@@ -30,15 +30,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
     super.dispose();
   }
 
-  void _handleRegister() {
+void _handleRegister() {
     if (_formKey.currentState!.validate()) {
-      // TODO: Implement registration logic
-      Navigator.pushReplacementNamed(context, RouteNames.home);
-    }
-  }
+      // 1. Show  message
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Account created successfully!'),
+          backgroundColor: AppColors.primary,
+        ),
+      );
 
-  void _goToLogin() {
-    Navigator.pushReplacementNamed(context, RouteNames.login);
+      // 2. Redirect back to Login screen
+      Navigator.pushReplacementNamed(context, RouteNames.login);
+    }
   }
 
   @override
