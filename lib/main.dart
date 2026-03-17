@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cross/core/theme/app_theme.dart';
 import 'package:cross/routes/app_routes.dart';
 import 'package:cross/routes/route_names.dart';
 
@@ -13,7 +14,7 @@ class PulsifyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Pulsify',
+      theme: AppTheme.darkTheme,
       initialRoute: RouteNames.login,
       onGenerateRoute: AppRoutes.generateRoute,
     );
