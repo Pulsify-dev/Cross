@@ -33,7 +33,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _goToSignUp() {
-      Navigator.pushReplacementNamed(context, RouteNames.register);
+      Navigator.pushNamed(context, RouteNames.register);
   }
 
   void _goToForgotPassword() {
