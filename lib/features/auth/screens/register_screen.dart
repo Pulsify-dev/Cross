@@ -30,19 +30,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
     super.dispose();
   }
 
-void _handleRegister() {
+  void _handleRegister() {
     if (_formKey.currentState!.validate()) {
-      // 1. Show  message
+      // 1. Show Success Message
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Account created successfully!'),
           backgroundColor: AppColors.primary,
+          behavior: SnackBarBehavior.floating,
         ),
       );
 
-      // 2. Redirect back to Login screen
+      // 2. Redirect back to Login
       Navigator.pushReplacementNamed(context, RouteNames.login);
     }
+  }
+
+  void _goToLogin() {
+    Navigator.pushReplacementNamed(context, RouteNames.login);
   }
 
   @override
@@ -60,7 +65,10 @@ void _handleRegister() {
         ),
         title: Text(
           'Create Account',
-          style: textTheme.titleMedium?.copyWith(color: AppColors.textPrimary, fontWeight: FontWeight.bold),
+          style: textTheme.titleMedium?.copyWith(
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         centerTitle: true,
       ),
@@ -69,7 +77,7 @@ void _handleRegister() {
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
           child: Column(
             children: [
-              // Profile Photo Section
+              // Profile Photo Placeholder
               Center(
                 child: Stack(
                   children: [
@@ -96,12 +104,8 @@ void _handleRegister() {
                 ),
               ),
               const SizedBox(height: 16),
-              Text('Set Profile Photo', style: textTheme.titleMedium?.copyWith(color: AppColors.textPrimary, fontWeight: FontWeight.bold)),
-              Text('Personalize your music profile', style: textTheme.bodySmall?.copyWith(color: AppColors.textSecondary)),
               
-              const SizedBox(height: 24),
-
-              // Registration Form
+              // Form Container
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(20),
@@ -155,20 +159,15 @@ void _handleRegister() {
                         obscureText: isConfirmPasswordHidden,
                         validator: (value) => value != passwordController.text ? 'Passwords do not match' : null,
                       ),
-                      
                       const SizedBox(height: 30),
 
-                      // Gradient Button with Glow
+                      // Gradient Button
                       Container(
                         width: double.infinity,
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(28),
-                          gradient: const LinearGradient(
-                            colors: [AppColors.gradientStart, AppColors.gradientEnd],
-                          ),
-                          boxShadow: const [
-                            BoxShadow(color: AppColors.glow, blurRadius: 18, spreadRadius: 1),
-                          ],
+                          gradient: const LinearGradient(colors: [AppColors.gradientStart, AppColors.gradientEnd]),
+                          boxShadow: const [BoxShadow(color: AppColors.glow, blurRadius: 18, spreadRadius: 1)],
                         ),
                         child: ElevatedButton(
                           onPressed: _handleRegister,
@@ -178,24 +177,14 @@ void _handleRegister() {
                             padding: const EdgeInsets.symmetric(vertical: 17),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
                           ),
-                          child: const Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text('Create Account', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                              SizedBox(width: 8),
-                              Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 18),
-                            ],
-                          ),
+                          child: const Text('Create Account', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                         ),
                       ),
                     ],
                   ),
                 ),
               ),
-              
               const SizedBox(height: 24),
-
-              // Bottom Link
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -206,7 +195,6 @@ void _handleRegister() {
                   ),
                 ],
               ),
-              const SizedBox(height: 20),
             ],
           ),
         ),
