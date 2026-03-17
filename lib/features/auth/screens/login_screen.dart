@@ -254,7 +254,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         children: [
                           Expanded(
                             child: Divider(
-                              color: AppColors.divider.withOpacity(0.8),
+                              color: AppColors.divider.withValues(alpha: 0.8),
                             ),
                           ),
                           Padding(
@@ -269,7 +269,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                           Expanded(
                             child: Divider(
-                              color: AppColors.divider.withOpacity(0.8),
+                              color: AppColors.divider.withValues(alpha: 0.8),
                             ),
                           ),
                         ],

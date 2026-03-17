@@ -20,10 +20,9 @@ class AppTheme {
     );
 
     return base.copyWith(
-      useMaterial3: true,
       scaffoldBackgroundColor: AppColors.background,
       colorScheme: colorScheme,
-      splashColor: AppColors.primary.withOpacity(0.10),
+      splashColor: AppColors.primary.withValues(alpha: 0.10),
       highlightColor: Colors.transparent,
       dividerColor: AppColors.divider,
 
@@ -215,7 +214,7 @@ class AppTheme {
           elevation: 0,
           foregroundColor: Colors.white,
           backgroundColor: AppColors.primary,
-          disabledBackgroundColor: AppColors.primary.withOpacity(0.35),
+          disabledBackgroundColor: AppColors.primary.withValues(alpha: 0.35),
           disabledForegroundColor: Colors.white70,
           padding: const EdgeInsets.symmetric(
             horizontal: 20,
@@ -285,7 +284,7 @@ class AppTheme {
 
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: AppColors.navBarBackground,
-        indicatorColor: AppColors.primary.withOpacity(0.15),
+        indicatorColor: AppColors.primary.withValues(alpha: 0.15),
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
             return const TextStyle(
