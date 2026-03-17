@@ -3,6 +3,7 @@ import 'package:cross/core/theme/app_colors.dart';
 import 'package:cross/features/auth/widgets/auth_text_field.dart';
 import 'package:cross/features/auth/widgets/social_auth_button.dart';
 import 'package:cross/routes/route_names.dart';
+
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -26,17 +27,17 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _handleLogin() {
-  if (_formKey.currentState!.validate()) {
-    Navigator.pushReplacementNamed(context, RouteNames.home);
+    if (_formKey.currentState!.validate()) {
+      Navigator.pushReplacementNamed(context, RouteNames.home);
+    }
   }
-}
 
   void _goToSignUp() {
-    // TODO: navigate to register screen
+      Navigator.pushReplacementNamed(context, RouteNames.register);
   }
 
   void _goToForgotPassword() {
-    // TODO: navigate to forgot password screen
+    Navigator.pushNamed(context, RouteNames.forgotPassword);
   }
 
   void _handleGoogleLogin() {
@@ -102,10 +103,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 decoration: BoxDecoration(
                   color: AppColors.surfaceSoft,
                   borderRadius: BorderRadius.circular(30),
-                  border: Border.all(
-                    color: AppColors.border,
-                    width: 1,
-                  ),
+                  border: Border.all(color: AppColors.border, width: 1),
                 ),
                 child: Form(
                   key: _formKey,

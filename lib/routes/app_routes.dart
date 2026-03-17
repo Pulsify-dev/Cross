@@ -3,6 +3,7 @@ import 'package:cross/features/auth/screens/login_screen.dart';
 import 'package:cross/features/auth/screens/register_screen.dart';
 import 'package:cross/features/feed/screens/home_feed_screen.dart';
 import 'package:cross/features/profile/screens/user_profile_screen.dart';
+import 'package:cross/features/auth/screens/forgot_password_screen.dart';
 import 'package:cross/routes/route_names.dart';
 class AppRoutes {
   static Route<dynamic> generateRoute(RouteSettings settings) {
@@ -11,6 +12,8 @@ class AppRoutes {
         return MaterialPageRoute(builder: (_) => const LoginScreen());
       case RouteNames.register:
         return MaterialPageRoute(builder: (_) => const RegisterScreen());
+       case RouteNames.forgotPassword:
+        return MaterialPageRoute(builder: (_) => const ForgotPasswordScreen());  
       case RouteNames.home:
         return MaterialPageRoute(builder: (_) => const HomeFeedScreen());
       case RouteNames.profile:
