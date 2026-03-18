@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:cross/core/theme/app_colors.dart';
 import 'package:cross/features/profile/models/profile_data.dart';
 import 'package:cross/providers/profile_provider.dart';
 import 'package:cross/routes/route_names.dart';
@@ -124,7 +125,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                 tooltip: 'More',
               ),
             ],
-            backgroundColor: theme.scaffoldBackgroundColor.withOpacity(0.8),
+            backgroundColor: Colors.transparent,
             elevation: 0,
           ),
           body: DefaultTabController(
@@ -147,14 +148,17 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                     pinned: true,
                     delegate: _TabBarHeader(
                       tabBar: TabBar(
-                        indicatorColor: const Color(0xFFA855F7),
-                        labelColor: const Color(0xFFA855F7),
-                        unselectedLabelColor:
-                            theme.textTheme.bodyMedium?.color?.withOpacity(0.6),
-                        labelStyle:
-                            const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                        indicatorColor: AppColors.primary,
+                        labelColor: AppColors.primary,
+                        unselectedLabelColor: AppColors.textSecondary,
+                        labelStyle: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14,
+                        ),
                         unselectedLabelStyle: const TextStyle(
-                            fontWeight: FontWeight.w500, fontSize: 14),
+                          fontWeight: FontWeight.w500,
+                          fontSize: 14,
+                        ),
                         tabs: const [
                           Tab(text: 'Uploaded'),
                           Tab(text: 'Playlists'),
@@ -199,7 +203,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                 height: avatarSize,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  border: Border.all(color: const Color(0xFFA855F7), width: borderSize),
+                  border: Border.all(color: AppColors.primary, width: borderSize),
                 ),
                 child: ClipOval(
                   child: Image(
@@ -209,12 +213,12 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                     ),
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) => Container(
-                      color: theme.colorScheme.surfaceContainerHighest,
+                      color: AppColors.surfaceElevated,
                       child: Center(
                         child: Icon(
                           Icons.person,
                           size: avatarSize * 0.45,
-                          color: theme.colorScheme.onSurface.withOpacity(0.4),
+                          color: AppColors.iconMuted.withValues(alpha: 0.6),
                         ),
                       ),
                     ),
@@ -225,7 +229,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                 width: avatarSize * 0.28,
                 height: avatarSize * 0.28,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFA855F7),
+                  color: AppColors.primary,
                   shape: BoxShape.circle,
                   border: Border.all(
                     color: Theme.of(context).scaffoldBackgroundColor,
@@ -245,16 +249,17 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           const SizedBox(height: 16),
           Text(
             profile.username,
-            style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
+            style: theme.textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
+            ),
           ),
           const SizedBox(height: 8),
           Text(
             profile.bio,
             textAlign: TextAlign.center,
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.brightness == Brightness.dark
-                  ? Colors.white70
-                  : Colors.black54,
+              color: AppColors.textSecondary,
             ),
           ),
           const SizedBox(height: 16),
@@ -265,18 +270,16 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                 Navigator.pushNamed(context, RouteNames.editProfile);
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFA855F7),
-                padding: const EdgeInsets.symmetric(vertical: 14),
+                backgroundColor: AppColors.primary,
+                padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(999),
+                  borderRadius: BorderRadius.circular(28),
                 ),
-                elevation: 8,
-                shadowColor: const Color(0xFFA855F7).withOpacity(0.2),
               ),
-              icon: const Icon(Icons.edit, size: 20),
+              icon: const Icon(Icons.edit, size: 20, color: Colors.white),
               label: const Text(
                 'Edit Profile',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
               ),
             ),
           ),
@@ -287,12 +290,6 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
   Widget _buildStatsRow(BuildContext context, ProfileData profile) {
     final theme = Theme.of(context);
-    final cardBg = theme.brightness == Brightness.dark
-        ? const Color(0xFFA855F7).withOpacity(0.06)
-        : Colors.grey.shade100;
-    final borderColor = theme.brightness == Brightness.dark
-        ? const Color(0xFFA855F7).withOpacity(0.1)
-        : Colors.grey.shade200;
 
     Widget statItem(String value, String label) {
       return Flexible(
@@ -300,29 +297,26 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         child: Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: cardBg,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: borderColor),
+            color: AppColors.surfaceSoft,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: AppColors.border),
           ),
           child: Column(
             children: [
               Text(
                 value,
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFFA855F7),
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.primary,
                 ),
               ),
               const SizedBox(height: 6),
               Text(
                 label.toUpperCase(),
-                style: TextStyle(
+                style: theme.textTheme.labelSmall?.copyWith(
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
-                  color: theme.brightness == Brightness.dark
-                      ? Colors.white70
-                      : Colors.black54,
+                  color: AppColors.textSecondary,
                   letterSpacing: 0.6,
                 ),
               ),
@@ -389,18 +383,12 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   }) {
     final theme = Theme.of(context);
     final imageSize = math.min(64.0, MediaQuery.of(context).size.width * 0.16);
-    final bg = theme.brightness == Brightness.dark
-        ? const Color(0xFFA855F7).withValues(alpha: 0.05)
-        : Colors.grey.shade100;
-    final border = theme.brightness == Brightness.dark
-        ? const Color(0xFFA855F7).withValues(alpha: 0.1)
-        : Colors.grey.shade200;
 
     return Container(
       decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: border),
+        color: AppColors.surfaceSoft,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppColors.border),
       ),
       padding: const EdgeInsets.all(12),
       child: Row(
@@ -423,7 +411,11 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -431,9 +423,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                 Text(
                   subtitle,
                   style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.brightness == Brightness.dark
-                        ? Colors.white70
-                        : Colors.black54,
+                    color: AppColors.textSecondary,
                     fontSize: 12,
                   ),
                 ),
@@ -449,19 +439,15 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                 style: theme.textTheme.bodyMedium?.copyWith(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: theme.brightness == Brightness.dark
-                      ? Colors.white70
-                      : Colors.black54,
+                  color: AppColors.textSecondary,
                 ),
               ),
               const SizedBox(height: 8),
               IconButton(
                 onPressed: () {},
-                icon: Icon(
+                icon: const Icon(
                   Icons.more_horiz,
-                  color: theme.brightness == Brightness.dark
-                      ? Colors.white70
-                      : Colors.black54,
+                  color: AppColors.iconSecondary,
                 ),
                 splashRadius: 20,
               ),
@@ -473,19 +459,13 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   }
 
   Widget _buildBottomNavigationBar(BuildContext context) {
-    final theme = Theme.of(context);
-    final bg = theme.brightness == Brightness.dark
-        ? const Color(0xFF191022).withValues(alpha: 0.9)
-        : Colors.white.withValues(alpha: 0.9);
-
     return Container(
-      decoration: BoxDecoration(
-        color: bg,
+      decoration: const BoxDecoration(
+        color: AppColors.navBarBackground,
         border: Border(
           top: BorderSide(
-            color: theme.brightness == Brightness.dark
-                ? const Color(0xFFA855F7).withValues(alpha: 0.1)
-                : Colors.grey.shade200,
+            color: AppColors.border,
+            width: 1,
           ),
         ),
       ),
@@ -539,7 +519,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     required bool selected,
     bool showBadge = false,
   }) {
-    final color = selected ? const Color(0xFFA855F7) : Colors.grey.shade500;
+    final color = selected ? AppColors.primary : AppColors.textMuted;
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -561,7 +541,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                     width: 10,
                     height: 10,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFA855F7),
+                      color: AppColors.primary,
                       shape: BoxShape.circle,
                       border: Border.all(
                         color: Theme.of(context).scaffoldBackgroundColor,

@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:cross/core/theme/app_colors.dart';
 import 'package:cross/features/profile/models/profile_data.dart';
 import 'package:cross/providers/profile_provider.dart';
 import 'package:provider/provider.dart';
@@ -44,13 +45,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     });
 
     final profileProvider = Provider.of<ProfileProvider>(context, listen: false);
-    profileProvider.updateProfile(profileProvider.profile.copyWith(
-      avatarBytes: bytes,
-      avatarPath: null,
-      username: _usernameController.text,
-      bio: _bioController.text,
-      email: _emailController.text,
-    ));
+    profileProvider.updateProfile(
+      profileProvider.profile.copyWith(
+        avatarBytes: bytes,
+        avatarPath: null,
+        username: _usernameController.text,
+        bio: _bioController.text,
+        email: _emailController.text,
+      ),
+    );
   }
 
   @override
@@ -75,7 +78,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         ),
         centerTitle: true,
         title: const Text('Edit Profile'),
-        backgroundColor: theme.scaffoldBackgroundColor.withOpacity(0.8),
+        backgroundColor: Colors.transparent,
         elevation: 0,
       ),
       body: SingleChildScrollView(
@@ -84,7 +87,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Profile Photo Section
               Center(
                 child: Column(
                   children: [
@@ -97,12 +99,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             border: Border.all(
-                              color: const Color(0xFFA855F7).withOpacity(0.2),
+                              color: AppColors.primary.withValues(alpha: 0.2),
                               width: 4,
                             ),
-                            boxShadow: [
+                            boxShadow: const [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.1),
+                                color: AppColors.shadow,
                                 blurRadius: 16,
                                 spreadRadius: 0,
                               ),
@@ -116,12 +118,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                               ),
                               fit: BoxFit.cover,
                               errorBuilder: (context, error, stackTrace) => Container(
-                                color: theme.colorScheme.surfaceContainerHighest,
+                                color: AppColors.surfaceElevated,
                                 child: Center(
                                   child: Icon(
                                     Icons.person,
                                     size: 52,
-                                    color: theme.colorScheme.onSurface.withOpacity(0.4),
+                                    color: AppColors.iconMuted.withValues(alpha: 0.6),
                                   ),
                                 ),
                               ),
@@ -134,15 +136,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             width: 44,
                             height: 44,
                             decoration: BoxDecoration(
-                              color: const Color(0xFFA855F7),
+                              color: AppColors.primary,
                               shape: BoxShape.circle,
                               border: Border.all(
                                 color: theme.scaffoldBackgroundColor,
                                 width: 4,
                               ),
-                              boxShadow: [
+                              boxShadow: const [
                                 BoxShadow(
-                                  color: const Color(0xFFA855F7).withOpacity(0.3),
+                                  color: AppColors.glow,
                                   blurRadius: 12,
                                   spreadRadius: 0,
                                 ),
@@ -165,8 +167,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       child: Text(
                         'Change Profile Picture',
                         style: theme.textTheme.bodyMedium?.copyWith(
-                          color: const Color(0xFFA855F7),
-                          fontWeight: FontWeight.bold,
+                          color: AppColors.primaryLight,
+                          fontWeight: FontWeight.w700,
                           fontSize: 16,
                           decoration: TextDecoration.underline,
                         ),
@@ -177,7 +179,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               ),
               const SizedBox(height: 32),
 
-              // Username Field
               _buildFormField(
                 context,
                 label: 'Username',
@@ -186,11 +187,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               ),
               const SizedBox(height: 20),
 
-              // Bio Field
               _buildBioField(context),
               const SizedBox(height: 20),
 
-              // Email Field
               _buildFormField(
                 context,
                 label: 'Email',
@@ -200,38 +199,36 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               ),
               const SizedBox(height: 24),
 
-              // Change Password Button
               _buildChangePasswordButton(context),
               const SizedBox(height: 32),
 
-              // Action Buttons
               ElevatedButton(
                 onPressed: () {
                   final profileProvider = Provider.of<ProfileProvider>(context, listen: false);
-                  profileProvider.updateProfile(profileProvider.profile.copyWith(
-                    avatarPath: _avatarPath.isNotEmpty ? _avatarPath : null,
-                    avatarBytes: _avatarBytes,
-                    username: _usernameController.text,
-                    bio: _bioController.text,
-                    email: _emailController.text,
-                  ));
+                  profileProvider.updateProfile(
+                    profileProvider.profile.copyWith(
+                      avatarPath: _avatarPath.isNotEmpty ? _avatarPath : null,
+                      avatarBytes: _avatarBytes,
+                      username: _usernameController.text,
+                      bio: _bioController.text,
+                      email: _emailController.text,
+                    ),
+                  );
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Changes saved!')),
                   );
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFA855F7),
+                  backgroundColor: AppColors.primary,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(28),
                   ),
-                  elevation: 8,
-                  shadowColor: const Color(0xFFA855F7).withOpacity(0.25),
                 ),
                 child: const Text(
                   'Save Changes',
                   style: TextStyle(
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w700,
                     fontSize: 16,
                     color: Colors.white,
                   ),
@@ -243,49 +240,40 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 style: OutlinedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(24),
                   ),
-                  side: BorderSide(
-                    color: theme.brightness == Brightness.dark
-                        ? const Color(0xFFA855F7).withOpacity(0.2)
-                        : Colors.grey.shade200,
+                  side: const BorderSide(
+                    color: AppColors.border,
+                    width: 1,
                   ),
                 ),
                 child: Text(
                   'Discard Changes',
-                  style: TextStyle(
+                  style: theme.textTheme.bodyMedium?.copyWith(
                     fontWeight: FontWeight.w600,
                     fontSize: 16,
-                    color: theme.brightness == Brightness.dark
-                        ? Colors.grey.shade400
-                        : Colors.grey.shade600,
+                    color: AppColors.textSecondary,
                   ),
                 ),
               ),
               const SizedBox(height: 32),
 
-              // Account Security Footer
               Center(
                 child: Column(
                   children: [
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(
+                        const Icon(
                           Icons.shield,
                           size: 16,
-                          color: theme.brightness == Brightness.dark
-                              ? Colors.grey.shade600
-                              : Colors.grey.shade500,
+                          color: AppColors.iconMuted,
                         ),
                         const SizedBox(width: 8),
                         Text(
                           'Last updated 2 days ago',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: theme.brightness == Brightness.dark
-                                ? Colors.grey.shade600
-                                : Colors.grey.shade500,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: AppColors.textMuted,
                           ),
                         ),
                       ],
@@ -309,7 +297,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                 onPressed: () => Navigator.pop(context),
                                 child: const Text(
                                   'Delete',
-                                  style: TextStyle(color: Colors.red),
+                                  style: TextStyle(color: AppColors.error),
                                 ),
                               ),
                             ],
@@ -320,7 +308,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         'Delete Account',
                         style: TextStyle(
                           fontSize: 14,
-                          color: Colors.red,
+                          color: AppColors.error,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -344,24 +332,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     TextInputType keyboardType = TextInputType.text,
   }) {
     final theme = Theme.of(context);
-    final inputBg = theme.brightness == Brightness.dark
-        ? const Color(0xFFA855F7).withOpacity(0.05)
-        : Colors.white;
-    final inputBorder = theme.brightness == Brightness.dark
-        ? const Color(0xFFA855F7).withOpacity(0.2)
-        : Colors.grey.shade200;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
-          style: TextStyle(
+          style: theme.textTheme.labelMedium?.copyWith(
             fontSize: 14,
             fontWeight: FontWeight.w600,
-            color: theme.brightness == Brightness.dark
-                ? Colors.grey.shade300
-                : Colors.grey.shade700,
+            color: AppColors.textSecondary,
           ),
         ),
         const SizedBox(height: 8),
@@ -369,26 +349,32 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           controller: controller,
           keyboardType: keyboardType,
           decoration: InputDecoration(
-            prefixIcon: Icon(icon, color: Colors.grey.shade400, size: 20),
+            prefixIcon: const Icon(
+              Icons.person,
+              color: AppColors.iconMuted,
+              size: 20,
+            ),
             filled: true,
-            fillColor: inputBg,
+            fillColor: AppColors.inputBackground,
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide(color: inputBorder),
+              borderRadius: BorderRadius.circular(22),
+              borderSide: const BorderSide(color: AppColors.border),
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide(color: inputBorder, width: 1),
+              borderRadius: BorderRadius.circular(22),
+              borderSide: const BorderSide(color: AppColors.border, width: 1),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: const BorderSide(color: Color(0xFFA855F7), width: 2),
+              borderRadius: BorderRadius.circular(22),
+              borderSide: const BorderSide(color: AppColors.primary, width: 1.4),
             ),
-            hintStyle: TextStyle(color: Colors.grey.shade400),
-            contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 0),
+            hintStyle: const TextStyle(color: AppColors.textHint),
+            contentPadding: const EdgeInsets.symmetric(vertical: 18, horizontal: 0),
+          ).copyWith(
+            prefixIcon: Icon(icon, color: AppColors.iconMuted, size: 20),
           ),
-          style: TextStyle(
-            color: theme.brightness == Brightness.dark ? Colors.white : Colors.black87,
+          style: theme.textTheme.bodyLarge?.copyWith(
+            color: AppColors.textPrimary,
             fontSize: 16,
           ),
         ),
@@ -398,24 +384,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   Widget _buildBioField(BuildContext context) {
     final theme = Theme.of(context);
-    final inputBg = theme.brightness == Brightness.dark
-        ? const Color(0xFFA855F7).withOpacity(0.05)
-        : Colors.white;
-    final inputBorder = theme.brightness == Brightness.dark
-        ? const Color(0xFFA855F7).withOpacity(0.2)
-        : Colors.grey.shade200;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'Bio',
-          style: TextStyle(
+          style: theme.textTheme.labelMedium?.copyWith(
             fontSize: 14,
             fontWeight: FontWeight.w600,
-            color: theme.brightness == Brightness.dark
-                ? Colors.grey.shade300
-                : Colors.grey.shade700,
+            color: AppColors.textSecondary,
           ),
         ),
         const SizedBox(height: 8),
@@ -424,24 +402,24 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           maxLines: 5,
           decoration: InputDecoration(
             filled: true,
-            fillColor: inputBg,
+            fillColor: AppColors.inputBackground,
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide(color: inputBorder),
+              borderRadius: BorderRadius.circular(22),
+              borderSide: const BorderSide(color: AppColors.border),
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide(color: inputBorder, width: 1),
+              borderRadius: BorderRadius.circular(22),
+              borderSide: const BorderSide(color: AppColors.border, width: 1),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: const BorderSide(color: Color(0xFFA855F7), width: 2),
+              borderRadius: BorderRadius.circular(22),
+              borderSide: const BorderSide(color: AppColors.primary, width: 1.4),
             ),
-            hintStyle: TextStyle(color: Colors.grey.shade400),
-            contentPadding: const EdgeInsets.all(16),
+            hintStyle: const TextStyle(color: AppColors.textHint),
+            contentPadding: const EdgeInsets.all(18),
           ),
-          style: TextStyle(
-            color: theme.brightness == Brightness.dark ? Colors.white : Colors.black87,
+          style: theme.textTheme.bodyLarge?.copyWith(
+            color: AppColors.textPrimary,
             fontSize: 16,
           ),
         ),
@@ -451,12 +429,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   Widget _buildChangePasswordButton(BuildContext context) {
     final theme = Theme.of(context);
-    final bg = theme.brightness == Brightness.dark
-        ? const Color(0xFFA855F7).withOpacity(0.05)
-        : Colors.white;
-    final border = theme.brightness == Brightness.dark
-        ? const Color(0xFFA855F7).withOpacity(0.2)
-        : Colors.grey.shade200;
 
     return GestureDetector(
       onTap: () {
@@ -514,36 +486,34 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: bg,
-          border: Border.all(color: border),
-          borderRadius: BorderRadius.circular(16),
+          color: AppColors.surfaceSoft,
+          border: Border.all(color: AppColors.border),
+          borderRadius: BorderRadius.circular(24),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Row(
               children: [
-                Icon(
+                const Icon(
                   Icons.lock,
-                  color: const Color(0xFFA855F7),
+                  color: AppColors.primary,
                   size: 24,
                 ),
                 const SizedBox(width: 12),
                 Text(
                   'Change Password',
-                  style: TextStyle(
+                  style: theme.textTheme.bodyLarge?.copyWith(
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
-                    color: theme.brightness == Brightness.dark
-                        ? Colors.white
-                        : Colors.black87,
+                    color: AppColors.textPrimary,
                   ),
                 ),
               ],
             ),
-            Icon(
+            const Icon(
               Icons.chevron_right,
-              color: Colors.grey.shade400,
+              color: AppColors.iconMuted,
               size: 24,
             ),
           ],
