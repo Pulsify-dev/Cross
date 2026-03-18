@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cross/routes/route_names.dart';
 import 'package:cross/features/profile/screens/user_profile_screen.dart';
-import 'package:cross/features/edit profile/screens/edit_profile_screen.dart';
+import 'package:cross/features/profile/screens/edit_profile_screen.dart';
 
 class AppRoutes {
   static Route<dynamic> generateRoute(RouteSettings settings) {

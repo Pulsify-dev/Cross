@@ -390,10 +390,10 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     final theme = Theme.of(context);
     final imageSize = math.min(64.0, MediaQuery.of(context).size.width * 0.16);
     final bg = theme.brightness == Brightness.dark
-        ? const Color(0xFFA855F7).withOpacity(0.05)
+        ? const Color(0xFFA855F7).withValues(alpha: 0.05)
         : Colors.grey.shade100;
     final border = theme.brightness == Brightness.dark
-        ? const Color(0xFFA855F7).withOpacity(0.1)
+        ? const Color(0xFFA855F7).withValues(alpha: 0.1)
         : Colors.grey.shade200;
 
     return Container(
@@ -475,8 +475,8 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   Widget _buildBottomNavigationBar(BuildContext context) {
     final theme = Theme.of(context);
     final bg = theme.brightness == Brightness.dark
-        ? const Color(0xFF191022).withOpacity(0.9)
-        : Colors.white.withOpacity(0.9);
+        ? const Color(0xFF191022).withValues(alpha: 0.9)
+        : Colors.white.withValues(alpha: 0.9);
 
     return Container(
       decoration: BoxDecoration(
@@ -484,7 +484,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         border: Border(
           top: BorderSide(
             color: theme.brightness == Brightness.dark
-                ? const Color(0xFFA855F7).withOpacity(0.1)
+                ? const Color(0xFFA855F7).withValues(alpha: 0.1)
                 : Colors.grey.shade200,
           ),
         ),
