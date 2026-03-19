@@ -1,3 +1,6 @@
+import 'package:cross/features/library/screens/library_screen.dart';
+import 'package:cross/features/messages/screens/messages_screen.dart';
+import 'package:cross/features/search/screens/search_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:cross/features/auth/screens/login_screen.dart';
 import 'package:cross/features/auth/screens/register_screen.dart';
@@ -22,6 +25,15 @@ class AppRoutes {
         return MaterialPageRoute(builder: (_) => const UserProfileScreen());
       case RouteNames.editProfile:
         return MaterialPageRoute(builder: (_) => const EditProfileScreen());
+      case RouteNames.search:
+        return MaterialPageRoute(builder: (_) => const SearchScreen());
+      case RouteNames.library:
+        return MaterialPageRoute(builder: (_) => const LibraryScreen());
+      case RouteNames.messages:
+        return MaterialPageRoute(builder: (_) => const MessagesScreen());
+      case RouteNames.editProfile:
+        return MaterialPageRoute(builder: (_) => const EditProfileScreen());
+      
       default:
         return MaterialPageRoute(
           builder: (_) => Scaffold(

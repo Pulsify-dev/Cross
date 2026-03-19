@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:cross/core/theme/app_theme.dart';
 import 'package:cross/providers/feed_provider.dart';
 import 'package:cross/providers/profile_provider.dart';
+import 'package:cross/providers/search_provider.dart';
 import 'package:cross/routes/app_routes.dart';
 import 'package:cross/routes/route_names.dart';
 import 'package:cross/features/feed/services/track_service.dart';
@@ -25,6 +26,11 @@ class PulsifyApp extends StatelessWidget {
         ),
         ChangeNotifierProvider(
           create: (context) => FeedProvider(
+            context.read<TrackService>(),
+          ),
+        ),
+        ChangeNotifierProvider(
+          create: (context) => SearchProvider(
             context.read<TrackService>(),
           ),
         ),

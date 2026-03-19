@@ -102,6 +102,32 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     },
   ];
 
+  void _onBottomNavTap(int index) {
+    if (_selectedBottomNav == index) return;
+
+    setState(() {
+      _selectedBottomNav = index;
+    });
+
+    switch (index) {
+      case 0:
+        Navigator.pushNamed(context, RouteNames.home);
+        break;
+      case 1:
+        Navigator.pushNamed(context, RouteNames.search);
+        break;
+      case 2:
+        Navigator.pushNamed(context, RouteNames.library);
+        break;
+      case 3:
+        Navigator.pushNamed(context, RouteNames.messages);
+        break;
+      case 4:
+        Navigator.pushNamed(context, RouteNames.profile);
+        break;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -115,7 +141,13 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
             title: const Text('Profile'),
             leading: IconButton(
               icon: const Icon(Icons.arrow_back),
-              onPressed: () {},
+              onPressed: () {
+                if (Navigator.canPop(context)) {
+                  Navigator.pop(context);
+                } else {
+                  Navigator.pushReplacementNamed(context, RouteNames.home);
+                }
+              },
               tooltip: 'Back',
             ),
             actions: [
@@ -203,7 +235,10 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                 height: avatarSize,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  border: Border.all(color: AppColors.primary, width: borderSize),
+                  border: Border.all(
+                    color: AppColors.primary,
+                    width: borderSize,
+                  ),
                 ),
                 child: ClipOval(
                   child: Image(
@@ -237,11 +272,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                   ),
                 ),
                 child: const Center(
-                  child: Icon(
-                    Icons.verified,
-                    color: Colors.white,
-                    size: 18,
-                  ),
+                  child: Icon(Icons.verified, color: Colors.white, size: 18),
                 ),
               ),
             ],
@@ -358,7 +389,10 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     );
   }
 
-  Widget _buildTrackList(BuildContext context, List<Map<String, String>> trackItems) {
+  Widget _buildTrackList(
+    BuildContext context,
+    List<Map<String, String>> trackItems,
+  ) {
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 92),
       itemCount: trackItems.length,
@@ -462,12 +496,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     return Container(
       decoration: const BoxDecoration(
         color: AppColors.navBarBackground,
-        border: Border(
-          top: BorderSide(
-            color: AppColors.border,
-            width: 1,
-          ),
-        ),
+        border: Border(top: BorderSide(color: AppColors.border, width: 1)),
       ),
       padding: const EdgeInsets.only(top: 8, bottom: 16, left: 12, right: 12),
       child: SafeArea(
@@ -523,9 +552,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: () => setState(() {
-        _selectedBottomNav = index;
-      }),
+      onTap: () => _onBottomNavTap(index),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -580,15 +607,17 @@ class _TabBarHeader extends SliverPersistentHeaderDelegate {
   double get maxExtent => tabBar.preferredSize.height;
 
   @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
-    return Container(
-      color: backgroundColor,
-      child: tabBar,
-    );
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    return Container(color: backgroundColor, child: tabBar);
   }
 
   @override
   bool shouldRebuild(covariant _TabBarHeader oldDelegate) {
-    return oldDelegate.tabBar != tabBar || oldDelegate.backgroundColor != backgroundColor;
+    return oldDelegate.tabBar != tabBar ||
+        oldDelegate.backgroundColor != backgroundColor;
   }
 }
