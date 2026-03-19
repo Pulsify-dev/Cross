@@ -28,7 +28,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _handleLogin() {
     if (_formKey.currentState!.validate()) {
-      Navigator.pushReplacementNamed(context, RouteNames.home);
+      Navigator.pushReplacementNamed(context, RouteNames.mainScreen);
     }
   }
 
