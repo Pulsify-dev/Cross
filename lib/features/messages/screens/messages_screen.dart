@@ -7,11 +7,10 @@ class MessagesScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: const Text('Messages'),
       ),
-      body: const Center(
-        child: Text('Messages Screen Dummy'),
-      ),
+      body: const Center(child: Text('Messages Screen Dummy')),
     );
   }
 }
