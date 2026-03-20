@@ -272,10 +272,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               icon: const Icon(Icons.edit, size: 20, color: Colors.white),
               label: const Text(
                 'Edit Profile',
-                style: TextStyle(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 16,
-                ),
+                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
               ),
             ),
           ),
@@ -287,36 +284,43 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   Widget _buildStatsRow(BuildContext context, ProfileData profile) {
     final theme = Theme.of(context);
 
-    Widget statItem(String value, String label) {
+    Widget statItem(String value, String label, {VoidCallback? onTap}) {
       return Flexible(
         fit: FlexFit.tight,
-        child: Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: AppColors.surfaceSoft,
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: AppColors.border),
-          ),
-          child: Column(
-            children: [
-              Text(
-                value,
-                style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.primary,
-                ),
+            child: Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceSoft,
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: AppColors.border),
               ),
-              const SizedBox(height: 6),
-              Text(
-                label.toUpperCase(),
-                style: theme.textTheme.labelSmall?.copyWith(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textSecondary,
-                  letterSpacing: 0.6,
-                ),
+              child: Column(
+                children: [
+                  Text(
+                    value,
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    label.toUpperCase(),
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textSecondary,
+                      letterSpacing: 0.6,
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       );
@@ -332,9 +336,19 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                statItem('12.4K', 'Followers'),
+                statItem(
+                  '12.4K',
+                  'Followers',
+                  onTap: () =>
+                      Navigator.pushNamed(context, RouteNames.followers),
+                ),
                 const SizedBox(height: 12),
-                statItem('450', 'Following'),
+                statItem(
+                  '450',
+                  'Following',
+                  onTap: () =>
+                      Navigator.pushNamed(context, RouteNames.following),
+                ),
                 const SizedBox(height: 12),
                 statItem('86', 'Tracks'),
               ],
@@ -343,10 +357,18 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
           return Row(
             children: [
-              statItem('12.4K', 'Followers'),
-              const SizedBox(width: 12),
-              statItem('450', 'Following'),
-              const SizedBox(width: 12),
+              statItem(
+                '12.4K',
+                'Followers',
+                onTap: () => Navigator.pushNamed(context, RouteNames.followers),
+              ),
+              const SizedBox(height: 12),
+              statItem(
+                '450',
+                'Following',
+                onTap: () => Navigator.pushNamed(context, RouteNames.following),
+              ),
+              const SizedBox(height: 12),
               statItem('86', 'Tracks'),
             ],
           );
@@ -460,10 +482,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 }
 
 class _TabBarHeader extends SliverPersistentHeaderDelegate {
-  _TabBarHeader({
-    required this.tabBar,
-    required this.backgroundColor,
-  });
+  _TabBarHeader({required this.tabBar, required this.backgroundColor});
 
   final TabBar tabBar;
   final Color backgroundColor;
@@ -480,10 +499,7 @@ class _TabBarHeader extends SliverPersistentHeaderDelegate {
     double shrinkOffset,
     bool overlapsContent,
   ) {
-    return Container(
-      color: backgroundColor,
-      child: tabBar,
-    );
+    return Container(color: backgroundColor, child: tabBar);
   }
 
   @override

@@ -19,6 +19,8 @@ import 'package:cross/features/library/screens/listening_history_screen.dart';
 import 'package:cross/features/search/screens/search_results_screen.dart';
 import 'package:cross/features/player/screens/track_comments_screen.dart';
 import 'package:cross/features/player/screens/track_likes_screen.dart';
+import 'package:cross/features/profile/screens/followers_screen.dart';
+import 'package:cross/features/profile/screens/following_screen.dart';
 
 class AppRoutes {
   static Route<dynamic> generateRoute(RouteSettings settings) {
@@ -73,14 +75,12 @@ class AppRoutes {
         return MaterialPageRoute(builder: (_) => const UserProfileScreen());
       case RouteNames.editProfile:
         return MaterialPageRoute(builder: (_) => const EditProfileScreen());
-      /*case RouteNames.search:
-        return MaterialPageRoute(builder: (_) => const SearchScreen());
-      case RouteNames.library:
-        return MaterialPageRoute(builder: (_) => const LibraryScreen());
-      case RouteNames.messages:
-        return MaterialPageRoute(builder: (_) => const MessagesScreen());
-      case RouteNames.editProfile:
-        return MaterialPageRoute(builder: (_) => const EditProfileScreen());*/
+      case RouteNames.followers:
+        return MaterialPageRoute(builder: (_) => const FollowersScreen());
+
+      case RouteNames.following:
+        return MaterialPageRoute(builder: (_) => const FollowingScreen());
+
       default:
         return MaterialPageRoute(
           builder: (_) => Scaffold(
