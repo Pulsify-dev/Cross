@@ -1,4 +1,4 @@
-import 'dart:ui';
+//import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -53,7 +53,7 @@ class _TrendingTracksScreenState extends State<TrendingTracksScreen> {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                    Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
                     Colors.transparent,
                   ],
                 ),
@@ -114,7 +114,7 @@ class _TrendingTracksScreenState extends State<TrendingTracksScreen> {
                             ? Theme.of(context).colorScheme.primary
                             : Theme.of(
                                 context,
-                              ).colorScheme.onSurface.withOpacity(0.2),
+                              ).colorScheme.onSurface.withValues(alpha: 0.2),
                         width: 1.5,
                       ),
                       color: Colors.transparent,
@@ -156,7 +156,7 @@ class _TrendingTracksScreenState extends State<TrendingTracksScreen> {
             child: Text(
               'No tracks found for this genre.',
               style: TextStyle(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
               ),
             ),
           );
@@ -191,7 +191,7 @@ class _TrendingTracksScreenState extends State<TrendingTracksScreen> {
                         Icons.music_note,
                         color: Theme.of(
                           context,
-                        ).colorScheme.onSurface.withOpacity(0.5),
+                        ).colorScheme.onSurface.withValues(alpha: 0.5),
                       ),
                     ),
                   ),
@@ -211,7 +211,7 @@ class _TrendingTracksScreenState extends State<TrendingTracksScreen> {
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: Theme.of(
                       context,
-                    ).colorScheme.onSurface.withOpacity(0.6),
+                    ).colorScheme.onSurface.withValues(alpha: 0.6),
                     fontSize: 14,
                   ),
                   maxLines: 1,
@@ -222,7 +222,7 @@ class _TrendingTracksScreenState extends State<TrendingTracksScreen> {
                     Icons.more_vert,
                     color: Theme.of(
                       context,
-                    ).colorScheme.onSurface.withOpacity(0.7),
+                    ).colorScheme.onSurface.withValues(alpha: 0.7),
                   ),
                   onPressed: () {
                     Navigator.of(

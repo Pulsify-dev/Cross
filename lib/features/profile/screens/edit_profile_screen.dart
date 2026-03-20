@@ -23,7 +23,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   @override
   void initState() {
     super.initState();
-    final profileProvider = Provider.of<ProfileProvider>(context, listen: false);
+    final profileProvider = Provider.of<ProfileProvider>(
+      context,
+      listen: false,
+    );
     final profile = profileProvider.profile;
     _avatarPath = profile.avatarPath ?? '';
     _avatarBytes = profile.avatarBytes;
@@ -33,18 +36,24 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Future<void> _pickImage() async {
+    final profileProvider = Provider.of<ProfileProvider>(
+      context,
+      listen: false,
+    );
     final picker = ImagePicker();
+
     final picked = await picker.pickImage(source: ImageSource.gallery);
     if (picked == null) return;
 
     final bytes = await picked.readAsBytes();
+
+    if (!mounted) return;
 
     setState(() {
       _avatarBytes = bytes;
       _avatarPath = '';
     });
 
-    final profileProvider = Provider.of<ProfileProvider>(context, listen: false);
     profileProvider.updateProfile(
       profileProvider.profile.copyWith(
         avatarBytes: bytes,
@@ -113,20 +122,25 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           child: ClipOval(
                             child: Image(
                               image: avatarImage(
-                                path: _avatarPath.isNotEmpty ? _avatarPath : null,
+                                path: _avatarPath.isNotEmpty
+                                    ? _avatarPath
+                                    : null,
                                 bytes: _avatarBytes,
                               ),
                               fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) => Container(
-                                color: AppColors.surfaceElevated,
-                                child: Center(
-                                  child: Icon(
-                                    Icons.person,
-                                    size: 52,
-                                    color: AppColors.iconMuted.withValues(alpha: 0.6),
+                              errorBuilder: (context, error, stackTrace) =>
+                                  Container(
+                                    color: AppColors.surfaceElevated,
+                                    child: Center(
+                                      child: Icon(
+                                        Icons.person,
+                                        size: 52,
+                                        color: AppColors.iconMuted.withValues(
+                                          alpha: 0.6,
+                                        ),
+                                      ),
+                                    ),
                                   ),
-                                ),
-                              ),
                             ),
                           ),
                         ),
@@ -204,7 +218,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
               ElevatedButton(
                 onPressed: () {
-                  final profileProvider = Provider.of<ProfileProvider>(context, listen: false);
+                  final profileProvider = Provider.of<ProfileProvider>(
+                    context,
+                    listen: false,
+                  );
                   profileProvider.updateProfile(
                     profileProvider.profile.copyWith(
                       avatarPath: _avatarPath.isNotEmpty ? _avatarPath : null,
@@ -242,10 +259,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(24),
                   ),
-                  side: const BorderSide(
-                    color: AppColors.border,
-                    width: 1,
-                  ),
+                  side: const BorderSide(color: AppColors.border, width: 1),
                 ),
                 child: Text(
                   'Discard Changes',
@@ -348,31 +362,41 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         TextField(
           controller: controller,
           keyboardType: keyboardType,
-          decoration: InputDecoration(
-            prefixIcon: const Icon(
-              Icons.person,
-              color: AppColors.iconMuted,
-              size: 20,
-            ),
-            filled: true,
-            fillColor: AppColors.inputBackground,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(22),
-              borderSide: const BorderSide(color: AppColors.border),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(22),
-              borderSide: const BorderSide(color: AppColors.border, width: 1),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(22),
-              borderSide: const BorderSide(color: AppColors.primary, width: 1.4),
-            ),
-            hintStyle: const TextStyle(color: AppColors.textHint),
-            contentPadding: const EdgeInsets.symmetric(vertical: 18, horizontal: 0),
-          ).copyWith(
-            prefixIcon: Icon(icon, color: AppColors.iconMuted, size: 20),
-          ),
+          decoration:
+              InputDecoration(
+                prefixIcon: const Icon(
+                  Icons.person,
+                  color: AppColors.iconMuted,
+                  size: 20,
+                ),
+                filled: true,
+                fillColor: AppColors.inputBackground,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(22),
+                  borderSide: const BorderSide(color: AppColors.border),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(22),
+                  borderSide: const BorderSide(
+                    color: AppColors.border,
+                    width: 1,
+                  ),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(22),
+                  borderSide: const BorderSide(
+                    color: AppColors.primary,
+                    width: 1.4,
+                  ),
+                ),
+                hintStyle: const TextStyle(color: AppColors.textHint),
+                contentPadding: const EdgeInsets.symmetric(
+                  vertical: 18,
+                  horizontal: 0,
+                ),
+              ).copyWith(
+                prefixIcon: Icon(icon, color: AppColors.iconMuted, size: 20),
+              ),
           style: theme.textTheme.bodyLarge?.copyWith(
             color: AppColors.textPrimary,
             fontSize: 16,
@@ -413,7 +437,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(22),
-              borderSide: const BorderSide(color: AppColors.primary, width: 1.4),
+              borderSide: const BorderSide(
+                color: AppColors.primary,
+                width: 1.4,
+              ),
             ),
             hintStyle: const TextStyle(color: AppColors.textHint),
             contentPadding: const EdgeInsets.all(18),
@@ -495,11 +522,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           children: [
             Row(
               children: [
-                const Icon(
-                  Icons.lock,
-                  color: AppColors.primary,
-                  size: 24,
-                ),
+                const Icon(Icons.lock, color: AppColors.primary, size: 24),
                 const SizedBox(width: 12),
                 Text(
                   'Change Password',

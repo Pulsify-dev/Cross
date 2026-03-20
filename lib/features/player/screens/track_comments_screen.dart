@@ -153,7 +153,7 @@ class _TrackCommentsScreenState extends State<TrackCommentsScreen> {
                 label: comment.likeCount.toString(),
                 color: comment.isLiked
                     ? Theme.of(context).colorScheme.secondary
-                    : Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                    : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
                 onTap: () =>
                     provider.toggleCommentLike(widget.track.id, comment),
               ),
@@ -190,7 +190,7 @@ class _TrackCommentsScreenState extends State<TrackCommentsScreen> {
               size: 16,
               color:
                   color ??
-                  Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                  Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
             ),
             const SizedBox(width: 4),
             Text(
@@ -198,7 +198,7 @@ class _TrackCommentsScreenState extends State<TrackCommentsScreen> {
               style: TextStyle(
                 color:
                     color ??
-                    Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                    Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
                 fontSize: 12,
               ),
             ),
@@ -215,7 +215,7 @@ class _TrackCommentsScreenState extends State<TrackCommentsScreen> {
         if (_replyingTo != null)
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
             child: Row(
               children: [
                 Icon(
@@ -246,7 +246,7 @@ class _TrackCommentsScreenState extends State<TrackCommentsScreen> {
             color: Theme.of(context).colorScheme.surface,
             border: Border(
               top: BorderSide(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
               ),
             ),
           ),

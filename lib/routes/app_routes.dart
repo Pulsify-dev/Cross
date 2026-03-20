@@ -16,11 +16,8 @@ import '../features/feed/models/track.dart';
 import 'package:cross/features/feed/screens/trending_tracks_screen.dart';
 import 'package:cross/features/library/screens/liked_tracks_screen.dart';
 import 'package:cross/features/library/screens/listening_history_screen.dart';
-import 'package:cross/features/library/screens/library_screen.dart';
-import 'package:cross/features/search/screens/search_screen.dart';
 import 'package:cross/features/search/screens/search_results_screen.dart';
 import 'package:cross/features/player/screens/track_comments_screen.dart';
-import 'package:cross/features/messages/screens/messages_screen.dart';
 import 'package:cross/features/player/screens/track_likes_screen.dart';
 
 class AppRoutes {
@@ -76,15 +73,14 @@ class AppRoutes {
         return MaterialPageRoute(builder: (_) => const UserProfileScreen());
       case RouteNames.editProfile:
         return MaterialPageRoute(builder: (_) => const EditProfileScreen());
-      case RouteNames.search:
+      /*case RouteNames.search:
         return MaterialPageRoute(builder: (_) => const SearchScreen());
       case RouteNames.library:
         return MaterialPageRoute(builder: (_) => const LibraryScreen());
       case RouteNames.messages:
         return MaterialPageRoute(builder: (_) => const MessagesScreen());
       case RouteNames.editProfile:
-        return MaterialPageRoute(builder: (_) => const EditProfileScreen());
-      
+        return MaterialPageRoute(builder: (_) => const EditProfileScreen());*/
       default:
         return MaterialPageRoute(
           builder: (_) => Scaffold(

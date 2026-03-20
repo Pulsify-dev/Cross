@@ -52,6 +52,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         ),
       );
     } finally {
+      // ignore: control_flow_in_finally
       if (!mounted) return;
 
       setState(() {
