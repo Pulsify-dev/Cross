@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:cross/core/theme/app_colors.dart';
+import 'package:cross/providers/auth_provider.dart';
 import 'package:cross/features/auth/widgets/auth_text_field.dart';
 import 'package:cross/features/auth/widgets/social_auth_button.dart';
 import 'package:cross/routes/route_names.dart';
+import 'package:provider/provider.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -26,10 +28,32 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  void _handleLogin() {
-    if (_formKey.currentState!.validate()) {
-      Navigator.pushReplacementNamed(context, RouteNames.mainScreen);
+  Future<void> _handleLogin() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
     }
+
+    final authProvider = context.read<AuthProvider>();
+    final isSuccess = await authProvider.login(
+      email: emailController.text.trim(),
+      password: passwordController.text,
+    );
+
+    if (!mounted) {
+      return;
+    }
+
+    if (isSuccess) {
+      Navigator.pushReplacementNamed(context, RouteNames.mainScreen);
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(authProvider.errorMessage ?? 'Login failed.'),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   void _goToSignUp() {
@@ -51,6 +75,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final isLoading = context.select<AuthProvider, bool>((p) => p.isLoading);
 
     return Scaffold(
       backgroundColor: AppColors.backgroundAlt,
@@ -226,7 +251,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           ],
                         ),
                         child: ElevatedButton(
-                          onPressed: _handleLogin,
+                          onPressed: isLoading ? null : _handleLogin,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.transparent,
                             shadowColor: Colors.transparent,
@@ -236,13 +261,24 @@ class _LoginScreenState extends State<LoginScreen> {
                               borderRadius: BorderRadius.circular(28),
                             ),
                           ),
-                          child: Text(
-                            'Log In',
-                            style: textTheme.labelLarge?.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
+                          child: isLoading
+                              ? const SizedBox(
+                                  width: 22,
+                                  height: 22,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2.2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.white,
+                                    ),
+                                  ),
+                                )
+                              : Text(
+                                  'Log In',
+                                  style: textTheme.labelLarge?.copyWith(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
                         ),
                       ),
 

@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'core/theme/app_theme.dart';
 import 'features/feed/services/mock_track_service.dart';
 import 'features/feed/services/track_service.dart';
+import 'providers/auth_provider.dart';
 import 'providers/engagement_provider.dart';
 import 'providers/feed_provider.dart';
 import 'providers/player_provider.dart';
@@ -23,6 +24,10 @@ class PulsifyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
+        ChangeNotifierProvider(
+          create: (_) => AuthProvider()..checkLoginStatus(),
+        ),
+
         Provider<TrackService>(
           create: (_) => MockTrackService(),
         ),
