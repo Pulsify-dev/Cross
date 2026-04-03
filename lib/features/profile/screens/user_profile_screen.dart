@@ -114,10 +114,15 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
             centerTitle: true,
             title: const Text('Profile'),
             actions: [
-              IconButton(
-                icon: const Icon(Icons.more_vert),
-                onPressed: () {},
+              PopupMenuButton<String>(
                 tooltip: 'More',
+                icon: const Icon(Icons.more_vert),
+                itemBuilder: (context) => const [
+                  PopupMenuItem<String>(
+                    value: 'logout',
+                    child: Text('Log out'),
+                  ),
+                ],
               ),
             ],
             backgroundColor: Colors.transparent,
