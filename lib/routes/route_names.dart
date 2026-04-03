@@ -17,4 +17,6 @@ class RouteNames {
   static const String mainScreen = '/main';
   static const String messages = '/messages';
   static const String searchResults = '/search-results';
+  static const String followers = '/followers';
+  static const String following = '/following';
 }
