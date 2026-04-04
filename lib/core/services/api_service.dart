@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:cross/core/constants/api_constants.dart';
+import 'package:cross/core/constants/api_endpoints.dart';
 import 'package:cross/core/services/session_service.dart';
 import 'package:http/http.dart' as http;
 
@@ -25,6 +26,7 @@ class ApiService {
 
 	final http.Client _client;
 	final SessionService _sessionService;
+	Future<bool>? _refreshFuture;
 
 	Future<dynamic> get(
 		String endpoint, {
@@ -60,6 +62,7 @@ class ApiService {
 		Map<String, dynamic>? body,
 		bool authRequired = false,
 		Map<String, String>? headers,
+		bool allowAuthRetry = true,
 	}) async {
 		final uri = Uri.parse('${ApiConstants.baseUrl}$endpoint');
 		final requestHeaders = <String, String>{
@@ -98,6 +101,23 @@ class ApiService {
 					throw ApiException('Unsupported HTTP method: $method');
 			}
 
+			if (response.statusCode == 401 &&
+				authRequired &&
+				allowAuthRetry &&
+				endpoint != ApiEndpoints.refreshToken) {
+				final refreshed = await _tryRefreshAndPersistTokens();
+				if (refreshed) {
+					return _sendRequest(
+						method: method,
+						endpoint: endpoint,
+						body: body,
+						authRequired: authRequired,
+						headers: headers,
+						allowAuthRetry: false,
+					);
+				}
+			}
+
 			final parsedBody = _parseResponseBody(response.body);
 			if (response.statusCode >= 200 && response.statusCode < 300) {
 				return parsedBody;
@@ -112,6 +132,95 @@ class ApiService {
 		} on TimeoutException {
 			throw const ApiException('Request timed out. Please try again.');
 		}
+	}
+
+	Future<bool> _tryRefreshAndPersistTokens() async {
+		if (_refreshFuture != null) {
+			return _refreshFuture!;
+		}
+
+		_refreshFuture = _performRefreshAndPersistTokens();
+		try {
+			return await _refreshFuture!;
+		} finally {
+			_refreshFuture = null;
+		}
+	}
+
+	Future<bool> _performRefreshAndPersistTokens() async {
+		final savedRefreshToken = await _sessionService.getRefreshToken();
+		if (savedRefreshToken == null || savedRefreshToken.isEmpty) {
+			await _sessionService.clearSession();
+			return false;
+		}
+
+		try {
+			final uri = Uri.parse('${ApiConstants.baseUrl}${ApiEndpoints.refreshToken}');
+			final response = await _client
+				.post(
+					uri,
+					headers: const {
+						'Content-Type': 'application/json',
+						'Accept': 'application/json',
+					},
+					body: jsonEncode({'refresh_token': savedRefreshToken}),
+				)
+				.timeout(const Duration(seconds: 25));
+
+			if (response.statusCode < 200 || response.statusCode >= 300) {
+				await _sessionService.clearSession();
+				return false;
+			}
+
+			final parsedBody = _parseResponseBody(response.body);
+			if (parsedBody is! Map<String, dynamic>) {
+				await _sessionService.clearSession();
+				return false;
+			}
+
+			final newAccessToken = _extractToken(
+				parsedBody,
+				snakeCaseKey: 'access_token',
+				camelCaseKey: 'accessToken',
+			);
+			if (newAccessToken == null || newAccessToken.isEmpty) {
+				await _sessionService.clearSession();
+				return false;
+			}
+
+			final rotatedRefreshToken = _extractToken(
+				parsedBody,
+				snakeCaseKey: 'refresh_token',
+				camelCaseKey: 'refreshToken',
+			);
+			final refreshToSave =
+				(rotatedRefreshToken != null && rotatedRefreshToken.isNotEmpty)
+					? rotatedRefreshToken
+					: savedRefreshToken;
+
+			await _sessionService.saveTokens(
+				accessToken: newAccessToken,
+				refreshToken: refreshToSave,
+			);
+			return true;
+		} on SocketException {
+			await _sessionService.clearSession();
+			return false;
+		} on TimeoutException {
+			await _sessionService.clearSession();
+			return false;
+		} catch (_) {
+			await _sessionService.clearSession();
+			return false;
+		}
+	}
+
+	String? _extractToken(
+		Map<String, dynamic> body, {
+		required String snakeCaseKey,
+		required String camelCaseKey,
+	}) {
+		return body[snakeCaseKey]?.toString() ?? body[camelCaseKey]?.toString();
 	}
 
 	dynamic _parseResponseBody(String body) {

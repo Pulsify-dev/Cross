@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:cross/core/theme/app_colors.dart';
 import 'package:cross/features/profile/models/profile_data.dart';
+import 'package:cross/providers/auth_provider.dart';
 import 'package:cross/providers/profile_provider.dart';
 import 'package:cross/routes/route_names.dart';
 import 'package:provider/provider.dart';
@@ -100,6 +101,25 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     },
   ];
 
+  Future<void> _handleProfileMenuSelection(String value) async {
+    if (value != 'logout') {
+      return;
+    }
+
+    final authProvider = context.read<AuthProvider>();
+    await authProvider.logout();
+
+    if (!mounted) {
+      return;
+    }
+
+    Navigator.pushNamedAndRemoveUntil(
+      context,
+      RouteNames.login,
+      (_) => false,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -117,6 +137,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               PopupMenuButton<String>(
                 tooltip: 'More',
                 icon: const Icon(Icons.more_vert),
+                onSelected: _handleProfileMenuSelection,
                 itemBuilder: (context) => const [
                   PopupMenuItem<String>(
                     value: 'logout',

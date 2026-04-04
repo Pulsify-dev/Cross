@@ -5,6 +5,16 @@ class SessionService {
   static const String _refreshTokenKey = 'refresh_token';
   static const String _isLoggedInKey = 'is_logged_in';
 
+  Future<void> saveTokens({
+    required String accessToken,
+    required String refreshToken,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_accessTokenKey, accessToken);
+    await prefs.setString(_refreshTokenKey, refreshToken);
+    await prefs.setBool(_isLoggedInKey, true);
+  }
+
   Future<void> saveAccessToken(String token) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_accessTokenKey, token);
@@ -33,6 +43,11 @@ class SessionService {
   Future<bool> isLoggedIn() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getBool(_isLoggedInKey) ?? false;
+  }
+
+  Future<bool> hasRefreshToken() async {
+    final refreshToken = await getRefreshToken();
+    return refreshToken != null && refreshToken.isNotEmpty;
   }
 
   Future<void> clearSession() async {
