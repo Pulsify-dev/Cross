@@ -21,13 +21,13 @@ jobs:
       - name: Build the APK
         run: flutter build apk --release
 
-      - name: connect & deploy to firebase
-        uses: w9jds/firebase-action-distribution@v1
+      - name: Upload to Firebase App Distribution
+        uses: wzieba/Firebase-Distribution-Github-Action@v1
         with:
           appId: ${{ secrets.FIREBASE_ID }}
           serviceCredentialsFileContent: ${{ secrets.FIREBASE_CREDENTIALS }}
-          file: build/app/outputs/flutter-apk/app-release.apk
           groups: team
-          releaseNotes: "Pulsify v${{github.run_number}}"
+          file: build/app/outputs/flutter-apk/app-release.apk
+          releaseNotes: "Pulsify v${{ github.run_number }}"
           
         
