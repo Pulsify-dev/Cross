@@ -172,7 +172,11 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               },
               body: TabBarView(
                 children: [
-                  _buildTrackList(context, _trackItems),
+                  _buildTrackList(
+                    context,
+                    _trackItems,
+                    enableTrackActions: true,
+                  ),
                   _buildTrackList(context, _playlistItems),
                   _buildTrackList(context, _recentItems),
                 ],
@@ -385,6 +389,9 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   Widget _buildTrackList(
     BuildContext context,
     List<Map<String, String>> trackItems,
+    {
+      bool enableTrackActions = false,
+    }
   ) {
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
@@ -397,9 +404,72 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           title: track['title']!,
           subtitle: track['subtitle']!,
           plays: track['plays']!,
+          enableActions: enableTrackActions,
         );
       },
     );
+  }
+
+  Future<void> _showUploadedTrackActions() async {
+    final action = await showModalBottomSheet<String>(
+      context: context,
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.edit_outlined),
+                title: const Text('Edit'),
+                onTap: () => Navigator.pop(context, 'edit'),
+              ),
+              ListTile(
+                leading: const Icon(Icons.delete_outline),
+                title: const Text('Delete'),
+                onTap: () => Navigator.pop(context, 'delete'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (!mounted || action == null) return;
+
+    if (action == 'edit') {
+      Navigator.pushNamed(context, RouteNames.editUploadedTrack);
+      return;
+    }
+
+    if (action == 'delete') {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: const Text('Delete Track'),
+            content: const Text(
+              'Are you sure you want to delete this track? This action cannot be undone.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Delete'),
+              ),
+            ],
+          );
+        },
+      );
+
+      if (confirmed == true && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Delete placeholder: track removed')),
+        );
+      }
+    }
   }
 
   Widget _buildTrackItem({
@@ -407,6 +477,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     required String title,
     required String subtitle,
     required String plays,
+    bool enableActions = false,
   }) {
     final theme = Theme.of(context);
     final imageSize = math.min(64.0, MediaQuery.of(context).size.width * 0.16);
@@ -471,7 +542,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               ),
               const SizedBox(height: 8),
               IconButton(
-                onPressed: () {},
+                onPressed: enableActions ? _showUploadedTrackActions : null,
                 icon: const Icon(
                   Icons.more_horiz,
                   color: AppColors.iconSecondary,
@@ -484,6 +555,8 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       ),
     );
   }
+
+  
 }
 
 class _TabBarHeader extends SliverPersistentHeaderDelegate {
