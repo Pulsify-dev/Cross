@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "48046590462",
+    "project_id": "pulsify-8b5e9",
+    "storage_bucket": "pulsify-8b5e9.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:48046590462:android:626b3a09476418a1c958af",
+        "android_client_info": {
+          "package_name": "Pulsify.release"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAV24r9GgQ8C9ovQEX1M8lAqWJYM5xKhg4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
