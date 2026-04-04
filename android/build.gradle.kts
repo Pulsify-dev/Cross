@@ -1,6 +1,6 @@
 plugins {
     // 1. Check the ID syntax (Kotlin uses double quotes and parentheses)
-    id("com.android.application") version "8.1.1" apply false
+    id("com.android.application") version "8.11.1" apply false
     id("org.jetbrains.kotlin.android") version "1.8.22" apply false
     id("dev.flutter.flutter-gradle-plugin") version "1.0.0" apply false
 
