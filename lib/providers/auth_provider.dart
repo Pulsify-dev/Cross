@@ -266,7 +266,7 @@ class AuthProvider extends ChangeNotifier {
     }
 
     final hasValidSession =
-        accessToken != null && accessToken.isNotEmpty &&
+      accessToken.isNotEmpty &&
         effectiveRefreshToken != null && effectiveRefreshToken.isNotEmpty;
     _isLoggedIn = hasValidSession;
     await _sessionService.setLoggedIn(hasValidSession);
