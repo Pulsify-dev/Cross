@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'dart:typed_data';
+import 'package:file_picker/file_picker.dart';
 //import '../../../core/theme/app_colors.dart';
 import '../widgets/audio_picker_card.dart';
 import '../widgets/artwork_picker_card.dart';
@@ -33,7 +35,39 @@ class _UploadTrackScreenState extends State<UploadTrackScreen> {
 
   String _privacy = 'Public';
   String? _selectedAudioFile;
+  String? _selectedArtworkFile;
+  Uint8List? _selectedArtworkBytes;
   DateTime _selectedDate = DateTime.now();
+
+  Future<void> _pickAudioFile() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['mp3', 'wav', 'flac', 'aac', 'm4a'],
+      withData: false,
+    );
+
+    if (result == null || result.files.isEmpty) return;
+
+    final file = result.files.single;
+    setState(() {
+      _selectedAudioFile = file.name;
+    });
+  }
+
+  Future<void> _pickArtworkFile() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.image,
+      withData: true,
+    );
+
+    if (result == null || result.files.isEmpty) return;
+
+    final file = result.files.single;
+    setState(() {
+      _selectedArtworkFile = file.name;
+      _selectedArtworkBytes = file.bytes;
+    });
+  }
 
   @override
   void initState() {
@@ -86,6 +120,20 @@ class _UploadTrackScreenState extends State<UploadTrackScreen> {
 
     if (confirmed != true || !mounted) return;
 
+    if (_selectedAudioFile == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please choose an audio file first')),
+      );
+      return;
+    }
+
+    if (_selectedArtworkBytes == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please choose a cover image first')),
+      );
+      return;
+    }
+
     final title = _titleController.text.trim().isEmpty
         ? 'Untitled Track'
         : _titleController.text.trim();
@@ -103,6 +151,8 @@ class _UploadTrackScreenState extends State<UploadTrackScreen> {
       imageUrl: MockUploadedTracksStore.defaultArtworkUrl,
       plays: '0 plays',
       status: 'Processing',
+      audioFileName: _selectedAudioFile,
+      artworkBytes: _selectedArtworkBytes,
     );
 
     MockUploadedTracksStore.addTrack(newTrack);
@@ -126,16 +176,13 @@ class _UploadTrackScreenState extends State<UploadTrackScreen> {
         const SizedBox(height: 18),
         AudioPickerCard(
           fileName: _selectedAudioFile,
-          onPick: () {
-            setState(() {
-              _selectedAudioFile = 'my_track_demo.wav';
-            });
-          },
+          onPick: _pickAudioFile,
         ),
         const SizedBox(height: 18),
         ArtworkPickerCard(
-          title: 'Cover Art',
-          onPick: () {},
+          title: _selectedArtworkFile ?? 'Cover Art',
+          imageBytes: _selectedArtworkBytes,
+          onPick: _pickArtworkFile,
         ),
         const SizedBox(height: 22),
 

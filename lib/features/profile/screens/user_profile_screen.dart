@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:cross/core/theme/app_colors.dart';
 import 'package:cross/features/profile/models/profile_data.dart';
@@ -395,6 +396,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               title: track.title,
               subtitle: track.subtitle,
               plays: track.plays,
+              imageBytes: track.artworkBytes,
               onMorePressed: () => _showUploadedTrackActions(track),
             );
           },
@@ -475,6 +477,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     required String title,
     required String subtitle,
     required String plays,
+    Uint8List? imageBytes,
     VoidCallback? onMorePressed,
   }) {
     final theme = Theme.of(context);
@@ -495,7 +498,9 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(14),
               image: DecorationImage(
-                image: NetworkImage(imageUrl),
+                image: imageBytes != null
+                    ? MemoryImage(imageBytes)
+                    : NetworkImage(imageUrl) as ImageProvider,
                 fit: BoxFit.cover,
               ),
             ),

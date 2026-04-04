@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 class MockUploadedTrack {
   const MockUploadedTrack({
     required this.id,
@@ -9,6 +11,8 @@ class MockUploadedTrack {
     required this.imageUrl,
     required this.plays,
     required this.status,
+    this.audioFileName,
+    this.artworkBytes,
   });
 
   final String id;
@@ -20,6 +24,8 @@ class MockUploadedTrack {
   final String imageUrl;
   final String plays;
   final String status;
+  final String? audioFileName;
+  final Uint8List? artworkBytes;
 
   String get subtitle => '$genre • $status';
 
@@ -33,6 +39,8 @@ class MockUploadedTrack {
     String? imageUrl,
     String? plays,
     String? status,
+    String? audioFileName,
+    Uint8List? artworkBytes,
   }) {
     return MockUploadedTrack(
       id: id ?? this.id,
@@ -44,6 +52,8 @@ class MockUploadedTrack {
       imageUrl: imageUrl ?? this.imageUrl,
       plays: plays ?? this.plays,
       status: status ?? this.status,
+      audioFileName: audioFileName ?? this.audioFileName,
+      artworkBytes: artworkBytes ?? this.artworkBytes,
     );
   }
 }
