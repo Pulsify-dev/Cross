@@ -86,7 +86,12 @@ class AppRoutes {
       case RouteNames.uploadTrack:
         return MaterialPageRoute(builder: (_) => const UploadTrackScreen());
       case RouteNames.editUploadedTrack:
-        return MaterialPageRoute(builder: (_) => const EditUploadedTrackScreen());
+        final trackId = settings.arguments is String
+            ? settings.arguments as String
+            : '';
+        return MaterialPageRoute(
+          builder: (_) => EditUploadedTrackScreen(trackId: trackId),
+        );
 
 
       default:

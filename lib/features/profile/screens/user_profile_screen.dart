@@ -4,6 +4,8 @@ import 'package:cross/core/theme/app_colors.dart';
 import 'package:cross/features/profile/models/profile_data.dart';
 import 'package:cross/providers/profile_provider.dart';
 import 'package:cross/routes/route_names.dart';
+import 'package:cross/features/upload/services/mock_uploaded_track.dart';
+import 'package:cross/features/upload/services/mock_uploaded_tracks_store.dart';
 import 'package:provider/provider.dart';
 
 class UserProfileScreen extends StatefulWidget {
@@ -14,36 +16,6 @@ class UserProfileScreen extends StatefulWidget {
 }
 
 class _UserProfileScreenState extends State<UserProfileScreen> {
-  static const _trackItems = [
-    {
-      'title': 'Neon Sunset Vibes',
-      'subtitle': 'Electronic • 3:45',
-      'plays': '2.1M plays',
-      'image':
-          'https://lh3.googleusercontent.com/aida-public/AB6AXuCKlgPSzOBWDjf6m-ENOfVNJ7d84EuEkszfYCt69BgIheo1VIvde6YIYsfQTfANtBpnsu_4Zb1J8r4nw481yUii9RuFVRpYMwC1f3SrPpw1eBo2nOFBRLO8ojpzhc6PFr2miNPvYHjqoXc3cjGfTdHfkN4C9aPClk3Ph0JIBotryBxBIdEwKNvJfRwabbz_UOTNr6r9naWNsXu2iTCtzGY8FwZWo6298hCrS-zMIlfbwiYYo5NvIn4gyLwXpDcu5Mbqh_4POQo7l4Y',
-    },
-    {
-      'title': 'Midnight Echoes',
-      'subtitle': 'Ambient • 5:12',
-      'plays': '850K plays',
-      'image':
-          'https://lh3.googleusercontent.com/aida-public/AB6AXuCV0zNT-Fr8pb_LW_sA2QdcVBZF2ndTEWzK-zaDfJ55TtQbXdhvnBL-fUEaONTf19lxXLdxWNSqOZTnXGtV0YUrzQhYrzEeae3bz8DC1hjcOYmg2u6MpDGbjxtQy0Dwqtxe--EBLyFFVzvbOyTUKCcbipRZVXLbFYXsLTKLQ0v1dWmJicfQlUn-r7txUEqyYazEbJnomXs6gSIPM5ov0I9QJyJBQozZEEbp1u8nos9hMQkcJ6ZP9c9p_7Xt20BYdx2emy1Kaq8e5Dg',
-    },
-    {
-      'title': 'Pacific Drift',
-      'subtitle': 'Lo-fi • 2:58',
-      'plays': '1.4M plays',
-      'image':
-          'https://lh3.googleusercontent.com/aida-public/AB6AXuBwwb6cioW2l3ZGQ7Daxm2tLZNacCZ7QLjy8X0izIozKkcHVHHv65frBFBIl7JQ2d6htyh2vc2pC2yov4aohqVrJWRCdT0RR8OhbDAMxosiIxmd2rnFZVTUtdk-U93vzSDApK3QJp9yIN3_-2XRfZZ2kofYzNdnaKkf__si-9H5B3FKttgr1TdoLUElOHIw07hjNP12YFDHEPbqRegvfm1hygD-QVBH8xbSF8I75OQoTR_tDIQPViJ7Ybj7oUSrUmG8W39piQ5vAWQ',
-    },
-    {
-      'title': 'City Lights',
-      'subtitle': 'Chill Hop • 3:20',
-      'plays': '920K plays',
-      'image':
-          'https://lh3.googleusercontent.com/aida-public/AB6AXuAWROw6qxsbQJKACyZZ65DEI88V-J9kbSie21JamMJzojoRrttVgcXrOXi-5BIwAR9r8xwDKDlzmP9WLUV82-2IrYKiqt9p7Ri2e0GXS5IUTseWESRPBLxNHqQKV8vs26l8X27SRpllBK8oAnNRVZRY0wybQwOVgGGD3p8o_3CPG6lIjAQpFMlNuzNpd_1-cpgCm-HtQy7UXqbaPB41iaPpWCQnCK-u5x9L3mGiGohzs7gPCX-XUUytvkERvMWhzO1c1J-T-xmoEgg',
-    },
-  ];
 
   static const _playlistItems = [
     {
@@ -172,11 +144,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               },
               body: TabBarView(
                 children: [
-                  _buildTrackList(
-                    context,
-                    _trackItems,
-                    enableTrackActions: true,
-                  ),
+                  _buildUploadedTrackList(context),
                   _buildTrackList(context, _playlistItems),
                   _buildTrackList(context, _recentItems),
                 ],
@@ -389,9 +357,6 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   Widget _buildTrackList(
     BuildContext context,
     List<Map<String, String>> trackItems,
-    {
-      bool enableTrackActions = false,
-    }
   ) {
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
@@ -404,13 +369,41 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           title: track['title']!,
           subtitle: track['subtitle']!,
           plays: track['plays']!,
-          enableActions: enableTrackActions,
         );
       },
     );
   }
 
-  Future<void> _showUploadedTrackActions() async {
+  Widget _buildUploadedTrackList(BuildContext context) {
+    return ValueListenableBuilder<List<MockUploadedTrack>>(
+      valueListenable: MockUploadedTracksStore.tracksNotifier,
+      builder: (context, tracks, _) {
+        if (tracks.isEmpty) {
+          return const Center(
+            child: Text('No uploaded tracks yet.'),
+          );
+        }
+
+        return ListView.separated(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+          itemCount: tracks.length,
+          separatorBuilder: (_, _) => const SizedBox(height: 12),
+          itemBuilder: (context, index) {
+            final track = tracks[index];
+            return _buildTrackItem(
+              imageUrl: track.imageUrl,
+              title: track.title,
+              subtitle: track.subtitle,
+              plays: track.plays,
+              onMorePressed: () => _showUploadedTrackActions(track),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _showUploadedTrackActions(MockUploadedTrack track) async {
     final action = await showModalBottomSheet<String>(
       context: context,
       builder: (context) {
@@ -437,7 +430,11 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     if (!mounted || action == null) return;
 
     if (action == 'edit') {
-      Navigator.pushNamed(context, RouteNames.editUploadedTrack);
+      Navigator.pushNamed(
+        context,
+        RouteNames.editUploadedTrack,
+        arguments: track.id,
+      );
       return;
     }
 
@@ -465,6 +462,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       );
 
       if (confirmed == true && mounted) {
+        MockUploadedTracksStore.removeTrack(track.id);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Delete placeholder: track removed')),
         );
@@ -477,7 +475,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     required String title,
     required String subtitle,
     required String plays,
-    bool enableActions = false,
+    VoidCallback? onMorePressed,
   }) {
     final theme = Theme.of(context);
     final imageSize = math.min(64.0, MediaQuery.of(context).size.width * 0.16);
@@ -542,7 +540,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               ),
               const SizedBox(height: 8),
               IconButton(
-                onPressed: enableActions ? _showUploadedTrackActions : null,
+                onPressed: onMorePressed,
                 icon: const Icon(
                   Icons.more_horiz,
                   color: AppColors.iconSecondary,

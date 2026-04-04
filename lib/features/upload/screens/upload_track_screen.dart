@@ -10,6 +10,8 @@ import '../widgets/track_tab_switcher.dart';
 import '../widgets/track_text_field.dart';
 import '../widgets/upload_track_confirm_dialog.dart';
 import '../widgets/waveform_preview_card.dart';
+import 'package:cross/features/upload/services/mock_uploaded_track.dart';
+import 'package:cross/features/upload/services/mock_uploaded_tracks_store.dart';
 
 class UploadTrackScreen extends StatefulWidget {
   const UploadTrackScreen({super.key});
@@ -82,11 +84,34 @@ class _UploadTrackScreenState extends State<UploadTrackScreen> {
       builder: (_) => const UploadTrackConfirmDialog(),
     );
 
-    if (confirmed == true && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Track upload started')),
-      );
-    }
+    if (confirmed != true || !mounted) return;
+
+    final title = _titleController.text.trim().isEmpty
+        ? 'Untitled Track'
+        : _titleController.text.trim();
+    final genre = _genreController.text.trim().isEmpty
+        ? 'Unknown Genre'
+        : _genreController.text.trim();
+
+    final newTrack = MockUploadedTrack(
+      id: DateTime.now().microsecondsSinceEpoch.toString(),
+      title: title,
+      genre: genre,
+      description: _descriptionController.text.trim(),
+      tags: _tagsController.text.trim(),
+      privacy: _privacy,
+      imageUrl: MockUploadedTracksStore.defaultArtworkUrl,
+      plays: '0 plays',
+      status: 'Processing',
+    );
+
+    MockUploadedTracksStore.addTrack(newTrack);
+
+    final messenger = ScaffoldMessenger.of(context);
+    Navigator.pop(context);
+    messenger.showSnackBar(
+      const SnackBar(content: Text('Track uploaded (mock)')),
+    );
   }
 
   Widget _buildTrackInfoTab() {
