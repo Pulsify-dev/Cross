@@ -1,21 +1,30 @@
 import 'package:cross/features/auth/models/user_model.dart';
 
 class AuthResponseModel {
-  final String accessToken;
-  final String refreshToken;
-  final UserModel user;
+  final String? accessToken;
+  final String? refreshToken;
+  final UserModel? user;
+  final String? message;
 
   const AuthResponseModel({
-    required this.accessToken,
-    required this.refreshToken,
-    required this.user,
+    this.accessToken,
+    this.refreshToken,
+    this.user,
+    this.message,
   });
 
   factory AuthResponseModel.fromJson(Map<String, dynamic> json) {
+    final userJson = json['user'];
+
     return AuthResponseModel(
-      accessToken: json['accessToken']?.toString() ?? '',
-      refreshToken: json['refreshToken']?.toString() ?? '',
-      user: UserModel.fromJson(json['user'] ?? {}),
+      accessToken:
+          json['access_token']?.toString() ?? json['accessToken']?.toString(),
+      refreshToken: json['refresh_token']?.toString() ??
+          json['refreshToken']?.toString(),
+      user: userJson is Map<String, dynamic>
+          ? UserModel.fromJson(userJson)
+          : null,
+      message: json['message']?.toString(),
     );
   }
 
@@ -23,7 +32,8 @@ class AuthResponseModel {
     return {
       'accessToken': accessToken,
       'refreshToken': refreshToken,
-      'user': user.toJson(),
+      'user': user?.toJson(),
+      'message': message,
     };
   }
 }

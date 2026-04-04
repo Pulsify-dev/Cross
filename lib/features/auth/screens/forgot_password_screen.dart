@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:cross/core/theme/app_colors.dart';
-import 'package:cross/features/auth/services/auth_service.dart';
 import 'package:cross/features/auth/widgets/auth_text_field.dart';
+import 'package:cross/providers/auth_provider.dart';
 import 'package:cross/routes/route_names.dart';
+import 'package:provider/provider.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -14,9 +15,6 @@ class ForgotPasswordScreen extends StatefulWidget {
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final TextEditingController emailController = TextEditingController();
-  final AuthService _authService = AuthService();
-
-  bool isLoading = false;
 
   @override
   void dispose() {
@@ -27,37 +25,32 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   Future<void> _handleSendResetLink() async {
     if (!_formKey.currentState!.validate()) return;
 
-    setState(() {
-      isLoading = true;
-    });
+    final authProvider = context.read<AuthProvider>();
+    final isSuccess = await authProvider.sendPasswordReset(
+      email: emailController.text.trim(),
+    );
 
-    try {
-      await _authService.sendPasswordReset(
-        email: emailController.text.trim(),
-      );
+    if (!mounted) return;
 
-      if (!mounted) return;
-
+    if (isSuccess) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Password reset link sent to your email'),
+        SnackBar(
+          content: Text(
+            authProvider.successMessage ??
+                'If that email address is in our database, we will send you a link to reset your password.',
+          ),
         ),
       );
-    } catch (e) {
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Something went wrong. Please try again.'),
-        ),
-      );
-    } finally {
-      if (!mounted) return;
-
-      setState(() {
-        isLoading = false;
-      });
+      return;
     }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          authProvider.errorMessage ?? 'Something went wrong. Please try again.',
+        ),
+      ),
+    );
   }
 
   void _goBackToLogin() {
@@ -67,6 +60,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final isLoading = context.select<AuthProvider, bool>((p) => p.isLoading);
 
     return Scaffold(
       backgroundColor: AppColors.backgroundAlt,

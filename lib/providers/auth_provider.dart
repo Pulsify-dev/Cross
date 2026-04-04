@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:cross/core/services/api_service.dart';
 import 'package:cross/core/services/session_service.dart';
+import 'package:cross/features/auth/models/auth_response_model.dart';
 import 'package:cross/features/auth/models/user_model.dart';
 import 'package:cross/features/auth/services/auth_service.dart';
 
@@ -11,14 +13,17 @@ class AuthProvider extends ChangeNotifier {
   bool _isLoading = false;
   bool _isLoggedIn = false;
   String? _errorMessage;
+  String? _successMessage;
 
   UserModel? get currentUser => _currentUser;
   bool get isLoading => _isLoading;
   bool get isLoggedIn => _isLoggedIn;
   String? get errorMessage => _errorMessage;
+  String? get successMessage => _successMessage;
 
   Future<void> checkLoginStatus() async {
-    _isLoggedIn = await _sessionService.isLoggedIn();
+    _isLoggedIn = await _sessionService.isLoggedIn() &&
+        (await _sessionService.getAccessToken()) != null;
     notifyListeners();
   }
 
@@ -27,7 +32,7 @@ class AuthProvider extends ChangeNotifier {
     required String password,
   }) async {
     _setLoading(true);
-    _clearError();
+    _clearMessages();
 
     try {
       final response = await _authService.login(
@@ -35,17 +40,17 @@ class AuthProvider extends ChangeNotifier {
         password: password,
       );
 
-      _currentUser = response.user;
-      _isLoggedIn = true;
+      if (response.user == null) {
+        throw const ApiException('Login response is missing user data.');
+      }
 
-      await _sessionService.saveAccessToken(response.accessToken);
-      await _sessionService.saveRefreshToken(response.refreshToken);
-      await _sessionService.setLoggedIn(true);
+      _currentUser = response.user;
+      await _persistTokens(response);
 
       notifyListeners();
       return true;
     } catch (e) {
-      _errorMessage = 'Login failed';
+      _errorMessage = _getErrorMessage(e, fallback: 'Login failed.');
       notifyListeners();
       return false;
     } finally {
@@ -59,7 +64,7 @@ class AuthProvider extends ChangeNotifier {
     required String password,
   }) async {
     _setLoading(true);
-    _clearError();
+    _clearMessages();
 
     try {
       final response = await _authService.register(
@@ -69,16 +74,15 @@ class AuthProvider extends ChangeNotifier {
       );
 
       _currentUser = response.user;
-      _isLoggedIn = true;
+      _successMessage = response.message ??
+          'Registration successful. Please check your email to verify.';
 
-      await _sessionService.saveAccessToken(response.accessToken);
-      await _sessionService.saveRefreshToken(response.refreshToken);
-      await _sessionService.setLoggedIn(true);
+      await _persistTokens(response);
 
       notifyListeners();
       return true;
     } catch (e) {
-      _errorMessage = 'Registration failed';
+      _errorMessage = _getErrorMessage(e, fallback: 'Registration failed.');
       notifyListeners();
       return false;
     } finally {
@@ -90,14 +94,84 @@ class AuthProvider extends ChangeNotifier {
     required String email,
   }) async {
     _setLoading(true);
-    _clearError();
+    _clearMessages();
 
     try {
-      await _authService.sendPasswordReset(email: email);
+      _successMessage = await _authService.sendPasswordReset(email: email);
       notifyListeners();
       return true;
     } catch (e) {
-      _errorMessage = 'Failed to send reset link';
+      _errorMessage =
+          _getErrorMessage(e, fallback: 'Failed to send reset link.');
+      notifyListeners();
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<bool> verifyEmail({
+    required String token,
+  }) async {
+    _setLoading(true);
+    _clearMessages();
+
+    try {
+      _successMessage = await _authService.verifyEmail(token: token);
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _errorMessage =
+          _getErrorMessage(e, fallback: 'Email verification failed.');
+      notifyListeners();
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<bool> resetPassword({
+    required String token,
+    required String newPassword,
+  }) async {
+    _setLoading(true);
+    _clearMessages();
+
+    try {
+      _successMessage = await _authService.resetPassword(
+        token: token,
+        newPassword: newPassword,
+      );
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _errorMessage =
+          _getErrorMessage(e, fallback: 'Password reset failed.');
+      notifyListeners();
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<bool> refreshSession() async {
+    _setLoading(true);
+    _clearMessages();
+
+    try {
+      final savedRefreshToken = await _sessionService.getRefreshToken();
+      if (savedRefreshToken == null || savedRefreshToken.isEmpty) {
+        throw const ApiException('Session expired. Please log in again.');
+      }
+
+      final refreshed =
+          await _authService.refreshToken(refreshToken: savedRefreshToken);
+      await _persistTokens(refreshed);
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _errorMessage =
+          _getErrorMessage(e, fallback: 'Session refresh failed.');
       notifyListeners();
       return false;
     } finally {
@@ -107,10 +181,13 @@ class AuthProvider extends ChangeNotifier {
 
   Future<void> logout() async {
     _setLoading(true);
-    _clearError();
+    _clearMessages();
 
     try {
-      await _authService.logout();
+      final refreshToken = await _sessionService.getRefreshToken();
+      if (refreshToken != null && refreshToken.isNotEmpty) {
+        await _authService.logout(refreshToken: refreshToken);
+      }
       await _sessionService.clearSession();
 
       _currentUser = null;
@@ -118,7 +195,7 @@ class AuthProvider extends ChangeNotifier {
 
       notifyListeners();
     } catch (e) {
-      _errorMessage = 'Logout failed';
+      _errorMessage = _getErrorMessage(e, fallback: 'Logout failed.');
       notifyListeners();
     } finally {
       _setLoading(false);
@@ -130,7 +207,39 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void _clearError() {
+  void clearMessages() {
+    _clearMessages();
+    notifyListeners();
+  }
+
+  Future<void> _persistTokens(AuthResponseModel response) async {
+    final accessToken = response.accessToken;
+    final refreshToken = response.refreshToken;
+
+    if (accessToken != null && accessToken.isNotEmpty) {
+      await _sessionService.saveAccessToken(accessToken);
+    }
+
+    if (refreshToken != null && refreshToken.isNotEmpty) {
+      await _sessionService.saveRefreshToken(refreshToken);
+    }
+
+    final hasValidSession =
+        accessToken != null && accessToken.isNotEmpty &&
+        refreshToken != null && refreshToken.isNotEmpty;
+    _isLoggedIn = hasValidSession;
+    await _sessionService.setLoggedIn(hasValidSession);
+  }
+
+  void _clearMessages() {
     _errorMessage = null;
+    _successMessage = null;
+  }
+
+  String _getErrorMessage(Object error, {required String fallback}) {
+    if (error is ApiException) {
+      return error.message;
+    }
+    return fallback;
   }
 }

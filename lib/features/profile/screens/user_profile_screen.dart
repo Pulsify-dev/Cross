@@ -14,8 +14,6 @@ class UserProfileScreen extends StatefulWidget {
 }
 
 class _UserProfileScreenState extends State<UserProfileScreen> {
-  int _selectedBottomNav = 4;
-
   static const _trackItems = [
     {
       'title': 'Neon Sunset Vibes',
@@ -109,20 +107,22 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     return Consumer<ProfileProvider>(
       builder: (context, profileProvider, _) {
         final profile = profileProvider.profile;
+
         return Scaffold(
           appBar: AppBar(
+            automaticallyImplyLeading: false,
             centerTitle: true,
             title: const Text('Profile'),
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back),
-              onPressed: () {},
-              tooltip: 'Back',
-            ),
             actions: [
-              IconButton(
-                icon: const Icon(Icons.more_vert),
-                onPressed: () {},
+              PopupMenuButton<String>(
                 tooltip: 'More',
+                icon: const Icon(Icons.more_vert),
+                itemBuilder: (context) => const [
+                  PopupMenuItem<String>(
+                    value: 'logout',
+                    child: Text('Log out'),
+                  ),
+                ],
               ),
             ],
             backgroundColor: Colors.transparent,
@@ -179,7 +179,6 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               ),
             ),
           ),
-          bottomNavigationBar: _buildBottomNavigationBar(context),
         );
       },
     );
@@ -203,7 +202,10 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                 height: avatarSize,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  border: Border.all(color: AppColors.primary, width: borderSize),
+                  border: Border.all(
+                    color: AppColors.primary,
+                    width: borderSize,
+                  ),
                 ),
                 child: ClipOval(
                   child: Image(
@@ -237,11 +239,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                   ),
                 ),
                 child: const Center(
-                  child: Icon(
-                    Icons.verified,
-                    color: Colors.white,
-                    size: 18,
-                  ),
+                  child: Icon(Icons.verified, color: Colors.white, size: 18),
                 ),
               ),
             ],
@@ -291,36 +289,43 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   Widget _buildStatsRow(BuildContext context, ProfileData profile) {
     final theme = Theme.of(context);
 
-    Widget statItem(String value, String label) {
+    Widget statItem(String value, String label, {VoidCallback? onTap}) {
       return Flexible(
         fit: FlexFit.tight,
-        child: Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: AppColors.surfaceSoft,
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: AppColors.border),
-          ),
-          child: Column(
-            children: [
-              Text(
-                value,
-                style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.primary,
-                ),
+            child: Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceSoft,
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: AppColors.border),
               ),
-              const SizedBox(height: 6),
-              Text(
-                label.toUpperCase(),
-                style: theme.textTheme.labelSmall?.copyWith(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textSecondary,
-                  letterSpacing: 0.6,
-                ),
+              child: Column(
+                children: [
+                  Text(
+                    value,
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    label.toUpperCase(),
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textSecondary,
+                      letterSpacing: 0.6,
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       );
@@ -331,13 +336,24 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       child: LayoutBuilder(
         builder: (context, constraints) {
           final isNarrow = constraints.maxWidth < 370;
+
           if (isNarrow) {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                statItem('12.4K', 'Followers'),
+                statItem(
+                  '12.4K',
+                  'Followers',
+                  onTap: () =>
+                      Navigator.pushNamed(context, RouteNames.followers),
+                ),
                 const SizedBox(height: 12),
-                statItem('450', 'Following'),
+                statItem(
+                  '450',
+                  'Following',
+                  onTap: () =>
+                      Navigator.pushNamed(context, RouteNames.following),
+                ),
                 const SizedBox(height: 12),
                 statItem('86', 'Tracks'),
               ],
@@ -346,10 +362,18 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
           return Row(
             children: [
-              statItem('12.4K', 'Followers'),
-              const SizedBox(width: 12),
-              statItem('450', 'Following'),
-              const SizedBox(width: 12),
+              statItem(
+                '12.4K',
+                'Followers',
+                onTap: () => Navigator.pushNamed(context, RouteNames.followers),
+              ),
+              const SizedBox(height: 12),
+              statItem(
+                '450',
+                'Following',
+                onTap: () => Navigator.pushNamed(context, RouteNames.following),
+              ),
+              const SizedBox(height: 12),
               statItem('86', 'Tracks'),
             ],
           );
@@ -358,9 +382,12 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     );
   }
 
-  Widget _buildTrackList(BuildContext context, List<Map<String, String>> trackItems) {
+  Widget _buildTrackList(
+    BuildContext context,
+    List<Map<String, String>> trackItems,
+  ) {
     return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 92),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
       itemCount: trackItems.length,
       separatorBuilder: (_, _) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
@@ -457,114 +484,6 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       ),
     );
   }
-
-  Widget _buildBottomNavigationBar(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.navBarBackground,
-        border: Border(
-          top: BorderSide(
-            color: AppColors.border,
-            width: 1,
-          ),
-        ),
-      ),
-      padding: const EdgeInsets.only(top: 8, bottom: 16, left: 12, right: 12),
-      child: SafeArea(
-        top: false,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            _bottomNavItem(
-              icon: Icons.home,
-              label: 'Home',
-              index: 0,
-              selected: _selectedBottomNav == 0,
-            ),
-            _bottomNavItem(
-              icon: Icons.search,
-              label: 'Search',
-              index: 1,
-              selected: _selectedBottomNav == 1,
-            ),
-            _bottomNavItem(
-              icon: Icons.library_music,
-              label: 'Playlists',
-              index: 2,
-              selected: _selectedBottomNav == 2,
-            ),
-            _bottomNavItem(
-              icon: Icons.chat_bubble,
-              label: 'Messages',
-              index: 3,
-              selected: _selectedBottomNav == 3,
-              showBadge: true,
-            ),
-            _bottomNavItem(
-              icon: Icons.person,
-              label: 'Profile',
-              index: 4,
-              selected: _selectedBottomNav == 4,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _bottomNavItem({
-    required IconData icon,
-    required String label,
-    required int index,
-    required bool selected,
-    bool showBadge = false,
-  }) {
-    final color = selected ? AppColors.primary : AppColors.textMuted;
-
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: () => setState(() {
-        _selectedBottomNav = index;
-      }),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Stack(
-            clipBehavior: Clip.none,
-            children: [
-              Icon(icon, color: color, size: 24),
-              if (showBadge)
-                Positioned(
-                  right: -4,
-                  top: -4,
-                  child: Container(
-                    width: 10,
-                    height: 10,
-                    decoration: BoxDecoration(
-                      color: AppColors.primary,
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: Theme.of(context).scaffoldBackgroundColor,
-                        width: 1.5,
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: selected ? FontWeight.bold : FontWeight.w500,
-              color: color,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 class _TabBarHeader extends SliverPersistentHeaderDelegate {
@@ -580,15 +499,17 @@ class _TabBarHeader extends SliverPersistentHeaderDelegate {
   double get maxExtent => tabBar.preferredSize.height;
 
   @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
-    return Container(
-      color: backgroundColor,
-      child: tabBar,
-    );
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    return Container(color: backgroundColor, child: tabBar);
   }
 
   @override
   bool shouldRebuild(covariant _TabBarHeader oldDelegate) {
-    return oldDelegate.tabBar != tabBar || oldDelegate.backgroundColor != backgroundColor;
+    return oldDelegate.tabBar != tabBar ||
+        oldDelegate.backgroundColor != backgroundColor;
   }
 }
