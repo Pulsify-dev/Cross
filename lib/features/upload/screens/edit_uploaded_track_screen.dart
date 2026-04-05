@@ -155,7 +155,8 @@ class _EditUploadedTrackScreenState extends State<EditUploadedTrackScreen> {
     if (_isUpdatingArtwork) return;
 
     final result = await FilePicker.platform.pickFiles(
-      type: FileType.image,
+      type: FileType.custom,
+      allowedExtensions: ['jpg', 'jpeg', 'png', 'webp'],
       withData: true,
     );
 
@@ -178,27 +179,31 @@ class _EditUploadedTrackScreenState extends State<EditUploadedTrackScreen> {
     });
 
     final provider = context.read<UploadProvider>();
-    final updated = await provider.updateTrackArtwork(
-      trackId: track.id,
-      artworkPathOrUrl: selectedPath,
-    );
-    if (!mounted) return;
-
-    setState(() => _isUpdatingArtwork = false);
-
-    if (updated == null) {
-      final errorText = provider.errorMessage ?? 'Failed to update artwork.';
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(errorText)),
+    try {
+      final updated = await provider.updateTrackArtwork(
+        trackId: track.id,
+        artworkPathOrUrl: selectedPath,
       );
-      provider.clearError();
-      return;
-    }
+      if (!mounted) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(provider.successMessage ?? 'Artwork updated')),
-    );
-    provider.clearSuccessMessage();
+      if (updated == null) {
+        final errorText = provider.errorMessage ?? 'Failed to update artwork.';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(errorText)),
+        );
+        provider.clearError();
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(provider.successMessage ?? 'Artwork updated')),
+      );
+      provider.clearSuccessMessage();
+    } finally {
+      if (mounted) {
+        setState(() => _isUpdatingArtwork = false);
+      }
+    }
   }
 
   @override
@@ -234,6 +239,10 @@ class _EditUploadedTrackScreenState extends State<EditUploadedTrackScreen> {
               ArtworkPickerCard(
                 title: _isUpdatingArtwork ? 'Updating Artwork...' : 'Update Artwork',
                 imageBytes: _selectedArtworkPreviewBytes ?? track.artworkBytes,
+                imageUrl: (_selectedArtworkPreviewBytes == null &&
+                        track.artworkBytes == null)
+                    ? track.artworkPathOrUrl
+                    : null,
                 onPick: () => _pickAndUpdateArtwork(track),
               ),
               const SizedBox(height: 22),

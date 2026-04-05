@@ -2,6 +2,7 @@ import 'package:cross/core/constants/api_endpoints.dart';
 import 'package:cross/core/services/api_service.dart';
 import 'package:cross/features/upload/models/upload_model.dart';
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 
 class UploadTrackStatusResult {
 	const UploadTrackStatusResult({
@@ -47,12 +48,23 @@ class UploadService {
 		}
 
 		final files = <http.MultipartFile>[
-			await http.MultipartFile.fromPath('audio_file', audioPath),
+			await http.MultipartFile.fromPath(
+				'audio_file',
+				audioPath,
+				contentType: _inferMediaTypeFromPath(audioPath, isAudio: true),
+			),
 		];
 
 		if (track.artworkPathOrUrl.isNotEmpty) {
 			files.add(
-				await http.MultipartFile.fromPath('artwork_file', track.artworkPathOrUrl),
+				await http.MultipartFile.fromPath(
+					'artwork_file',
+					track.artworkPathOrUrl,
+					contentType: _inferMediaTypeFromPath(
+						track.artworkPathOrUrl,
+						isAudio: false,
+					),
+				),
 			);
 		} else if (track.artworkBytes != null) {
 			files.add(
@@ -60,6 +72,7 @@ class UploadService {
 					'artwork_file',
 					track.artworkBytes!,
 					filename: 'cover.jpg',
+					contentType: _inferMediaTypeFromPath('cover.jpg', isAudio: false),
 				),
 			);
 		} else {
@@ -213,6 +226,9 @@ class UploadService {
 		}
 
 		final mapped = UploadModel.fromJson(response);
+		final hasArtworkInResponse =
+				response.containsKey('artwork_url') || response.containsKey('artworkUrl');
+		final mappedArtworkPath = mapped.artworkPathOrUrl.trim();
 		final existing = _mockTracksById[trackId];
 
 		final merged = existing == null
@@ -224,6 +240,12 @@ class UploadService {
 						description: mapped.description,
 						tags: mapped.tags,
 						privacy: mapped.privacy,
+						artworkPathOrUrl: hasArtworkInResponse
+								? (mappedArtworkPath.isNotEmpty
+										? mappedArtworkPath
+										: existing.artworkPathOrUrl)
+								: existing.artworkPathOrUrl,
+						artworkBytes: hasArtworkInResponse ? null : existing.artworkBytes,
 						status: mapped.status,
 						progressPercent: mapped.progressPercent,
 						processingErrorMessage: mapped.processingErrorMessage,
@@ -251,7 +273,14 @@ class UploadService {
 		final response = await _apiService.putMultipart(
 			ApiEndpoints.trackArtwork(trackId),
 			files: [
-				await http.MultipartFile.fromPath('file', artworkPathOrUrl),
+				await http.MultipartFile.fromPath(
+					'file',
+					artworkPathOrUrl,
+					contentType: _inferMediaTypeFromPath(
+						artworkPathOrUrl,
+						isAudio: false,
+					),
+				),
 			],
 			authRequired: true,
 		);
@@ -405,6 +434,43 @@ class UploadService {
 			page: page,
 			limit: limit,
 		);
+	}
+
+	MediaType? _inferMediaTypeFromPath(String path, {required bool isAudio}) {
+		final trimmedPath = path.trim();
+		if (trimmedPath.isEmpty) return null;
+
+		final dotIndex = trimmedPath.lastIndexOf('.');
+		if (dotIndex < 0 || dotIndex == trimmedPath.length - 1) return null;
+
+		final ext = trimmedPath.substring(dotIndex + 1).toLowerCase();
+
+		if (isAudio) {
+			switch (ext) {
+				case 'mp3':
+					return MediaType('audio', 'mpeg');
+				case 'wav':
+					return MediaType('audio', 'wav');
+				case 'flac':
+					return MediaType('audio', 'flac');
+				case 'aac':
+					return MediaType('audio', 'aac');
+				default:
+					return null;
+			}
+		}
+
+		switch (ext) {
+			case 'jpg':
+			case 'jpeg':
+				return MediaType('image', 'jpeg');
+			case 'png':
+				return MediaType('image', 'png');
+			case 'webp':
+				return MediaType('image', 'webp');
+			default:
+				return null;
+		}
 	}
 
 	int? _tryParseInt(dynamic value) {

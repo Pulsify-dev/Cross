@@ -7,6 +7,7 @@ class ArtworkPickerCard extends StatelessWidget {
   final VoidCallback onPick;
   final bool showChangeAction;
   final Uint8List? imageBytes;
+  final String? imageUrl;
 
   const ArtworkPickerCard({
     super.key,
@@ -14,6 +15,7 @@ class ArtworkPickerCard extends StatelessWidget {
     required this.onPick,
     this.showChangeAction = true,
     this.imageBytes,
+    this.imageUrl,
   });
 
   @override
@@ -31,11 +33,26 @@ class ArtworkPickerCard extends StatelessWidget {
                 color: AppColors.surfaceElevated,
               ),
               child: imageBytes == null
-                  ? const Icon(
-                      Icons.add_a_photo_outlined,
-                      color: AppColors.iconPrimary,
-                      size: 28,
-                    )
+                  ? (imageUrl != null && imageUrl!.trim().isNotEmpty)
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(18),
+                          child: Image.network(
+                            imageUrl!,
+                            fit: BoxFit.cover,
+                            width: 92,
+                            height: 92,
+                            errorBuilder: (_, __, ___) => const Icon(
+                              Icons.add_a_photo_outlined,
+                              color: AppColors.iconPrimary,
+                              size: 28,
+                            ),
+                          ),
+                        )
+                      : const Icon(
+                          Icons.add_a_photo_outlined,
+                          color: AppColors.iconPrimary,
+                          size: 28,
+                        )
                   : ClipRRect(
                       borderRadius: BorderRadius.circular(18),
                       child: Image.memory(
