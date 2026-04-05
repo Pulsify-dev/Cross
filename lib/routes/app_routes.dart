@@ -21,6 +21,8 @@ import 'package:cross/features/player/screens/track_comments_screen.dart';
 import 'package:cross/features/player/screens/track_likes_screen.dart';
 import 'package:cross/features/profile/screens/followers_screen.dart';
 import 'package:cross/features/profile/screens/following_screen.dart';
+import 'package:cross/features/upload/screens/upload_track_screen.dart';
+import 'package:cross/features/upload/screens/edit_uploaded_track_screen.dart';
 
 class AppRoutes {
   static Route<dynamic> generateRoute(RouteSettings settings) {
@@ -80,6 +82,17 @@ class AppRoutes {
 
       case RouteNames.following:
         return MaterialPageRoute(builder: (_) => const FollowingScreen());
+
+      case RouteNames.uploadTrack:
+        return MaterialPageRoute(builder: (_) => const UploadTrackScreen());
+      case RouteNames.editUploadedTrack:
+        final trackId = settings.arguments is String
+            ? settings.arguments as String
+            : '';
+        return MaterialPageRoute(
+          builder: (_) => EditUploadedTrackScreen(trackId: trackId),
+        );
+
 
       default:
         return MaterialPageRoute(

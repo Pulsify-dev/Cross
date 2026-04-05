@@ -11,4 +11,18 @@ class ApiEndpoints {
   static const String editProfile = '/users/profile/edit';
   static const String followers = '/users/followers';
   static const String following = '/users/following';
+
+  static const String tracks = '/tracks';
+
+  static String trackById(String trackId) => '/tracks/$trackId';
+  static String trackStatus(String trackId) => '/tracks/$trackId/status';
+  static String trackMetadata(String trackId) => trackById(trackId);
+  static String trackDelete(String trackId) => trackById(trackId);
+  static String trackArtwork(String trackId) => '/tracks/$trackId/artwork';
+  static String trackWaveform(String trackId) => '/tracks/$trackId/waveform';
+  static String artistTracks(
+    String artistId, {
+    int page = 1,
+    int limit = 20,
+  }) => '/artists/$artistId/tracks?page=$page&limit=$limit';
 }

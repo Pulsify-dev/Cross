@@ -1,10 +1,13 @@
 import 'dart:math' as math;
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:cross/core/theme/app_colors.dart';
 import 'package:cross/features/profile/models/profile_data.dart';
 import 'package:cross/providers/auth_provider.dart';
 import 'package:cross/providers/profile_provider.dart';
+import 'package:cross/providers/upload_provider.dart';
 import 'package:cross/routes/route_names.dart';
+import 'package:cross/features/upload/models/upload_model.dart';
 import 'package:provider/provider.dart';
 
 class UserProfileScreen extends StatefulWidget {
@@ -15,36 +18,31 @@ class UserProfileScreen extends StatefulWidget {
 }
 
 class _UserProfileScreenState extends State<UserProfileScreen> {
-  static const _trackItems = [
-    {
-      'title': 'Neon Sunset Vibes',
-      'subtitle': 'Electronic • 3:45',
-      'plays': '2.1M plays',
-      'image':
-          'https://lh3.googleusercontent.com/aida-public/AB6AXuCKlgPSzOBWDjf6m-ENOfVNJ7d84EuEkszfYCt69BgIheo1VIvde6YIYsfQTfANtBpnsu_4Zb1J8r4nw481yUii9RuFVRpYMwC1f3SrPpw1eBo2nOFBRLO8ojpzhc6PFr2miNPvYHjqoXc3cjGfTdHfkN4C9aPClk3Ph0JIBotryBxBIdEwKNvJfRwabbz_UOTNr6r9naWNsXu2iTCtzGY8FwZWo6298hCrS-zMIlfbwiYYo5NvIn4gyLwXpDcu5Mbqh_4POQo7l4Y',
-    },
-    {
-      'title': 'Midnight Echoes',
-      'subtitle': 'Ambient • 5:12',
-      'plays': '850K plays',
-      'image':
-          'https://lh3.googleusercontent.com/aida-public/AB6AXuCV0zNT-Fr8pb_LW_sA2QdcVBZF2ndTEWzK-zaDfJ55TtQbXdhvnBL-fUEaONTf19lxXLdxWNSqOZTnXGtV0YUrzQhYrzEeae3bz8DC1hjcOYmg2u6MpDGbjxtQy0Dwqtxe--EBLyFFVzvbOyTUKCcbipRZVXLbFYXsLTKLQ0v1dWmJicfQlUn-r7txUEqyYazEbJnomXs6gSIPM5ov0I9QJyJBQozZEEbp1u8nos9hMQkcJ6ZP9c9p_7Xt20BYdx2emy1Kaq8e5Dg',
-    },
-    {
-      'title': 'Pacific Drift',
-      'subtitle': 'Lo-fi • 2:58',
-      'plays': '1.4M plays',
-      'image':
-          'https://lh3.googleusercontent.com/aida-public/AB6AXuBwwb6cioW2l3ZGQ7Daxm2tLZNacCZ7QLjy8X0izIozKkcHVHHv65frBFBIl7JQ2d6htyh2vc2pC2yov4aohqVrJWRCdT0RR8OhbDAMxosiIxmd2rnFZVTUtdk-U93vzSDApK3QJp9yIN3_-2XRfZZ2kofYzNdnaKkf__si-9H5B3FKttgr1TdoLUElOHIw07hjNP12YFDHEPbqRegvfm1hygD-QVBH8xbSF8I75OQoTR_tDIQPViJ7Ybj7oUSrUmG8W39piQ5vAWQ',
-    },
-    {
-      'title': 'City Lights',
-      'subtitle': 'Chill Hop • 3:20',
-      'plays': '920K plays',
-      'image':
-          'https://lh3.googleusercontent.com/aida-public/AB6AXuAWROw6qxsbQJKACyZZ65DEI88V-J9kbSie21JamMJzojoRrttVgcXrOXi-5BIwAR9r8xwDKDlzmP9WLUV82-2IrYKiqt9p7Ri2e0GXS5IUTseWESRPBLxNHqQKV8vs26l8X27SRpllBK8oAnNRVZRY0wybQwOVgGGD3p8o_3CPG6lIjAQpFMlNuzNpd_1-cpgCm-HtQy7UXqbaPB41iaPpWCQnCK-u5x9L3mGiGohzs7gPCX-XUUytvkERvMWhzO1c1J-T-xmoEgg',
-    },
-  ];
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _loadUploadedTracksForCurrentArtist();
+    });
+  }
+
+  Future<void> _loadUploadedTracksForCurrentArtist() async {
+    final authProvider = context.read<AuthProvider>();
+    final uploadProvider = context.read<UploadProvider>();
+
+    // TODO(profile/auth/session): Source this id from the fully integrated
+    // current user/profile/session pipeline once that flow is completed.
+    final currentArtistId = authProvider.currentUser?.id;
+
+    await uploadProvider.loadCurrentArtistTracks(
+      currentArtistId: currentArtistId,
+      page: 1,
+      limit: 20,
+      replace: true,
+    );
+  }
 
   static const _playlistItems = [
     {
@@ -193,7 +191,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               },
               body: TabBarView(
                 children: [
-                  _buildTrackList(context, _trackItems),
+                  _buildUploadedTrackList(context),
                   _buildTrackList(context, _playlistItems),
                   _buildTrackList(context, _recentItems),
                 ],
@@ -423,11 +421,159 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     );
   }
 
+  Widget _buildUploadedTrackList(BuildContext context) {
+    return Consumer<UploadProvider>(
+      builder: (context, uploadProvider, _) {
+        final tracks = uploadProvider.allUploadedTracks;
+
+        if (uploadProvider.isLoading &&
+            uploadProvider.currentOperation == 'loadArtistTracks' &&
+            tracks.isEmpty) {
+          return const Center(
+            child: CircularProgressIndicator(),
+          );
+        }
+
+        if (uploadProvider.errorMessage != null && tracks.isEmpty) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    uploadProvider.errorMessage!,
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 12),
+                  TextButton(
+                    onPressed: _loadUploadedTracksForCurrentArtist,
+                    child: const Text('Retry'),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        if (tracks.isEmpty) {
+          return const Center(
+            child: Text('No uploaded tracks yet.'),
+          );
+        }
+
+        return ListView.separated(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+          itemCount: tracks.length,
+          separatorBuilder: (_, _) => const SizedBox(height: 12),
+          itemBuilder: (context, index) {
+            final track = tracks[index];
+            return _buildTrackItem(
+              imageUrl: track.artworkPathOrUrl,
+              title: track.title,
+              subtitle: '${track.genre} • ${track.status.name}',
+              plays: '0 plays',
+              imageBytes: track.artworkBytes,
+              onMorePressed: () => _showUploadedTrackActions(track),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _showUploadedTrackActions(UploadModel track) async {
+    final action = await showModalBottomSheet<String>(
+      context: context,
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.edit_outlined),
+                title: const Text('Edit'),
+                onTap: () => Navigator.pop(context, 'edit'),
+              ),
+              ListTile(
+                leading: const Icon(Icons.delete_outline),
+                title: const Text('Delete'),
+                onTap: () => Navigator.pop(context, 'delete'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (!mounted || action == null) return;
+
+    if (action == 'edit') {
+      Navigator.pushNamed(
+        context,
+        RouteNames.editUploadedTrack,
+        arguments: track.id,
+      );
+      return;
+    }
+
+    if (action == 'delete') {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: const Text('Delete Track'),
+            content: const Text(
+              'Are you sure you want to delete this track? This action cannot be undone.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Delete'),
+              ),
+            ],
+          );
+        },
+      );
+
+      if (confirmed == true && mounted) {
+        final uploadProvider = context.read<UploadProvider>();
+        final deleted = await uploadProvider.deleteTrackById(track.id);
+        if (!mounted) return;
+
+        if (!deleted) {
+          final errorText =
+              uploadProvider.errorMessage ?? 'Failed to delete track.';
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(errorText)),
+          );
+          uploadProvider.clearError();
+          return;
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              uploadProvider.successMessage ?? 'Track deleted successfully.',
+            ),
+          ),
+        );
+        uploadProvider.clearSuccessMessage();
+      }
+    }
+  }
+
   Widget _buildTrackItem({
     required String imageUrl,
     required String title,
     required String subtitle,
     required String plays,
+    Uint8List? imageBytes,
+    VoidCallback? onMorePressed,
   }) {
     final theme = Theme.of(context);
     final imageSize = math.min(64.0, MediaQuery.of(context).size.width * 0.16);
@@ -447,7 +593,9 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(14),
               image: DecorationImage(
-                image: NetworkImage(imageUrl),
+                image: imageBytes != null
+                    ? MemoryImage(imageBytes)
+                    : NetworkImage(imageUrl) as ImageProvider,
                 fit: BoxFit.cover,
               ),
             ),
@@ -492,7 +640,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               ),
               const SizedBox(height: 8),
               IconButton(
-                onPressed: () {},
+                onPressed: onMorePressed,
                 icon: const Icon(
                   Icons.more_horiz,
                   color: AppColors.iconSecondary,
@@ -505,6 +653,8 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       ),
     );
   }
+
+  
 }
 
 class _TabBarHeader extends SliverPersistentHeaderDelegate {
