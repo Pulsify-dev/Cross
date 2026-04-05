@@ -13,6 +13,8 @@ class PrivacySelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final normalizedSelected = selectedValue.trim().toLowerCase();
+
     return Row(
       children: [
         Expanded(
@@ -20,8 +22,8 @@ class PrivacySelector extends StatelessWidget {
             context: context,
             label: 'Public',
             icon: Icons.public,
-            selected: selectedValue == 'Public',
-            onTap: () => onChanged('Public'),
+            selected: normalizedSelected == 'public',
+            onTap: () => onChanged('public'),
           ),
         ),
         const SizedBox(width: 12),
@@ -30,8 +32,8 @@ class PrivacySelector extends StatelessWidget {
             context: context,
             label: 'Private',
             icon: Icons.lock,
-            selected: selectedValue == 'Private',
-            onTap: () => onChanged('Private'),
+            selected: normalizedSelected == 'private',
+            onTap: () => onChanged('private'),
           ),
         ),
       ],

@@ -3,10 +3,11 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:cross/core/theme/app_colors.dart';
 import 'package:cross/features/profile/models/profile_data.dart';
+import 'package:cross/providers/auth_provider.dart';
 import 'package:cross/providers/profile_provider.dart';
+import 'package:cross/providers/upload_provider.dart';
 import 'package:cross/routes/route_names.dart';
-import 'package:cross/features/upload/services/mock_uploaded_track.dart';
-import 'package:cross/features/upload/services/mock_uploaded_tracks_store.dart';
+import 'package:cross/features/upload/models/upload_model.dart';
 import 'package:provider/provider.dart';
 
 class UserProfileScreen extends StatefulWidget {
@@ -17,6 +18,31 @@ class UserProfileScreen extends StatefulWidget {
 }
 
 class _UserProfileScreenState extends State<UserProfileScreen> {
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _loadUploadedTracksForCurrentArtist();
+    });
+  }
+
+  Future<void> _loadUploadedTracksForCurrentArtist() async {
+    final authProvider = context.read<AuthProvider>();
+    final uploadProvider = context.read<UploadProvider>();
+
+    // TODO(profile/auth/session): Source this id from the fully integrated
+    // current user/profile/session pipeline once that flow is completed.
+    final currentArtistId = authProvider.currentUser?.id;
+
+    await uploadProvider.loadCurrentArtistTracks(
+      currentArtistId: currentArtistId,
+      page: 1,
+      limit: 20,
+      replace: true,
+    );
+  }
 
   static const _playlistItems = [
     {
@@ -376,9 +402,40 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   }
 
   Widget _buildUploadedTrackList(BuildContext context) {
-    return ValueListenableBuilder<List<MockUploadedTrack>>(
-      valueListenable: MockUploadedTracksStore.tracksNotifier,
-      builder: (context, tracks, _) {
+    return Consumer<UploadProvider>(
+      builder: (context, uploadProvider, _) {
+        final tracks = uploadProvider.allUploadedTracks;
+
+        if (uploadProvider.isLoading &&
+            uploadProvider.currentOperation == 'loadArtistTracks' &&
+            tracks.isEmpty) {
+          return const Center(
+            child: CircularProgressIndicator(),
+          );
+        }
+
+        if (uploadProvider.errorMessage != null && tracks.isEmpty) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    uploadProvider.errorMessage!,
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 12),
+                  TextButton(
+                    onPressed: _loadUploadedTracksForCurrentArtist,
+                    child: const Text('Retry'),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
         if (tracks.isEmpty) {
           return const Center(
             child: Text('No uploaded tracks yet.'),
@@ -392,10 +449,10 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           itemBuilder: (context, index) {
             final track = tracks[index];
             return _buildTrackItem(
-              imageUrl: track.imageUrl,
+              imageUrl: track.artworkPathOrUrl,
               title: track.title,
-              subtitle: track.subtitle,
-              plays: track.plays,
+              subtitle: '${track.genre} • ${track.status.name}',
+              plays: '0 plays',
               imageBytes: track.artworkBytes,
               onMorePressed: () => _showUploadedTrackActions(track),
             );
@@ -405,7 +462,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     );
   }
 
-  Future<void> _showUploadedTrackActions(MockUploadedTrack track) async {
+  Future<void> _showUploadedTrackActions(UploadModel track) async {
     final action = await showModalBottomSheet<String>(
       context: context,
       builder: (context) {
@@ -464,10 +521,28 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       );
 
       if (confirmed == true && mounted) {
-        MockUploadedTracksStore.removeTrack(track.id);
+        final uploadProvider = context.read<UploadProvider>();
+        final deleted = await uploadProvider.deleteTrackById(track.id);
+        if (!mounted) return;
+
+        if (!deleted) {
+          final errorText =
+              uploadProvider.errorMessage ?? 'Failed to delete track.';
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(errorText)),
+          );
+          uploadProvider.clearError();
+          return;
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Delete placeholder: track removed')),
+          SnackBar(
+            content: Text(
+              uploadProvider.successMessage ?? 'Track deleted successfully.',
+            ),
+          ),
         );
+        uploadProvider.clearSuccessMessage();
       }
     }
   }

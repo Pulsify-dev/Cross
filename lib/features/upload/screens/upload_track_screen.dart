@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
+import 'package:provider/provider.dart';
 //import '../../../core/theme/app_colors.dart';
 import '../widgets/audio_picker_card.dart';
 import '../widgets/artwork_picker_card.dart';
-import '../widgets/privacy_selector.dart';
 import '../widgets/track_form_section_label.dart';
 import '../widgets/track_primary_button.dart';
 import '../widgets/track_processing_card.dart';
@@ -12,8 +13,8 @@ import '../widgets/track_tab_switcher.dart';
 import '../widgets/track_text_field.dart';
 import '../widgets/upload_track_confirm_dialog.dart';
 import '../widgets/waveform_preview_card.dart';
-import 'package:cross/features/upload/services/mock_uploaded_track.dart';
-import 'package:cross/features/upload/services/mock_uploaded_tracks_store.dart';
+import 'package:cross/features/upload/models/upload_model.dart';
+import 'package:cross/providers/upload_provider.dart';
 
 class UploadTrackScreen extends StatefulWidget {
   const UploadTrackScreen({super.key});
@@ -24,7 +25,10 @@ class UploadTrackScreen extends StatefulWidget {
 
 class _UploadTrackScreenState extends State<UploadTrackScreen> {
   UploadTrackTab _selectedTab = UploadTrackTab.trackInfo;
+  bool _isConfirmDialogOpen = false;
   late final PageController _pageController;
+  late final TextEditingController _artistNameController;
+  late final TextEditingController _releaseDateController;
 
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _collaboratorsController =
@@ -33,16 +37,22 @@ class _UploadTrackScreenState extends State<UploadTrackScreen> {
   final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _tagsController = TextEditingController();
 
-  String _privacy = 'Public';
   String? _selectedAudioFile;
+  String? _selectedAudioPath;
   String? _selectedArtworkFile;
+  String? _selectedArtworkPath;
   Uint8List? _selectedArtworkBytes;
   DateTime _selectedDate = DateTime.now();
+
+  void _syncReleaseDateText() {
+    _releaseDateController.text =
+        '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}';
+  }
 
   Future<void> _pickAudioFile() async {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
-      allowedExtensions: ['mp3', 'wav', 'flac', 'aac', 'm4a'],
+      allowedExtensions: ['mp3', 'wav', 'flac', 'aac'],
       withData: false,
     );
 
@@ -51,12 +61,14 @@ class _UploadTrackScreenState extends State<UploadTrackScreen> {
     final file = result.files.single;
     setState(() {
       _selectedAudioFile = file.name;
+      _selectedAudioPath = file.path;
     });
   }
 
   Future<void> _pickArtworkFile() async {
     final result = await FilePicker.platform.pickFiles(
-      type: FileType.image,
+      type: FileType.custom,
+      allowedExtensions: ['jpg', 'jpeg', 'png', 'webp'],
       withData: true,
     );
 
@@ -65,6 +77,7 @@ class _UploadTrackScreenState extends State<UploadTrackScreen> {
     final file = result.files.single;
     setState(() {
       _selectedArtworkFile = file.name;
+      _selectedArtworkPath = file.path;
       _selectedArtworkBytes = file.bytes;
     });
   }
@@ -73,6 +86,9 @@ class _UploadTrackScreenState extends State<UploadTrackScreen> {
   void initState() {
     super.initState();
     _pageController = PageController();
+    _artistNameController = TextEditingController(text: 'Mohammad Emad');
+    _releaseDateController = TextEditingController();
+    _syncReleaseDateText();
   }
 
   void _onTabSelected(UploadTrackTab tab) {
@@ -85,12 +101,26 @@ class _UploadTrackScreenState extends State<UploadTrackScreen> {
       curve: Curves.easeInOut,
     );
 
+    if (tab == UploadTrackTab.advanced) {
+      _requestWaveformForCurrentTrack();
+    }
+
     setState(() => _selectedTab = tab);
+  }
+
+  void _requestWaveformForCurrentTrack() {
+    final provider = context.read<UploadProvider>();
+    final track = provider.statusCardTrack;
+    if (track == null) return;
+    if (track.id.trim().isEmpty) return;
+    unawaited(provider.fetchWaveformForTrack(track.id));
   }
 
   @override
   void dispose() {
     _pageController.dispose();
+    _artistNameController.dispose();
+    _releaseDateController.dispose();
     _titleController.dispose();
     _collaboratorsController.dispose();
     _genreController.dispose();
@@ -108,26 +138,35 @@ class _UploadTrackScreenState extends State<UploadTrackScreen> {
     );
 
     if (picked != null) {
-      setState(() => _selectedDate = picked);
+      setState(() {
+        _selectedDate = picked;
+        _syncReleaseDateText();
+      });
     }
   }
 
   Future<void> _confirmUpload() async {
+    final provider = context.read<UploadProvider>();
+    if (provider.isUploading || _isConfirmDialogOpen) return;
+
+    _isConfirmDialogOpen = true;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (_) => const UploadTrackConfirmDialog(),
     );
+    _isConfirmDialogOpen = false;
 
     if (confirmed != true || !mounted) return;
 
-    if (_selectedAudioFile == null) {
+    if (_selectedAudioPath == null || _selectedAudioPath!.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please choose an audio file first')),
       );
       return;
     }
 
-    if (_selectedArtworkBytes == null) {
+    if ((_selectedArtworkPath == null || _selectedArtworkPath!.isEmpty) &&
+        _selectedArtworkBytes == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please choose a cover image first')),
       );
@@ -141,37 +180,134 @@ class _UploadTrackScreenState extends State<UploadTrackScreen> {
         ? 'Unknown Genre'
         : _genreController.text.trim();
 
-    final newTrack = MockUploadedTrack(
+    final tags = _tagsController.text
+      .split(RegExp(r'[\s,]+'))
+      .where((part) => part.trim().isNotEmpty)
+      .map((part) => part.replaceFirst('#', '').trim())
+      .where((part) => part.isNotEmpty)
+      .toList();
+
+    final newTrack = UploadModel(
       id: DateTime.now().microsecondsSinceEpoch.toString(),
       title: title,
+      artistName: _artistNameController.text.trim(),
+      collaborators: _collaboratorsController.text
+        .split(',')
+        .map((part) => part.trim())
+        .where((part) => part.isNotEmpty)
+        .toList(),
       genre: genre,
       description: _descriptionController.text.trim(),
-      tags: _tagsController.text.trim(),
-      privacy: _privacy,
-      imageUrl: MockUploadedTracksStore.defaultArtworkUrl,
-      plays: '0 plays',
-      status: 'Processing',
-      audioFileName: _selectedAudioFile,
+      tags: tags,
+      // Upload screen defaults to private; privacy can be changed in edit screen.
+      privacy: UploadTrackPrivacy.private.name,
+      artworkPathOrUrl: _selectedArtworkPath ?? '',
+      audioPathOrFileName: _selectedAudioPath!,
+      status: UploadTrackStatus.processing,
+      releaseDate: _selectedDate,
       artworkBytes: _selectedArtworkBytes,
     );
 
-    MockUploadedTracksStore.addTrack(newTrack);
+    final uploadProvider = context.read<UploadProvider>();
+    final created = await uploadProvider.uploadTrack(newTrack);
+    if (!mounted) return;
 
+    if (created == null) {
+      final errorText = uploadProvider.errorMessage ?? 'Failed to upload track.';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(errorText),
+        ),
+      );
+      uploadProvider.clearError();
+      return;
+    }
+
+    final successText = uploadProvider.successMessage ?? 'Track uploaded.';
     final messenger = ScaffoldMessenger.of(context);
     Navigator.pop(context);
     messenger.showSnackBar(
-      const SnackBar(content: Text('Track uploaded (mock)')),
+      SnackBar(
+        content: Text(successText),
+      ),
     );
+    uploadProvider.clearSuccessMessage();
   }
 
-  Widget _buildTrackInfoTab() {
+  String _statusLabelForCard(UploadProvider provider) {
+    final statusTrack = provider.statusCardTrack;
+
+    if (provider.isUploading) {
+      return 'UPLOADING FILES';
+    }
+
+    if (statusTrack == null) {
+      return 'READY TO UPLOAD';
+    }
+
+    switch (statusTrack.status) {
+      case UploadTrackStatus.processing:
+        return 'PROCESSING TRACK';
+      case UploadTrackStatus.finished:
+        return 'PROCESSING COMPLETE';
+      case UploadTrackStatus.failed:
+        return 'PROCESSING FAILED';
+      case UploadTrackStatus.draft:
+        return 'READY TO UPLOAD';
+    }
+  }
+
+  double _progressForCard(UploadProvider provider) {
+    if (provider.isUploading) return 0.15;
+
+    final statusTrack = provider.statusCardTrack;
+    final progressPercent = statusTrack?.progressPercent;
+    if (progressPercent != null) {
+      return (progressPercent / 100).clamp(0.0, 1.0);
+    }
+
+    switch (statusTrack?.status) {
+      case UploadTrackStatus.finished:
+        return 1.0;
+      case UploadTrackStatus.failed:
+        return 0.0;
+      case UploadTrackStatus.processing:
+        return 0.35;
+      case UploadTrackStatus.draft:
+      case null:
+        return 0.0;
+    }
+  }
+
+  String _percentageForCard(UploadProvider provider) {
+    if (provider.isUploading) return '0%';
+
+    final statusTrack = provider.statusCardTrack;
+    final progressPercent = statusTrack?.progressPercent;
+    if (progressPercent != null) {
+      return '${progressPercent.round()}%';
+    }
+
+    switch (statusTrack?.status) {
+      case UploadTrackStatus.finished:
+        return '100%';
+      case UploadTrackStatus.failed:
+        return '0%';
+      case UploadTrackStatus.processing:
+      case UploadTrackStatus.draft:
+      case null:
+        return '0%';
+    }
+  }
+
+  Widget _buildTrackInfoTab(UploadProvider provider) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         TrackProcessingCard(
-          progress: 0.35,
-          statusText: 'PREPARING TO PROCESS',
-          percentageText: '35%',
+          progress: _progressForCard(provider),
+          statusText: _statusLabelForCard(provider),
+          percentageText: _percentageForCard(provider),
         ),
         const SizedBox(height: 18),
         AudioPickerCard(
@@ -195,7 +331,7 @@ class _UploadTrackScreenState extends State<UploadTrackScreen> {
 
         const TrackFormSectionLabel(text: 'Artist Name'),
         TrackTextField(
-          controller: TextEditingController(text: 'Mohammad Emad'),
+          controller: _artistNameController,
           hintText: '',
           readOnly: true,
           suffixIcon: const Icon(Icons.lock_outline),
@@ -230,32 +366,30 @@ class _UploadTrackScreenState extends State<UploadTrackScreen> {
           controller: _tagsController,
           hintText: '#track #music #demo',
         ),
-        const SizedBox(height: 18),
-
-        const TrackFormSectionLabel(text: 'Visibility'),
-        PrivacySelector(
-          selectedValue: _privacy,
-          onChanged: (value) {
-            setState(() => _privacy = value);
-          },
-        ),
       ],
     );
   }
 
-  Widget _buildAdvancedTab() {
-    final dateText =
-        '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}';
+  Widget _buildAdvancedTab(UploadProvider provider) {
+    final statusTrack = provider.statusCardTrack;
+    final trackId = statusTrack?.id ?? '';
+    final currentTrack = trackId.isEmpty ? null : provider.getTrackById(trackId);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const TrackFormSectionLabel(text: 'Waveform'),
-        const WaveformPreviewCard(),
+        WaveformPreviewCard(
+          peaks: currentTrack?.waveformPeaks,
+          isLoading: trackId.isNotEmpty && provider.isWaveformLoading(trackId),
+          errorText: trackId.isNotEmpty
+              ? provider.waveformErrorForTrack(trackId)
+              : null,
+        ),
         const SizedBox(height: 24),
         const TrackFormSectionLabel(text: 'Release Date'),
         TrackTextField(
-          controller: TextEditingController(text: dateText),
+          controller: _releaseDateController,
           hintText: '',
           readOnly: true,
           onTap: _pickReleaseDate,
@@ -267,6 +401,8 @@ class _UploadTrackScreenState extends State<UploadTrackScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final uploadProvider = context.watch<UploadProvider>();
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Upload Track'),
@@ -291,15 +427,19 @@ class _UploadTrackScreenState extends State<UploadTrackScreen> {
                     _selectedTab =
                         index == 0 ? UploadTrackTab.trackInfo : UploadTrackTab.advanced;
                   });
+
+                  if (index == 1) {
+                    _requestWaveformForCurrentTrack();
+                  }
                 },
                 children: [
                   SingleChildScrollView(
                     padding: const EdgeInsets.fromLTRB(20, 0, 20, 120),
-                    child: _buildTrackInfoTab(),
+                    child: _buildTrackInfoTab(uploadProvider),
                   ),
                   SingleChildScrollView(
                     padding: const EdgeInsets.fromLTRB(20, 0, 20, 120),
-                    child: _buildAdvancedTab(),
+                    child: _buildAdvancedTab(uploadProvider),
                   ),
                 ],
               ),
@@ -312,7 +452,7 @@ class _UploadTrackScreenState extends State<UploadTrackScreen> {
         child: Padding(
           padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
           child: TrackPrimaryButton(
-            text: 'Upload Track',
+            text: uploadProvider.isUploading ? 'Uploading...' : 'Upload Track',
             icon: Icons.upload_outlined,
             onPressed: _confirmUpload,
           ),
