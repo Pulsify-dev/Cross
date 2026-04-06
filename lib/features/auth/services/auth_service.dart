@@ -1,81 +1,128 @@
+import 'package:cross/core/constants/api_endpoints.dart';
+import 'package:cross/core/services/api_service.dart';
 import 'package:cross/features/auth/models/auth_response_model.dart';
-import 'package:cross/features/auth/models/user_model.dart';
 
 class AuthService {
+  AuthService({ApiService? apiService}) : _apiService = apiService ?? ApiService();
+
+  final ApiService _apiService;
+
   Future<AuthResponseModel> login({
     required String email,
     required String password,
   }) async {
-    await Future.delayed(const Duration(milliseconds: 500));
-
-    return AuthResponseModel(
-      accessToken: 'mock_access_token',
-      refreshToken: 'mock_refresh_token',
-      user: UserModel(
-        id: '1',
-        username: 'mohammad',
-        email: email,
-        isVerified: true,
-      ),
+    final response = await _apiService.post(
+      ApiEndpoints.login,
+      body: {
+        'email': email,
+        'password': password,
+      },
     );
+
+    if (response is! Map<String, dynamic>) {
+      throw const ApiException('Invalid login response.');
+    }
+
+    return AuthResponseModel.fromJson(response);
   }
 
   Future<AuthResponseModel> register({
     required String username,
     required String email,
     required String password,
+    String captchaToken = 'mock-token',
   }) async {
-    await Future.delayed(const Duration(milliseconds: 500));
-
-    return AuthResponseModel(
-      accessToken: 'mock_access_token',
-      refreshToken: 'mock_refresh_token',
-      user: UserModel(
-        id: '2',
-        username: username,
-        email: email,
-        isVerified: false,
-      ),
+    final response = await _apiService.post(
+      ApiEndpoints.register,
+      body: {
+        'username': username,
+        'email': email,
+        'password': password,
+        // TODO: Replace this with real CAPTCHA token generation when backend CAPTCHA is finalized in app.
+        'captcha_token': captchaToken,
+      },
     );
+
+    if (response is! Map<String, dynamic>) {
+      throw const ApiException('Invalid registration response.');
+    }
+
+    return AuthResponseModel.fromJson(response);
   }
 
-  Future<void> sendPasswordReset({
+  Future<String> verifyEmail({
+    required String token,
+  }) async {
+    final response = await _apiService.post(
+      ApiEndpoints.verifyEmail,
+      body: {'token': token},
+    );
+
+    if (response is! Map<String, dynamic>) {
+      throw const ApiException('Invalid verify email response.');
+    }
+
+    return response['message']?.toString() ?? 'Email verification completed.';
+  }
+
+  Future<AuthResponseModel> refreshToken({
+    required String refreshToken,
+  }) async {
+    final response = await _apiService.post(
+      ApiEndpoints.refreshToken,
+      body: {'refresh_token': refreshToken},
+    );
+
+    if (response is! Map<String, dynamic>) {
+      throw const ApiException('Invalid refresh token response.');
+    }
+
+    return AuthResponseModel.fromJson(response);
+  }
+
+  Future<String> sendPasswordReset({
     required String email,
   }) async {
-    await Future.delayed(const Duration(milliseconds: 500));
-  }
-
-  Future<AuthResponseModel> loginWithGoogle() async {
-    await Future.delayed(const Duration(milliseconds: 500));
-
-    return const AuthResponseModel(
-      accessToken: 'google_mock_access_token',
-      refreshToken: 'google_mock_refresh_token',
-      user: UserModel(
-        id: '3',
-        username: 'google_user',
-        email: 'googleuser@example.com',
-        isVerified: true,
-      ),
+    final response = await _apiService.post(
+      ApiEndpoints.forgotPassword,
+      body: {'email': email},
     );
+
+    if (response is! Map<String, dynamic>) {
+      throw const ApiException('Invalid forgot password response.');
+    }
+
+    return response['message']?.toString() ??
+        'If that email address is in our database, we will send you a link to reset your password.';
   }
 
-  Future<AuthResponseModel> loginWithApple() async {
-    await Future.delayed(const Duration(milliseconds: 500));
-
-    return const AuthResponseModel(
-      accessToken: 'apple_mock_access_token',
-      refreshToken: 'apple_mock_refresh_token',
-      user: UserModel(
-        id: '4',
-        username: 'apple_user',
-        email: 'appleuser@example.com',
-        isVerified: true,
-      ),
+  Future<String> resetPassword({
+    required String token,
+    required String newPassword,
+  }) async {
+    final response = await _apiService.post(
+      ApiEndpoints.resetPassword,
+      body: {
+        'token': token,
+        'new_password': newPassword,
+      },
     );
+
+    if (response is! Map<String, dynamic>) {
+      throw const ApiException('Invalid reset password response.');
+    }
+
+    return response['message']?.toString() ??
+        'Password has been successfully reset. You can now log in.';
   }
 
-  Future<void> logout() async {
-    await Future.delayed(const Duration(milliseconds: 300));
+  Future<void> logout({
+    required String refreshToken,
+  }) async {
+    await _apiService.post(
+      ApiEndpoints.logout,
+      body: {'refresh_token': refreshToken},
+      authRequired: true,
+    );
   }
 }

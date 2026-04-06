@@ -1,4 +1,5 @@
-import 'dart:ui';
+//import 'dart:ffi';
+//import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -8,7 +9,8 @@ import '/routes/route_names.dart';
 import '../models/track.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final VoidCallback? onProfileTap;
+  const HomeScreen({super.key, this.onProfileTap});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -41,6 +43,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         backgroundColor: Colors.transparent,
         elevation: 0,
         title: Text(
@@ -51,11 +54,19 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         actions: [
+          IconButton(
+            onPressed: () {
+              Navigator.of(context).pushNamed(RouteNames.uploadTrack);
+            },
+            icon: const Icon(Icons.upload),
+            tooltip: 'Upload',
+          ),
           Padding(
             padding: const EdgeInsets.only(right: 16.0),
             child: GestureDetector(
               onTap: () {
-                Navigator.pushNamed(context, RouteNames.profile);
+                widget.onProfileTap?.call();
+                //Navigator.of(context).pushNamed(RouteNames.profile);
               },
               child: Hero(
                 tag: 'profile_avatar',
@@ -96,7 +107,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: Theme.of(
                         context,
-                      ).colorScheme.onSurface.withOpacity(0.6),
+                      ).colorScheme.onSurface.withValues(alpha:0.6),
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -171,13 +182,13 @@ class _HomeScreenState extends State<HomeScreen> {
                             ? Theme.of(context).colorScheme.primary
                             : Theme.of(
                                 context,
-                              ).colorScheme.onSurface.withOpacity(0.2),
+                              ).colorScheme.onSurface.withValues(alpha: 0.2),
                         width: 1.5,
                       ),
                       color: isSelected
                           ? Theme.of(
                               context,
-                            ).colorScheme.primary.withOpacity(0.1)
+                            ).colorScheme.primary.withValues(alpha: 0.1)
                           : Colors.transparent,
                     ),
                     child: Text(
@@ -278,7 +289,7 @@ class _HomeScreenState extends State<HomeScreen> {
               color: Theme.of(context).colorScheme.surface,
               child: Icon(
                 Icons.music_note,
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
               ),
             ),
           ),
@@ -294,7 +305,7 @@ class _HomeScreenState extends State<HomeScreen> {
         subtitle: Text(
           track.artistName,
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
           ),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
@@ -302,7 +313,7 @@ class _HomeScreenState extends State<HomeScreen> {
         trailing: IconButton(
           icon: Icon(
             Icons.more_vert,
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
           ),
           onPressed: () {
             Navigator.of(

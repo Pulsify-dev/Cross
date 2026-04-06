@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:cross/core/theme/app_colors.dart';
 import 'package:cross/features/auth/widgets/auth_text_field.dart';
+import 'package:cross/providers/auth_provider.dart';
 import 'package:cross/routes/route_names.dart';
+import 'package:provider/provider.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -30,20 +32,44 @@ class _RegisterScreenState extends State<RegisterScreen> {
     super.dispose();
   }
 
-  void _handleRegister() {
-    if (_formKey.currentState!.validate()) {
-      // 1. Show Success Message
+  Future<void> _handleRegister() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    final authProvider = context.read<AuthProvider>();
+    final isSuccess = await authProvider.register(
+      username: nameController.text.trim(),
+      email: emailController.text.trim(),
+      password: passwordController.text,
+    );
+
+    if (!mounted) {
+      return;
+    }
+
+    if (isSuccess) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Account created successfully!'),
+        SnackBar(
+          content: Text(
+            authProvider.successMessage ??
+                'Registration successful. Please check your email to verify.',
+          ),
           backgroundColor: AppColors.primary,
           behavior: SnackBarBehavior.floating,
         ),
       );
 
-      // 2. Redirect back to Login
       Navigator.pushReplacementNamed(context, RouteNames.login);
+      return;
     }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(authProvider.errorMessage ?? 'Registration failed.'),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   void _goToLogin() {
@@ -53,6 +79,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final isLoading = context.select<AuthProvider, bool>((p) => p.isLoading);
 
     return Scaffold(
       backgroundColor: AppColors.backgroundAlt,
@@ -170,14 +197,31 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           boxShadow: const [BoxShadow(color: AppColors.glow, blurRadius: 18, spreadRadius: 1)],
                         ),
                         child: ElevatedButton(
-                          onPressed: _handleRegister,
+                          onPressed: isLoading ? null : _handleRegister,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.transparent,
                             shadowColor: Colors.transparent,
                             padding: const EdgeInsets.symmetric(vertical: 17),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
                           ),
-                          child: const Text('Create Account', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                          child: isLoading
+                              ? const SizedBox(
+                                  width: 22,
+                                  height: 22,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2.2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.white,
+                                    ),
+                                  ),
+                                )
+                              : const Text(
+                                  'Create Account',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                         ),
                       ),
                     ],

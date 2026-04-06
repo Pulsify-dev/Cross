@@ -60,7 +60,7 @@ class _TrackDetailsScreenState extends State<TrackDetailsScreen> {
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  Theme.of(context).colorScheme.primary.withOpacity(0.5),
+                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.5),
                   Theme.of(context).scaffoldBackgroundColor,
                 ],
               ),
@@ -96,7 +96,7 @@ class _TrackDetailsScreenState extends State<TrackDetailsScreen> {
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         color: Theme.of(
                           context,
-                        ).colorScheme.onSurface.withOpacity(0.7),
+                        ).colorScheme.onSurface.withValues(alpha: 0.7),
                       ),
                       textAlign: TextAlign.center,
                     ),

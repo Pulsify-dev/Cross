@@ -14,5 +14,11 @@ class RouteNames {
   static const String library = '/library';
   static const String history = '/history';
   static const String trending = '/trending';
+  static const String mainScreen = '/main';
   static const String messages = '/messages';
+  static const String searchResults = '/search-results';
+  static const String followers = '/followers';
+  static const String following = '/following';
+  static const String uploadTrack = '/upload-track';
+  static const String editUploadedTrack = '/edit-uploaded-track';
 }
