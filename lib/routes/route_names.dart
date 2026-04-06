@@ -21,4 +21,5 @@ class RouteNames {
   static const String following = '/following';
   static const String uploadTrack = '/upload-track';
   static const String editUploadedTrack = '/edit-uploaded-track';
+  static const String blockedUsers = '/blocked-users';
 }

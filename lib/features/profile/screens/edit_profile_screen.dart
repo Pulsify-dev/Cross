@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cross/core/theme/app_colors.dart';
 import 'package:cross/features/profile/models/profile_data.dart';
+import 'package:cross/providers/auth_provider.dart';
 import 'package:cross/providers/profile_provider.dart';
 import 'package:provider/provider.dart';
 
@@ -28,11 +29,19 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       listen: false,
     );
     final profile = profileProvider.profile;
-    _avatarPath = profile.avatarPath ?? '';
-    _avatarBytes = profile.avatarBytes;
-    _usernameController = TextEditingController(text: profile.username);
-    _bioController = TextEditingController(text: profile.bio);
-    _emailController = TextEditingController(text: profile.email);
+    if (profile != null) {
+      _avatarPath = profile.avatarPath ?? '';
+      _avatarBytes = profile.avatarBytes;
+      _usernameController = TextEditingController(text: profile.username);
+      _bioController = TextEditingController(text: profile.bio);
+      _emailController = TextEditingController(text: profile.email);
+    } else {
+      _avatarPath = '';
+      _avatarBytes = null;
+      _usernameController = TextEditingController();
+      _bioController = TextEditingController();
+      _emailController = TextEditingController();
+    }
   }
 
   Future<void> _pickImage() async {
@@ -54,15 +63,24 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       _avatarPath = '';
     });
 
-    profileProvider.updateProfile(
-      profileProvider.profile.copyWith(
-        avatarBytes: bytes,
-        avatarPath: null,
-        username: _usernameController.text,
-        bio: _bioController.text,
-        email: _emailController.text,
-      ),
+    final authProvider = Provider.of<AuthProvider>(
+      context,
+      listen: false,
     );
+    final userId = authProvider.currentUser?.id;
+
+    if (userId != null && profileProvider.profile != null) {
+      profileProvider.updateProfile(
+        userId: userId,
+        newProfile: profileProvider.profile!.copyWith(
+          avatarBytes: bytes,
+          avatarPath: null,
+          username: _usernameController.text,
+          bio: _bioController.text,
+          email: _emailController.text,
+        ),
+      );
+    }
   }
 
   @override
@@ -222,8 +240,22 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     context,
                     listen: false,
                   );
+                  final authProvider = Provider.of<AuthProvider>(
+                    context,
+                    listen: false,
+                  );
+                  final userId = authProvider.currentUser?.id;
+
+                  if (userId == null || profileProvider.profile == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Unable to save profile.')),
+                    );
+                    return;
+                  }
+
                   profileProvider.updateProfile(
-                    profileProvider.profile.copyWith(
+                    userId: userId,
+                    newProfile: profileProvider.profile!.copyWith(
                       avatarPath: _avatarPath.isNotEmpty ? _avatarPath : null,
                       avatarBytes: _avatarBytes,
                       username: _usernameController.text,

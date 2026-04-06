@@ -23,6 +23,7 @@ import 'package:cross/features/profile/screens/followers_screen.dart';
 import 'package:cross/features/profile/screens/following_screen.dart';
 import 'package:cross/features/upload/screens/upload_track_screen.dart';
 import 'package:cross/features/upload/screens/edit_uploaded_track_screen.dart';
+import 'package:cross/features/profile/screens/blocked_users_screen.dart';
 
 class AppRoutes {
   static Route<dynamic> generateRoute(RouteSettings settings) {
@@ -92,7 +93,8 @@ class AppRoutes {
         return MaterialPageRoute(
           builder: (_) => EditUploadedTrackScreen(trackId: trackId),
         );
-
+      case RouteNames.blockedUsers:
+        return MaterialPageRoute(builder: (_) => const BlockedUsersScreen());
 
       default:
         return MaterialPageRoute(

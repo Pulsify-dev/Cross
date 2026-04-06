@@ -7,10 +7,10 @@ class ApiEndpoints {
   static const String forgotPassword = '/auth/forgot-password';
   static const String resetPassword = '/auth/reset-password';
 
-  static const String profile = '/users/profile';
-  static const String editProfile = '/users/profile/edit';
-  static const String followers = '/users/followers';
-  static const String following = '/users/following';
+  static String profile(String userId) => '/users/$userId';
+  static String editProfile(String userId) => '/users/$userId/edit';
+  static String followers(String userId) => '/users/$userId/followers';
+  static String following(String userId) => '/users/$userId/following';
 
   static const String tracks = '/tracks';
 

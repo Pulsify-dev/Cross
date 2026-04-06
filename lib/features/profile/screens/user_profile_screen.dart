@@ -25,7 +25,19 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       _loadUploadedTracksForCurrentArtist();
+      _loadProfile();
     });
+  }
+
+  Future<void> _loadProfile() async {
+    final authProvider = context.read<AuthProvider>();
+    final userId = authProvider.currentUser?.id;
+    if (userId == null) {
+      return;
+    }
+
+    final profileProvider = context.read<ProfileProvider>();
+    await profileProvider.loadProfile(userId: userId);
   }
 
   Future<void> _loadUploadedTracksForCurrentArtist() async {
@@ -99,11 +111,37 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     },
   ];
 
-  Future<void> _handleProfileMenuSelection(String value) async {
-    if (value != 'logout') {
-      return;
-    }
+  static const _favoriteGenres = [
+    {
+      'title': 'Pop',
+      'subtitle': 'Popular • 150K tracks',
+      'plays': '10M plays',
+      'image':
+          'https://lh3.googleusercontent.com/aida-public/AB6AXuAWROw6qxsbQJKACyZZ65DEI88V-J9kbSie21JamMJzojoRrttVgcXrOXi-5BIwAR9r8xwDKDlzmP9WLUV82-2IrYKiqt9p7Ri2e0GXS5IUTseWESRPBLxNHqQKV8vs26l8X27SRpllBK8oAnNRVZRY0wybQwOVgGGD3p8o_3CPG6lIjAQpFMlNuzNpd_1-cpgCm-HtQy7UXqbaPB41iaPpWCQnCK-u5x9L3mGiGohzs7gPCX-XUUytvkERvMWhzO1c1J-T-xmoEgg',
+    },
+    {
+      'title': 'Hip-Hop',
+      'subtitle': 'Trending • 200K tracks',
+      'plays': '25M plays',
+      'image':
+          'https://lh3.googleusercontent.com/aida-public/AB6AXuCKlgPSzOBWDjf6m-ENOfVNJ7d84EuEkszfYCt69BgIheo1VIvde6YIYsfQTfANtBpnsu_4Zb1J8r4nw481yUii9RuFVRpYMwC1f3SrPpw1eBo2nOFBRLO8ojpzhc6PFr2miNPvYHjqoXc3cjGfTdHfkN4C9aPClk3Ph0JIBotryBxBIdEwKNvJfRwabbz_UOTNr6r9naWNsXu2iTCtzGY8FwZWo6298hCrS-zMIlfbwiYYo5NvIn4gyLwXpDcu5Mbqh_4POQo7l4Y',
+    },
+    {
+      'title': 'Electronic',
+      'subtitle': 'Electronic • 80K tracks',
+      'plays': '8M plays',
+      'image':
+          'https://lh3.googleusercontent.com/aida-public/AB6AXuBwwb6cioW2l3ZGQ7Daxm2tLZNacCZ7QLjy8X0izIozKkcHVHHv65frBFBIl7JQ2d6htyh2vc2pC2yov4aohqVrJWRCdT0RR8OhbDAMxosiIxmd2rnFZVTUtdk-U93vzSDApK3QJp9yIN3_-2XRfZZ2kofYzNdnaKkf__si-9H5B3FKttgr1TdoLUElOHIw07hjNP12YFDHEPbqRegvfm1hygD-QVBH8xbSF8I75OQoTR_tDIQPViJ7Ybj7oUSrUmG8W39piQ5vAWQ',
+    },
+  ];
 
+  Future<void> _handleProfileMenuSelection(String value) async {
+    if (value == 'blocked_users') {
+      Navigator.pushNamed(context, RouteNames.blockedUsers);
+    }
+  }
+
+  Future<void> _logout() async {
     final authProvider = context.read<AuthProvider>();
     await authProvider.logout();
 
@@ -125,6 +163,48 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     return Consumer<ProfileProvider>(
       builder: (context, profileProvider, _) {
         final profile = profileProvider.profile;
+        final isLoading = profileProvider.isLoading;
+        final errorMessage = profileProvider.errorMessage;
+
+        if (isLoading && profile == null) {
+          return const Scaffold(
+            body: Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
+        }
+
+        if (errorMessage != null && profile == null) {
+          return Scaffold(
+            body: Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      errorMessage,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 12),
+                    TextButton(
+                      onPressed: _loadProfile,
+                      child: const Text('Retry'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }
+
+        if (profile == null) {
+          return const Scaffold(
+            body: Center(
+              child: Text('No profile data available'),
+            ),
+          );
+        }
 
         return Scaffold(
           appBar: AppBar(
@@ -138,8 +218,14 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                 onSelected: _handleProfileMenuSelection,
                 itemBuilder: (context) => const [
                   PopupMenuItem<String>(
-                    value: 'logout',
-                    child: Text('Log out'),
+                    value: 'blocked_users',
+                    child: Row(
+                      children: [
+                        Icon(Icons.block, size: 20),
+                        SizedBox(width: 8),
+                        Text('Blocked Users'),
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -148,7 +234,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
             elevation: 0,
           ),
           body: DefaultTabController(
-            length: 3,
+            length: 4,
             child: NestedScrollView(
               headerSliverBuilder: (context, innerBoxIsScrolled) {
                 return [
@@ -182,6 +268,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                           Tab(text: 'Uploaded'),
                           Tab(text: 'Playlists'),
                           Tab(text: 'Recent'),
+                          Tab(text: 'Favorite Genre'),
                         ],
                       ),
                       backgroundColor: theme.scaffoldBackgroundColor,
@@ -194,6 +281,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                   _buildUploadedTrackList(context),
                   _buildTrackList(context, _playlistItems),
                   _buildTrackList(context, _recentItems),
+                  _buildTrackList(context, _favoriteGenres),
                 ],
               ),
             ),
@@ -280,25 +368,46 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
             ),
           ),
           const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: () {
-                Navigator.pushNamed(context, RouteNames.editProfile);
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(28),
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.pushNamed(context, RouteNames.editProfile);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(28),
+                    ),
+                  ),
+                  icon: const Icon(Icons.edit, size: 20, color: Colors.white),
+                  label: const Text(
+                    'Edit Profile',
+                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+                  ),
                 ),
               ),
-              icon: const Icon(Icons.edit, size: 20, color: Colors.white),
-              label: const Text(
-                'Edit Profile',
-                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+              const SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: _logout,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(28),
+                    ),
+                  ),
+                  icon: const Icon(Icons.logout, size: 20, color: Colors.white),
+                  label: const Text(
+                    'Logout',
+                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+                  ),
+                ),
               ),
-            ),
+            ],
           ),
         ],
       ),
