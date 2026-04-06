@@ -61,8 +61,16 @@ class PulsifyApp extends StatelessWidget {
           create: (_) => ProfileProvider(),
         ),
 
-        ChangeNotifierProvider(
+        ChangeNotifierProxyProvider<AuthProvider, UploadProvider>(
           create: (_) => UploadProvider(),
+          update: (_, authProvider, uploadProvider) {
+            final provider = uploadProvider ?? UploadProvider();
+            provider.updateCurrentUser(
+              userId: authProvider.currentUser?.id,
+              username: authProvider.currentUser?.username,
+            );
+            return provider;
+          },
         ),
       ],
       child: MaterialApp(

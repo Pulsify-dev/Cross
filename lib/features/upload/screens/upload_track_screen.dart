@@ -14,6 +14,7 @@ import '../widgets/track_text_field.dart';
 import '../widgets/upload_track_confirm_dialog.dart';
 import '../widgets/waveform_preview_card.dart';
 import 'package:cross/features/upload/models/upload_model.dart';
+import 'package:cross/providers/auth_provider.dart';
 import 'package:cross/providers/upload_provider.dart';
 
 class UploadTrackScreen extends StatefulWidget {
@@ -43,6 +44,10 @@ class _UploadTrackScreenState extends State<UploadTrackScreen> {
   String? _selectedArtworkPath;
   Uint8List? _selectedArtworkBytes;
   DateTime _selectedDate = DateTime.now();
+  bool _audioSelectedInCurrentDraft = false;
+  bool _uploadSucceededForCurrentDraft = false;
+  String? _pendingWaveformTrackId;
+  UploadProvider? _uploadProviderForLifecycle;
 
   void _syncReleaseDateText() {
     _releaseDateController.text =
@@ -59,10 +64,15 @@ class _UploadTrackScreenState extends State<UploadTrackScreen> {
     if (result == null || result.files.isEmpty) return;
 
     final file = result.files.single;
+    final selectedPath = file.path;
+
     setState(() {
       _selectedAudioFile = file.name;
-      _selectedAudioPath = file.path;
+      _selectedAudioPath = selectedPath;
+      _audioSelectedInCurrentDraft = selectedPath != null && selectedPath.isNotEmpty;
     });
+
+    _markDraftChanged();
   }
 
   Future<void> _pickArtworkFile() async {
@@ -80,15 +90,68 @@ class _UploadTrackScreenState extends State<UploadTrackScreen> {
       _selectedArtworkPath = file.path;
       _selectedArtworkBytes = file.bytes;
     });
+
+    _markDraftChanged();
+  }
+
+  bool get _hasRequiredInputs {
+    final hasAudio = _selectedAudioPath != null && _selectedAudioPath!.trim().isNotEmpty;
+    final hasArtwork =
+        (_selectedArtworkPath != null && _selectedArtworkPath!.trim().isNotEmpty) ||
+        _selectedArtworkBytes != null;
+    return hasAudio && hasArtwork;
+  }
+
+  void _markDraftChanged() {
+    if (!_uploadSucceededForCurrentDraft) return;
+
+    setState(() {
+      _uploadSucceededForCurrentDraft = false;
+      _pendingWaveformTrackId = null;
+    });
+  }
+
+  void _attachDraftChangeListeners() {
+    for (final controller in [
+      _titleController,
+      _collaboratorsController,
+      _genreController,
+      _descriptionController,
+      _tagsController,
+    ]) {
+      controller.addListener(_markDraftChanged);
+    }
+  }
+
+  void _detachDraftChangeListeners() {
+    for (final controller in [
+      _titleController,
+      _collaboratorsController,
+      _genreController,
+      _descriptionController,
+      _tagsController,
+    ]) {
+      controller.removeListener(_markDraftChanged);
+    }
   }
 
   @override
   void initState() {
     super.initState();
     _pageController = PageController();
-    _artistNameController = TextEditingController(text: 'Mohammad Emad');
+    _artistNameController = TextEditingController();
     _releaseDateController = TextEditingController();
     _syncReleaseDateText();
+    _attachDraftChangeListeners();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final authProvider = context.read<AuthProvider>();
+      final username = authProvider.currentUser?.username.trim() ?? '';
+      if (username.isNotEmpty) {
+        _artistNameController.text = username;
+      }
+    });
   }
 
   void _onTabSelected(UploadTrackTab tab) {
@@ -116,8 +179,51 @@ class _UploadTrackScreenState extends State<UploadTrackScreen> {
     unawaited(provider.fetchWaveformForTrack(track.id));
   }
 
+  void _maybeFetchWaveformAfterUploadSuccess(UploadProvider provider) {
+    final trackId = _pendingWaveformTrackId;
+    if (trackId == null || trackId.trim().isEmpty) return;
+
+    final track = provider.getTrackById(trackId);
+    if (track == null) return;
+
+    if (track.waveformPeaks?.isNotEmpty == true) {
+      _pendingWaveformTrackId = null;
+      return;
+    }
+
+    if (provider.isWaveformLoading(trackId)) return;
+
+    if (track.status == UploadTrackStatus.finished) {
+      _pendingWaveformTrackId = null;
+      unawaited(provider.fetchWaveformForTrack(trackId, forceRefresh: true));
+      return;
+    }
+
+    if (track.status == UploadTrackStatus.failed) {
+      _pendingWaveformTrackId = null;
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _uploadProviderForLifecycle ??= context.read<UploadProvider>();
+  }
+
   @override
   void dispose() {
+    _uploadProviderForLifecycle?.resetCurrentUploadSessionState(notify: false);
+
+    _selectedAudioFile = null;
+    _selectedAudioPath = null;
+    _selectedArtworkFile = null;
+    _selectedArtworkPath = null;
+    _selectedArtworkBytes = null;
+    _audioSelectedInCurrentDraft = false;
+    _uploadSucceededForCurrentDraft = false;
+    _pendingWaveformTrackId = null;
+
+    _detachDraftChangeListeners();
     _pageController.dispose();
     _artistNameController.dispose();
     _releaseDateController.dispose();
@@ -142,6 +248,8 @@ class _UploadTrackScreenState extends State<UploadTrackScreen> {
         _selectedDate = picked;
         _syncReleaseDateText();
       });
+
+      _markDraftChanged();
     }
   }
 
@@ -224,13 +332,23 @@ class _UploadTrackScreenState extends State<UploadTrackScreen> {
     }
 
     final successText = uploadProvider.successMessage ?? 'Track uploaded.';
-    final messenger = ScaffoldMessenger.of(context);
-    Navigator.pop(context);
-    messenger.showSnackBar(
+    ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(successText),
       ),
     );
+
+    setState(() {
+      _uploadSucceededForCurrentDraft = true;
+      _pendingWaveformTrackId = created.id;
+      _selectedTab = UploadTrackTab.advanced;
+    });
+    _pageController.animateToPage(
+      1,
+      duration: const Duration(milliseconds: 280),
+      curve: Curves.easeInOut,
+    );
+
     uploadProvider.clearSuccessMessage();
   }
 
@@ -257,46 +375,26 @@ class _UploadTrackScreenState extends State<UploadTrackScreen> {
     }
   }
 
-  double _progressForCard(UploadProvider provider) {
-    if (provider.isUploading) return 0.15;
+  double? _progressForCard(UploadProvider provider) {
+    if (provider.isUploading) return null;
 
     final statusTrack = provider.statusCardTrack;
-    final progressPercent = statusTrack?.progressPercent;
+    if (statusTrack == null) return 0.0;
+
+    final progressPercent = statusTrack.progressPercent;
     if (progressPercent != null) {
       return (progressPercent / 100).clamp(0.0, 1.0);
     }
 
-    switch (statusTrack?.status) {
+    switch (statusTrack.status) {
       case UploadTrackStatus.finished:
         return 1.0;
       case UploadTrackStatus.failed:
         return 0.0;
       case UploadTrackStatus.processing:
-        return 0.35;
+        return null;
       case UploadTrackStatus.draft:
-      case null:
         return 0.0;
-    }
-  }
-
-  String _percentageForCard(UploadProvider provider) {
-    if (provider.isUploading) return '0%';
-
-    final statusTrack = provider.statusCardTrack;
-    final progressPercent = statusTrack?.progressPercent;
-    if (progressPercent != null) {
-      return '${progressPercent.round()}%';
-    }
-
-    switch (statusTrack?.status) {
-      case UploadTrackStatus.finished:
-        return '100%';
-      case UploadTrackStatus.failed:
-        return '0%';
-      case UploadTrackStatus.processing:
-      case UploadTrackStatus.draft:
-      case null:
-        return '0%';
     }
   }
 
@@ -307,7 +405,7 @@ class _UploadTrackScreenState extends State<UploadTrackScreen> {
         TrackProcessingCard(
           progress: _progressForCard(provider),
           statusText: _statusLabelForCard(provider),
-          percentageText: _percentageForCard(provider),
+          percentageText: null,
         ),
         const SizedBox(height: 18),
         AudioPickerCard(
@@ -374,17 +472,27 @@ class _UploadTrackScreenState extends State<UploadTrackScreen> {
     final statusTrack = provider.statusCardTrack;
     final trackId = statusTrack?.id ?? '';
     final currentTrack = trackId.isEmpty ? null : provider.getTrackById(trackId);
+    final previewPeaks = currentTrack?.waveformPeaks;
+    final isPreviewLoading = trackId.isNotEmpty
+        ? provider.isWaveformLoading(trackId)
+        : false;
+    final previewError = trackId.isNotEmpty
+        ? provider.waveformErrorForTrack(trackId)
+        : null;
+    final neutralText = _audioSelectedInCurrentDraft
+        ? 'Waveform will appear after upload completes.'
+        : 'Choose an audio file, then upload to generate waveform.';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const TrackFormSectionLabel(text: 'Waveform'),
         WaveformPreviewCard(
-          peaks: currentTrack?.waveformPeaks,
-          isLoading: trackId.isNotEmpty && provider.isWaveformLoading(trackId),
-          errorText: trackId.isNotEmpty
-              ? provider.waveformErrorForTrack(trackId)
-              : null,
+          peaks: previewPeaks,
+          isLoading: isPreviewLoading,
+          errorText: previewError,
+          emptyText: neutralText,
+          showErrorDetails: false,
         ),
         const SizedBox(height: 24),
         const TrackFormSectionLabel(text: 'Release Date'),
@@ -402,6 +510,11 @@ class _UploadTrackScreenState extends State<UploadTrackScreen> {
   @override
   Widget build(BuildContext context) {
     final uploadProvider = context.watch<UploadProvider>();
+    _maybeFetchWaveformAfterUploadSuccess(uploadProvider);
+    final isButtonEnabled =
+        _hasRequiredInputs &&
+        !uploadProvider.isUploading &&
+        !_uploadSucceededForCurrentDraft;
 
     return Scaffold(
       appBar: AppBar(
@@ -452,9 +565,11 @@ class _UploadTrackScreenState extends State<UploadTrackScreen> {
         child: Padding(
           padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
           child: TrackPrimaryButton(
-            text: uploadProvider.isUploading ? 'Uploading...' : 'Upload Track',
+            text: uploadProvider.isUploading
+                ? 'Uploading...'
+                : (_uploadSucceededForCurrentDraft ? 'Uploaded' : 'Upload Track'),
             icon: Icons.upload_outlined,
-            onPressed: _confirmUpload,
+            onPressed: isButtonEnabled ? _confirmUpload : null,
           ),
         ),
       ),

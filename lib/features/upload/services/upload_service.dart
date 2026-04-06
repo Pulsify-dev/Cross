@@ -105,7 +105,6 @@ class UploadService {
 		}
 
 		final created = UploadModel.fromJson(response).copyWith(
-			artistName: track.artistName,
 			collaborators: track.collaborators,
 			releaseDate: track.releaseDate,
 			artworkBytes: track.artworkBytes,
@@ -338,7 +337,7 @@ class UploadService {
 			limit: limit,
 		);
 
-		final response = await _apiService.get(endpoint, authRequired: false);
+		final response = await _apiService.get(endpoint, authRequired: true);
 		final parsed = _parseArtistTracksPayload(
 			response,
 			fallbackPage: page,

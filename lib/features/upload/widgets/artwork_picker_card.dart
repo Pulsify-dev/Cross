@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:typed_data';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/theme/app_colors.dart';
 
 class ArtworkPickerCard extends StatelessWidget {
@@ -36,15 +37,25 @@ class ArtworkPickerCard extends StatelessWidget {
                   ? (imageUrl != null && imageUrl!.trim().isNotEmpty)
                       ? ClipRRect(
                           borderRadius: BorderRadius.circular(18),
-                          child: Image.network(
-                            imageUrl!,
+                          child: CachedNetworkImage(
+                            imageUrl: imageUrl!,
                             fit: BoxFit.cover,
                             width: 92,
                             height: 92,
-                            errorBuilder: (_, __, ___) => const Icon(
+                            fadeInDuration: Duration.zero,
+                            fadeOutDuration: Duration.zero,
+                            placeholderFadeInDuration: Duration.zero,
+                            errorWidget: (context, _, error) => const Icon(
                               Icons.add_a_photo_outlined,
                               color: AppColors.iconPrimary,
                               size: 28,
+                            ),
+                            placeholder: (context, _) => const Center(
+                              child: SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              ),
                             ),
                           ),
                         )

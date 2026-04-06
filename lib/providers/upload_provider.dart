@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'dart:async';
+import 'package:cross/core/services/api_service.dart';
 import 'package:cross/features/upload/models/upload_model.dart';
 import 'package:cross/features/upload/services/upload_service.dart';
 
@@ -8,7 +9,6 @@ class UploadProvider extends ChangeNotifier {
 			: _uploadService = uploadService ?? UploadService();
 
 	final UploadService _uploadService;
-	static const String _temporaryArtistId = '69c2cd6052b177221f688062';
 
 	List<UploadModel> _uploadedTracks = [];
 	bool _isLoading = false;
@@ -26,6 +26,8 @@ class UploadProvider extends ChangeNotifier {
 	bool _hasMoreArtistTracks = false;
 	final Duration _statusPollInterval = const Duration(seconds: 3);
 	String? _currentUploadSessionTrackId;
+	String? _currentUserId;
+	String? _currentUsername;
 
 	List<UploadModel> get uploadedTracks {
 		if (_selectedStatus == null) return _uploadedTracks;
@@ -45,6 +47,8 @@ class UploadProvider extends ChangeNotifier {
 	String? get loadedArtistId => _loadedArtistId;
 	bool get hasMoreArtistTracks => _hasMoreArtistTracks;
 	int get lastLoadedArtistTracksPage => _lastLoadedArtistTracksPage;
+	String? get currentUserId => _currentUserId;
+	String? get currentUsername => _currentUsername;
 
 	bool isWaveformLoading(String trackId) =>
 			_waveformRequestsInFlight.contains(trackId);
@@ -65,6 +69,36 @@ class UploadProvider extends ChangeNotifier {
 		}
 
 		return null;
+	}
+
+	void updateCurrentUser({String? userId, String? username}) {
+		final normalizedUserId = userId?.trim();
+		final normalizedUsername = username?.trim();
+
+		final nextUserId = (normalizedUserId == null || normalizedUserId.isEmpty)
+				? null
+				: normalizedUserId;
+		final nextUsername =
+				(normalizedUsername == null || normalizedUsername.isEmpty)
+						? null
+						: normalizedUsername;
+
+		if (_currentUserId == nextUserId && _currentUsername == nextUsername) {
+			return;
+		}
+
+		_currentUserId = nextUserId;
+		_currentUsername = nextUsername;
+	}
+
+	bool isTrackOwnedByCurrentUser(UploadModel track) {
+		final currentUserId = _currentUserId?.trim() ?? '';
+		if (currentUserId.isEmpty) return false;
+
+		final ownerToken = track.artistName.trim();
+		if (ownerToken.isEmpty) return false;
+
+		return ownerToken == currentUserId;
 	}
 
 	void _resetTransientMessages() {
@@ -93,6 +127,26 @@ class UploadProvider extends ChangeNotifier {
 		notifyListeners();
 	}
 
+	void resetCurrentUploadSessionState({bool notify = true}) {
+		final sessionTrackId = _currentUploadSessionTrackId;
+		if (sessionTrackId != null && sessionTrackId.trim().isNotEmpty) {
+			_stopTrackStatusPolling(sessionTrackId);
+		}
+
+		_isUploading = false;
+		_currentOperation = null;
+		_currentUploadSessionTrackId = null;
+		_resetTransientMessages();
+
+		_statusPollRequestsInFlight.clear();
+		_waveformRequestsInFlight.clear();
+		_waveformErrorsByTrackId.clear();
+
+		if (notify) {
+			notifyListeners();
+		}
+	}
+
 	Future<void> loadCurrentArtistTracks({
 		String? currentArtistId,
 		int page = 1,
@@ -101,10 +155,15 @@ class UploadProvider extends ChangeNotifier {
 	}) async {
 		final resolvedArtistId = (currentArtistId ?? '').trim().isNotEmpty
 				? currentArtistId!.trim()
-				: _temporaryArtistId;
+				: (_currentUserId?.trim() ?? '');
 
-		// TODO(profile/auth/session): Replace this fallback with the real
-		// logged-in artist/user id from unified auth/profile/session state.
+		if (resolvedArtistId.isEmpty) {
+			_errorMessage =
+					'You must be logged in to load your uploaded tracks.';
+			notifyListeners();
+			return;
+		}
+
 		await loadArtistTracks(
 			artistId: resolvedArtistId,
 			page: page,
@@ -112,6 +171,7 @@ class UploadProvider extends ChangeNotifier {
 			replace: replace,
 		);
 	}
+
 
 	Future<void> loadArtistTracks({
 		required String artistId,
@@ -183,6 +243,11 @@ class UploadProvider extends ChangeNotifier {
 		notifyListeners();
 
 		try {
+			final currentUserId = _currentUserId?.trim() ?? '';
+			if (currentUserId.isEmpty) {
+				throw const ApiException('You must be logged in to upload a track.');
+			}
+
 			final created = await _uploadService.createTrack(track);
 			final previousSessionTrackId = _currentUploadSessionTrackId;
 			if (previousSessionTrackId != null &&

@@ -7,11 +7,15 @@ class WaveformPreviewCard extends StatelessWidget {
     this.peaks,
     this.isLoading = false,
     this.errorText,
+    this.emptyText = 'Select an audio file to preview waveform',
+    this.showErrorDetails = true,
   });
 
   final List<double>? peaks;
   final bool isLoading;
   final String? errorText;
+  final String emptyText;
+  final bool showErrorDetails;
 
   bool get _hasError => errorText != null && errorText!.trim().isNotEmpty;
 
@@ -57,8 +61,8 @@ class WaveformPreviewCard extends StatelessWidget {
         : _hasError
             ? 'Could not load waveform'
             : _hasPeaks
-                ? 'Auto-generated after processing'
-                : 'Waveform will appear after processing';
+                ? 'Waveform preview ready'
+                : emptyText;
 
     return Card(
       child: Padding(
@@ -97,7 +101,7 @@ class WaveformPreviewCard extends StatelessWidget {
                       ? Align(
                           alignment: Alignment.centerLeft,
                           child: Text(
-                            errorText!,
+                            showErrorDetails ? errorText! : 'Could not load waveform',
                             style: Theme.of(context)
                                 .textTheme
                                 .bodySmall
@@ -108,7 +112,7 @@ class WaveformPreviewCard extends StatelessWidget {
                           ? Align(
                               alignment: Alignment.centerLeft,
                               child: Text(
-                                'Waveform will appear after processing',
+                              emptyText,
                                 style: Theme.of(context)
                                     .textTheme
                                     .bodySmall

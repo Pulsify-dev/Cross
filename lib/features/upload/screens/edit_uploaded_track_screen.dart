@@ -79,6 +79,13 @@ class _EditUploadedTrackScreenState extends State<EditUploadedTrackScreen> {
     final track = provider.getTrackById(widget.trackId);
     if (track == null) return;
 
+    if (!provider.isTrackOwnedByCurrentUser(track)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Only the track owner can edit this track.')),
+      );
+      return;
+    }
+
     setState(() => _isSaving = true);
 
     final parsedTags = _tagsController.text
@@ -99,7 +106,6 @@ class _EditUploadedTrackScreenState extends State<EditUploadedTrackScreen> {
         description: _descriptionController.text.trim(),
         tags: parsedTags,
         privacy: _privacy,
-        status: UploadTrackStatus.finished,
       ),
     );
     if (!mounted) return;
@@ -123,6 +129,22 @@ class _EditUploadedTrackScreenState extends State<EditUploadedTrackScreen> {
   }
 
   Future<void> _confirmDelete() async {
+    final provider = context.read<UploadProvider>();
+    final track = provider.getTrackById(widget.trackId);
+    if (track == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Track not found.')),
+      );
+      return;
+    }
+
+    if (!provider.isTrackOwnedByCurrentUser(track)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Only the track owner can delete this track.')),
+      );
+      return;
+    }
+
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (_) => const DeleteTrackConfirmDialog(),
@@ -131,7 +153,6 @@ class _EditUploadedTrackScreenState extends State<EditUploadedTrackScreen> {
     if (confirmed != true) return;
     if (!mounted) return;
 
-    final provider = context.read<UploadProvider>();
     final deleted = await provider.deleteTrackById(widget.trackId);
     if (!mounted) return;
 
@@ -153,6 +174,14 @@ class _EditUploadedTrackScreenState extends State<EditUploadedTrackScreen> {
 
   Future<void> _pickAndUpdateArtwork(UploadModel track) async {
     if (_isUpdatingArtwork) return;
+
+    final provider = context.read<UploadProvider>();
+    if (!provider.isTrackOwnedByCurrentUser(track)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Only the track owner can update artwork.')),
+      );
+      return;
+    }
 
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
@@ -178,7 +207,6 @@ class _EditUploadedTrackScreenState extends State<EditUploadedTrackScreen> {
       _selectedArtworkPreviewBytes = selected.bytes;
     });
 
-    final provider = context.read<UploadProvider>();
     try {
       final updated = await provider.updateTrackArtwork(
         trackId: track.id,
@@ -208,7 +236,8 @@ class _EditUploadedTrackScreenState extends State<EditUploadedTrackScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final track = context.watch<UploadProvider>().getTrackById(widget.trackId);
+    final uploadProvider = context.watch<UploadProvider>();
+    final track = uploadProvider.getTrackById(widget.trackId);
 
     if (track == null) {
       return Scaffold(
@@ -218,13 +247,14 @@ class _EditUploadedTrackScreenState extends State<EditUploadedTrackScreen> {
     }
 
     _syncControllersFromTrack(track);
+    final isOwner = uploadProvider.isTrackOwnedByCurrentUser(track);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Edit Track'),
         actions: [
           IconButton(
-            onPressed: _confirmDelete,
+            onPressed: isOwner ? _confirmDelete : null,
             icon: const Icon(Icons.delete_outline),
             tooltip: 'Delete Track',
           ),
@@ -243,6 +273,7 @@ class _EditUploadedTrackScreenState extends State<EditUploadedTrackScreen> {
                         track.artworkBytes == null)
                     ? track.artworkPathOrUrl
                     : null,
+                showChangeAction: isOwner,
                 onPick: () => _pickAndUpdateArtwork(track),
               ),
               const SizedBox(height: 22),
@@ -295,7 +326,7 @@ class _EditUploadedTrackScreenState extends State<EditUploadedTrackScreen> {
           child: TrackPrimaryButton(
             text: _isSaving ? 'Saving...' : 'Save Changes',
             icon: Icons.save_outlined,
-            onPressed: _isSaving ? () {} : _saveChanges,
+            onPressed: (_isSaving || !isOwner) ? () {} : _saveChanges,
           ),
         ),
       ),

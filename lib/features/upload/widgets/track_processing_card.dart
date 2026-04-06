@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
 
 class TrackProcessingCard extends StatelessWidget {
-  final double progress;
+  final double? progress;
   final String statusText;
-  final String percentageText;
+  final String? percentageText;
 
   const TrackProcessingCard({
     super.key,
@@ -30,12 +30,13 @@ class TrackProcessingCard extends StatelessWidget {
                       ),
                 ),
                 const Spacer(),
-                Text(
-                  percentageText,
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        color: AppColors.primaryLight,
-                      ),
-                ),
+                if (percentageText != null && percentageText!.trim().isNotEmpty)
+                  Text(
+                    percentageText!,
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          color: AppColors.primaryLight,
+                        ),
+                  ),
               ],
             ),
             const SizedBox(height: 14),

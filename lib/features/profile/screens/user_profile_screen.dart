@@ -44,8 +44,6 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     final authProvider = context.read<AuthProvider>();
     final uploadProvider = context.read<UploadProvider>();
 
-    // TODO(profile/auth/session): Source this id from the fully integrated
-    // current user/profile/session pipeline once that flow is completed.
     final currentArtistId = authProvider.currentUser?.id;
 
     await uploadProvider.loadCurrentArtistTracks(
