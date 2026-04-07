@@ -24,6 +24,7 @@ import 'package:cross/features/profile/screens/following_screen.dart';
 import 'package:cross/features/upload/screens/upload_track_screen.dart';
 import 'package:cross/features/upload/screens/edit_uploaded_track_screen.dart';
 import 'package:cross/features/profile/screens/blocked_users_screen.dart';
+import 'package:cross/features/playlists/screens/playlist_library_screen.dart';
 
 class AppRoutes {
   static Route<dynamic> generateRoute(RouteSettings settings) {
@@ -96,6 +97,9 @@ class AppRoutes {
       case RouteNames.blockedUsers:
         return MaterialPageRoute(builder: (_) => const BlockedUsersScreen());
 
+     case RouteNames.playlists:
+        return MaterialPageRoute(builder: (_) => const PlaylistLibraryScreen());
+        
       default:
         return MaterialPageRoute(
           builder: (_) => Scaffold(
