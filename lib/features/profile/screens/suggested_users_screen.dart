@@ -1,21 +1,20 @@
-import 'package:flutter/material.dart';
 import 'package:cross/core/theme/app_colors.dart';
 import 'package:cross/features/social/widgets/social_list_state_view.dart';
 import 'package:cross/features/social/widgets/social_user_tile.dart';
 import 'package:cross/providers/social_provider.dart';
 import 'package:cross/routes/route_names.dart';
+import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-class FollowingScreen extends StatefulWidget {
-  const FollowingScreen({super.key});
+class SuggestedUsersScreen extends StatefulWidget {
+  const SuggestedUsersScreen({super.key});
 
   @override
-  State<FollowingScreen> createState() => _FollowingScreenState();
+  State<SuggestedUsersScreen> createState() => _SuggestedUsersScreenState();
 }
 
-class _FollowingScreenState extends State<FollowingScreen> {
+class _SuggestedUsersScreenState extends State<SuggestedUsersScreen> {
   final TextEditingController _searchController = TextEditingController();
-  String? _targetUserId;
 
   String get _query => _searchController.text.trim().toLowerCase();
 
@@ -25,12 +24,7 @@ class _FollowingScreenState extends State<FollowingScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final provider = context.read<SocialProvider>();
-      final args = ModalRoute.of(context)?.settings.arguments;
-      _targetUserId = args is String && args.isNotEmpty ? args : provider.currentUserId;
-      provider.loadList(
-        SocialListType.following,
-        userId: _targetUserId ?? provider.currentUserId,
-      );
+      provider.loadList(SocialListType.suggested, userId: provider.currentUserId);
     });
   }
 
@@ -44,18 +38,8 @@ class _FollowingScreenState extends State<FollowingScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Following'),
+        title: const Text('Suggested Users'),
         centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.person_add_alt_1),
-            onPressed: () {},
-          ),
-        ],
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
@@ -68,36 +52,36 @@ class _FollowingScreenState extends State<FollowingScreen> {
             Expanded(
               child: Consumer<SocialProvider>(
                 builder: (context, provider, _) {
-                  final users = provider.following
+                  final users = provider.suggestedUsers
                       .where((user) =>
                           _query.isEmpty ||
                           user.displayName.toLowerCase().contains(_query) ||
                           user.username.toLowerCase().contains(_query))
                       .toList();
 
-                  if (provider.isListLoading(SocialListType.following)) {
+                  if (provider.isListLoading(SocialListType.suggested)) {
                     return const Center(child: CircularProgressIndicator());
                   }
 
-                  final error = provider.listError(SocialListType.following);
+                  final error = provider.listError(SocialListType.suggested);
                   if (error != null && users.isEmpty) {
                     return SocialListStateView(
                       icon: Icons.error_outline,
-                      title: 'Could not load following',
+                      title: 'Could not load suggestions',
                       message: error,
                       actionLabel: 'Retry',
                       onAction: () => provider.loadList(
-                        SocialListType.following,
-                        userId: _targetUserId ?? provider.currentUserId,
+                        SocialListType.suggested,
+                        userId: provider.currentUserId,
                       ),
                     );
                   }
 
                   if (users.isEmpty) {
                     return const SocialListStateView(
-                      icon: Icons.person_add_alt_1,
-                      title: 'Not following anyone yet',
-                      message: 'Artists and creators you follow will appear here.',
+                      icon: Icons.person_search,
+                      title: 'No suggestions right now',
+                      message: 'Try again later for fresh recommendations.',
                     );
                   }
 
@@ -108,10 +92,11 @@ class _FollowingScreenState extends State<FollowingScreen> {
                       final user = users[index];
                       return SocialUserTile(
                         name: user.displayName,
-                        subtitle: '@${user.username}',
+                        subtitle: 'Suggested for you',
                         avatarUrl: user.avatarUrl,
                         actionLabel: user.isFollowing ? 'Following' : 'Follow',
                         actionActive: !user.isFollowing,
+                        isActionLoading: provider.isMutatingRelationship,
                         onTap: () => Navigator.pushNamed(
                           context,
                           RouteNames.publicProfile,
@@ -124,7 +109,6 @@ class _FollowingScreenState extends State<FollowingScreen> {
                             provider.followUser(user.id);
                           }
                         },
-                        isActionLoading: provider.isMutatingRelationship,
                       );
                     },
                   );
@@ -149,7 +133,7 @@ class _FollowingScreenState extends State<FollowingScreen> {
         onChanged: (_) => setState(() {}),
         style: const TextStyle(color: AppColors.textPrimary),
         decoration: const InputDecoration(
-          hintText: 'Search following artists...',
+          hintText: 'Search suggested users',
           hintStyle: TextStyle(color: AppColors.textSecondary),
           prefixIcon: Icon(Icons.search, color: AppColors.textSecondary),
           border: InputBorder.none,
@@ -158,5 +142,4 @@ class _FollowingScreenState extends State<FollowingScreen> {
       ),
     );
   }
-
 }

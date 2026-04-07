@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:cross/core/theme/app_colors.dart';
+import 'package:cross/features/social/widgets/social_list_state_view.dart';
+import 'package:cross/features/social/widgets/social_user_tile.dart';
+import 'package:cross/providers/social_provider.dart';
+import 'package:cross/routes/route_names.dart';
+import 'package:provider/provider.dart';
 
 class BlockedUsersScreen extends StatefulWidget {
   const BlockedUsersScreen({super.key});
@@ -11,31 +16,18 @@ class BlockedUsersScreen extends StatefulWidget {
 class _BlockedUsersScreenState extends State<BlockedUsersScreen> {
   final TextEditingController _searchController = TextEditingController();
 
-  final List<Map<String, dynamic>> _blockedUsers = [
-    {
-      'name': 'Spam User',
-      'subtitle': 'Blocked',
-      'image': 'https://i.pravatar.cc/150?img=1',
-    },
-    {
-      'name': 'Troll Account',
-      'subtitle': 'Blocked',
-      'image': 'https://i.pravatar.cc/150?img=2',
-    },
-    {
-      'name': 'Fake Profile',
-      'subtitle': 'Blocked',
-      'image': 'https://i.pravatar.cc/150?img=3',
-    },
-  ];
-
   String get _query => _searchController.text.trim().toLowerCase();
 
-  List<Map<String, dynamic>> get _filteredBlockedUsers {
-    if (_query.isEmpty) return _blockedUsers;
-    return _blockedUsers.where((user) {
-      return user['name'].toLowerCase().contains(_query);
-    }).toList();
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.read<SocialProvider>().loadList(
+            SocialListType.blocked,
+            userId: context.read<SocialProvider>().currentUserId,
+          );
+    });
   }
 
   @override
@@ -46,8 +38,6 @@ class _BlockedUsersScreenState extends State<BlockedUsersScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Blocked Users'),
@@ -82,57 +72,65 @@ class _BlockedUsersScreenState extends State<BlockedUsersScreen> {
             ),
           ),
           Expanded(
-            child: _filteredBlockedUsers.isEmpty
-                ? Center(
-                    child: Text(
-                      'No blocked users found',
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
+            child: Consumer<SocialProvider>(
+              builder: (context, provider, _) {
+                final users = provider.blockedUsers
+                    .where((user) =>
+                        _query.isEmpty ||
+                        user.displayName.toLowerCase().contains(_query) ||
+                        user.username.toLowerCase().contains(_query))
+                    .toList();
+
+                if (provider.isListLoading(SocialListType.blocked)) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                final error = provider.listError(SocialListType.blocked);
+                if (error != null && users.isEmpty) {
+                  return SocialListStateView(
+                    icon: Icons.error_outline,
+                    title: 'Could not load blocked users',
+                    message: error,
+                    actionLabel: 'Retry',
+                    onAction: () => provider.loadList(
+                      SocialListType.blocked,
+                      userId: provider.currentUserId,
                     ),
-                  )
-                : ListView.builder(
-                    itemCount: _filteredBlockedUsers.length,
-                    itemBuilder: (context, index) {
-                      final user = _filteredBlockedUsers[index];
-                      return ListTile(
-                        leading: CircleAvatar(
-                          backgroundImage: NetworkImage(user['image']),
-                          radius: 24,
-                        ),
-                        title: Text(
-                          user['name'],
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                        subtitle: Text(
-                          user['subtitle'],
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                        trailing: ElevatedButton(
-                          onPressed: () {
-                            // TODO: Implement unblock functionality
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('Unblock ${user['name']}'),
-                              ),
-                            );
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primary,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                          ),
-                          child: const Text('Unblock'),
-                        ),
-                      );
-                    },
-                  ),
+                  );
+                }
+
+                if (users.isEmpty) {
+                  return const SocialListStateView(
+                    icon: Icons.block,
+                    title: 'No blocked users',
+                    message: 'Users you block will appear here.',
+                  );
+                }
+
+                return ListView.separated(
+                  itemCount: users.length,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  separatorBuilder: (_, _) => const SizedBox(height: 10),
+                  itemBuilder: (context, index) {
+                    final user = users[index];
+                    return SocialUserTile(
+                      name: user.displayName,
+                      subtitle: 'Blocked user',
+                      avatarUrl: user.avatarUrl,
+                      actionLabel: 'Unblock',
+                      actionActive: true,
+                      isActionLoading: provider.isMutatingRelationship,
+                      onTap: () => Navigator.pushNamed(
+                        context,
+                        RouteNames.publicProfile,
+                        arguments: user.id,
+                      ),
+                      onAction: () => provider.unblockUser(user.id),
+                    );
+                  },
+                );
+              },
+            ),
           ),
         ],
       ),
