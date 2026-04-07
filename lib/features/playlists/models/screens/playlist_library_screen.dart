@@ -16,7 +16,9 @@ class PlaylistLibraryScreen extends StatelessWidget {
           return ListView.builder(
             itemCount: provider.playlists.length,
             itemBuilder: (context, index) {
+              
               final playlist = provider.playlists[index];
+              
               return ListTile(
                 leading: Container(
                   width: 50, height: 50,
