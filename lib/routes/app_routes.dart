@@ -99,6 +99,31 @@ class AppRoutes {
 
      case RouteNames.playlists:
         return MaterialPageRoute(builder: (_) => const PlaylistLibraryScreen());
+        case RouteNames.playlistLibrary:
+      return MaterialPageRoute(builder: (_) => const PlaylistLibraryScreen());
+
+    case RouteNames.playlistDetails:
+      return MaterialPageRoute(builder: (_) => const PlaylistDetailsScreen());
+
+    case RouteNames.createPlaylist:
+      return MaterialPageRoute(builder: (_) => const CreatePlaylistScreen());
+
+    case RouteNames.editPlaylist:
+    final playlist = settings.arguments as Playlist;
+     return MaterialPageRoute(
+    builder: (_) => EditPlaylistScreen(playlist: playlist),
+  );
+
+    case RouteNames.addTrack:
+      return MaterialPageRoute(builder: (_) => const AddTrackScreen());
+
+      case RouteNames.addTrack:
+        return MaterialPageRoute(
+          builder: (_) => const AddTrackScreen(),
+          settings: settings, // This passes the Playlist object correctly
+  );
+
+
         
       default:
         return MaterialPageRoute(

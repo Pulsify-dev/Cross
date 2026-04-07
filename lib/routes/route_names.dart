@@ -22,4 +22,11 @@ class RouteNames {
   static const String uploadTrack = '/upload-track';
   static const String editUploadedTrack = '/edit-uploaded-track';
   static const String blockedUsers = '/blocked-users';
+  static const String playlists = '/playlists';
+  static const String playlistLibrary = '/playlistLibrary';
+  static const String playlistDetails = '/playlistDetails';
+  static const String createPlaylist = '/createPlaylist';
+  static const String editPlaylist = '/editPlaylist';
+  static const String addTrack = '/addTrack';
+}
 }

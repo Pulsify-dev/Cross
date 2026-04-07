@@ -13,6 +13,7 @@ import 'providers/search_provider.dart';
 import 'providers/upload_provider.dart';
 import 'routes/app_routes.dart';
 import 'routes/route_names.dart';
+import 'providers/playlist_provider.dart';
 
 void main() {
   runApp(const PulsifyApp());
@@ -64,6 +65,10 @@ class PulsifyApp extends StatelessWidget {
         ChangeNotifierProvider(
           create: (_) => UploadProvider(),
         ),
+        ChangeNotifierProvider(
+          create: (_) => PlaylistProvider(),
+        ),
+      
       ],
       child: MaterialApp(
         title: 'Pulsify',
