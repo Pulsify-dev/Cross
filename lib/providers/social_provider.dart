@@ -52,6 +52,14 @@ class SocialProvider extends ChangeNotifier {
 		SocialListType.blocked: null,
 	};
 
+	final Map<SocialListType, int> _listTotals = {
+		SocialListType.followers: 0,
+		SocialListType.following: 0,
+		SocialListType.mutualFollowers: 0,
+		SocialListType.suggested: 0,
+		SocialListType.blocked: 0,
+	};
+
 	String get currentUserId => _currentUserId;
 	PublicProfileModel? get publicProfile => _publicProfile;
 	RelationshipStatusModel? get relationshipStatus => _relationshipStatus;
@@ -72,6 +80,7 @@ class SocialProvider extends ChangeNotifier {
 
 	bool isListLoading(SocialListType type) => _isLoadingList[type] ?? false;
 	String? listError(SocialListType type) => _listErrors[type];
+	int listTotal(SocialListType type) => _listTotals[type] ?? 0;
 
 	void setCurrentUser(String userId) {
 		final normalized = userId.trim().isEmpty ? 'me' : userId.trim();
@@ -129,6 +138,7 @@ class SocialProvider extends ChangeNotifier {
 		try {
 			final response = await _fetchList(type, userId: userId, page: page, limit: limit);
 			_lists[type] = response.users;
+			_listTotals[type] = response.total;
 		} catch (e) {
 			_listErrors[type] = e.toString();
 		} finally {
@@ -203,11 +213,13 @@ class SocialProvider extends ChangeNotifier {
 	Future<void> followUser(String userId) async {
 		await _mutateRelationship(userId, () => _service.followUser(userId),
 				increaseFollowers: true);
+		await _syncAfterFollowMutation();
 	}
 
 	Future<void> unfollowUser(String userId) async {
 		await _mutateRelationship(userId, () => _service.unfollowUser(userId),
 				increaseFollowers: false);
+		await _syncAfterFollowMutation();
 	}
 
 	Future<void> blockUser(String userId, {String? reason}) async {
@@ -367,5 +379,10 @@ class SocialProvider extends ChangeNotifier {
 		if (_publicProfile?.id == userId) {
 			await loadRelationshipStatus(userId);
 		}
+	}
+
+	Future<void> _syncAfterFollowMutation() async {
+		await loadFollowing(_currentUserId);
+		await loadSuggestedUsers();
 	}
 }

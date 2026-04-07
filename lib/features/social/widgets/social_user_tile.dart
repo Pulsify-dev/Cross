@@ -1,4 +1,5 @@
 import 'package:cross/core/theme/app_colors.dart';
+import 'package:cross/features/social/widgets/avatar_url_utils.dart';
 import 'package:cross/features/social/widgets/follow_action_button.dart';
 import 'package:flutter/material.dart';
 
@@ -28,6 +29,8 @@ class SocialUserTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final canUseNetworkAvatar = isValidNetworkAvatarUrl(avatarUrl);
+
     return InkWell(
       borderRadius: BorderRadius.circular(20),
       onTap: onTap,
@@ -43,8 +46,8 @@ class SocialUserTile extends StatelessWidget {
             CircleAvatar(
               radius: 24,
               backgroundColor: AppColors.surfaceElevated,
-              backgroundImage: avatarUrl.isNotEmpty ? NetworkImage(avatarUrl) : null,
-              child: avatarUrl.isEmpty
+              backgroundImage: canUseNetworkAvatar ? NetworkImage(avatarUrl.trim()) : null,
+              child: !canUseNetworkAvatar
                   ? const Icon(Icons.person, color: AppColors.iconSecondary)
                   : null,
             ),

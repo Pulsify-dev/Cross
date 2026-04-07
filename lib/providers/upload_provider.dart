@@ -21,8 +21,13 @@ class UploadProvider extends ChangeNotifier {
 	final Set<String> _statusPollRequestsInFlight = {};
 	final Set<String> _waveformRequestsInFlight = {};
 	final Map<String, String> _waveformErrorsByTrackId = {};
+	final Map<String, List<UploadModel>> _publicArtistTracksByUserId = {};
+	final Map<String, int> _publicArtistLastPageByUserId = {};
+	final Map<String, int> _publicArtistTotalByUserId = {};
+	final Map<String, bool> _publicArtistHasMoreByUserId = {};
 	String? _loadedArtistId;
 	int _lastLoadedArtistTracksPage = 1;
+	int _artistTracksTotal = 0;
 	bool _hasMoreArtistTracks = false;
 	final Duration _statusPollInterval = const Duration(seconds: 3);
 	String? _currentUploadSessionTrackId;
@@ -47,8 +52,35 @@ class UploadProvider extends ChangeNotifier {
 	String? get loadedArtistId => _loadedArtistId;
 	bool get hasMoreArtistTracks => _hasMoreArtistTracks;
 	int get lastLoadedArtistTracksPage => _lastLoadedArtistTracksPage;
+	int get artistTracksTotal => _artistTracksTotal;
 	String? get currentUserId => _currentUserId;
 	String? get currentUsername => _currentUsername;
+
+	List<UploadModel> publicArtistTracksForUser(String userId) {
+		final normalizedUserId = userId.trim();
+		if (normalizedUserId.isEmpty) return const <UploadModel>[];
+		return List.unmodifiable(
+			_publicArtistTracksByUserId[normalizedUserId] ?? const <UploadModel>[],
+		);
+	}
+
+	bool publicArtistHasMoreForUser(String userId) {
+		final normalizedUserId = userId.trim();
+		if (normalizedUserId.isEmpty) return false;
+		return _publicArtistHasMoreByUserId[normalizedUserId] ?? false;
+	}
+
+	int publicArtistLastPageForUser(String userId) {
+		final normalizedUserId = userId.trim();
+		if (normalizedUserId.isEmpty) return 1;
+		return _publicArtistLastPageByUserId[normalizedUserId] ?? 1;
+	}
+
+	int publicArtistTotalForUser(String userId) {
+		final normalizedUserId = userId.trim();
+		if (normalizedUserId.isEmpty) return 0;
+		return _publicArtistTotalByUserId[normalizedUserId] ?? 0;
+	}
 
 	bool isWaveformLoading(String trackId) =>
 			_waveformRequestsInFlight.contains(trackId);
@@ -179,7 +211,8 @@ class UploadProvider extends ChangeNotifier {
 		int limit = 20,
 		bool replace = true,
 	}) async {
-		if (artistId.trim().isEmpty) {
+		final normalizedArtistId = artistId.trim();
+		if (normalizedArtistId.isEmpty) {
 			_errorMessage = 'Artist id is required to load uploaded tracks.';
 			notifyListeners();
 			return;
@@ -192,38 +225,68 @@ class UploadProvider extends ChangeNotifier {
 
 		try {
 			final pageResult = await _uploadService.getArtistTracks(
-				artistId: artistId,
+				artistId: normalizedArtistId,
 				page: page,
 				limit: limit,
 			);
 
-			_loadedArtistId = artistId;
-			_lastLoadedArtistTracksPage = pageResult.page;
-			_hasMoreArtistTracks = pageResult.hasMore;
+			final isCurrentUserArtist =
+					normalizedArtistId == (_currentUserId?.trim() ?? '');
 
-			if (replace || page <= 1) {
-				final remoteTracks = pageResult.tracks;
-				final remoteIds = remoteTracks
-						.map((track) => track.id)
-						.where((id) => id.trim().isNotEmpty)
-						.toSet();
+			if (isCurrentUserArtist) {
+				_loadedArtistId = normalizedArtistId;
+				_lastLoadedArtistTracksPage = pageResult.page;
+				_artistTracksTotal = pageResult.total;
+				_hasMoreArtistTracks = pageResult.hasMore;
 
-				final localInFlightTracks = _uploadedTracks.where((track) {
-					if (remoteIds.contains(track.id)) return false;
-					return track.status == UploadTrackStatus.processing ||
-								track.status == UploadTrackStatus.draft;
-				}).toList();
+				if (replace || page <= 1) {
+					final remoteTracks = pageResult.tracks;
+					final remoteIds = remoteTracks
+							.map((track) => track.id)
+							.where((id) => id.trim().isNotEmpty)
+							.toSet();
 
-				_uploadedTracks = [
-					...remoteTracks,
-					...localInFlightTracks,
-				];
-			} else {
-				final existingById = {for (final track in _uploadedTracks) track.id: track};
-				for (final track in pageResult.tracks) {
-					existingById[track.id] = track;
+					final localInFlightTracks = _uploadedTracks.where((track) {
+						if (remoteIds.contains(track.id)) return false;
+						return track.status == UploadTrackStatus.processing ||
+									track.status == UploadTrackStatus.draft;
+					}).toList();
+
+					_uploadedTracks = [
+						...remoteTracks,
+						...localInFlightTracks,
+					];
+				} else {
+					final existingById = {for (final track in _uploadedTracks) track.id: track};
+					for (final track in pageResult.tracks) {
+						existingById[track.id] = track;
+					}
+					_uploadedTracks = existingById.values.toList();
 				}
-				_uploadedTracks = existingById.values.toList();
+			} else {
+				_loadedArtistId = normalizedArtistId;
+				_lastLoadedArtistTracksPage = pageResult.page;
+				_artistTracksTotal = pageResult.total;
+				_hasMoreArtistTracks = pageResult.hasMore;
+
+				_publicArtistLastPageByUserId[normalizedArtistId] = pageResult.page;
+				_publicArtistTotalByUserId[normalizedArtistId] = pageResult.total;
+				_publicArtistHasMoreByUserId[normalizedArtistId] = pageResult.hasMore;
+
+				final existingPublicTracks =
+						_publicArtistTracksByUserId[normalizedArtistId] ?? const <UploadModel>[];
+
+				if (replace || page <= 1) {
+					_publicArtistTracksByUserId[normalizedArtistId] = pageResult.tracks;
+				} else {
+					final existingById = {
+						for (final track in existingPublicTracks) track.id: track,
+					};
+					for (final track in pageResult.tracks) {
+						existingById[track.id] = track;
+					}
+					_publicArtistTracksByUserId[normalizedArtistId] = existingById.values.toList();
+				}
 			}
 		} catch (error) {
 			_errorMessage = error.toString();
@@ -232,6 +295,40 @@ class UploadProvider extends ChangeNotifier {
 			_currentOperation = null;
 			notifyListeners();
 		}
+	}
+
+	Future<void> loadNextArtistTracks({
+		required String artistId,
+		int limit = 20,
+	}) async {
+		final normalizedArtistId = artistId.trim();
+		if (normalizedArtistId.isEmpty) return;
+		if (_isLoading) return;
+
+		final isCurrentUserArtist =
+				normalizedArtistId == (_currentUserId?.trim() ?? '');
+
+		if (isCurrentUserArtist) {
+			if (!_hasMoreArtistTracks) return;
+			await loadArtistTracks(
+				artistId: normalizedArtistId,
+				page: _lastLoadedArtistTracksPage + 1,
+				limit: limit,
+				replace: false,
+			);
+			return;
+		}
+
+		final hasMore = _publicArtistHasMoreByUserId[normalizedArtistId] ?? false;
+		if (!hasMore) return;
+
+		final lastPage = _publicArtistLastPageByUserId[normalizedArtistId] ?? 1;
+		await loadArtistTracks(
+			artistId: normalizedArtistId,
+			page: lastPage + 1,
+			limit: limit,
+			replace: false,
+		);
 	}
 
 	Future<UploadModel?> uploadTrack(UploadModel track) async {

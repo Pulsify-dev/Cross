@@ -5,6 +5,7 @@ import 'package:cross/core/theme/app_colors.dart';
 import 'package:cross/features/profile/models/profile_data.dart';
 import 'package:cross/providers/auth_provider.dart';
 import 'package:cross/providers/profile_provider.dart';
+import 'package:cross/providers/social_provider.dart';
 import 'package:cross/providers/upload_provider.dart';
 import 'package:cross/routes/route_names.dart';
 import 'package:cross/features/upload/models/upload_model.dart';
@@ -26,6 +27,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       if (!mounted) return;
       _loadUploadedTracksForCurrentArtist();
       _loadProfile();
+      _loadSocialStats();
     });
   }
 
@@ -52,6 +54,13 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       limit: 20,
       replace: true,
     );
+  }
+
+  Future<void> _loadSocialStats() async {
+    final socialProvider = context.read<SocialProvider>();
+    final userId = socialProvider.currentUserId;
+    await socialProvider.loadFollowers(userId);
+    await socialProvider.loadFollowing(userId);
   }
 
   static const _playlistItems = [
@@ -257,7 +266,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                         const SizedBox(height: 20),
                         _buildProfileHeader(context, profile),
                         const SizedBox(height: 16),
-                        _buildStatsRow(context, profile),
+                        _buildStatsRow(context),
                         const SizedBox(height: 16),
                       ],
                     ),
@@ -427,7 +436,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     );
   }
 
-  Widget _buildStatsRow(BuildContext context, ProfileData profile) {
+  Widget _buildStatsRow(BuildContext context) {
     final theme = Theme.of(context);
 
     Widget statItem(String value, String label, {VoidCallback? onTap}) {
@@ -472,54 +481,60 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       );
     }
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 18),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final isNarrow = constraints.maxWidth < 370;
+    return Consumer2<SocialProvider, UploadProvider>(
+      builder: (context, socialProvider, uploadProvider, _) {
+        final followersCount = socialProvider.listTotal(SocialListType.followers);
+        final followingCount = socialProvider.listTotal(SocialListType.following);
+        final tracksCount = uploadProvider.allUploadedTracks.length;
 
-          if (isNarrow) {
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                statItem(
-                  '12.4K',
-                  'Followers',
-                  onTap: () =>
-                      Navigator.pushNamed(context, RouteNames.followers),
-                ),
-                const SizedBox(height: 12),
-                statItem(
-                  '450',
-                  'Following',
-                  onTap: () =>
-                      Navigator.pushNamed(context, RouteNames.following),
-                ),
-                const SizedBox(height: 12),
-                statItem('86', 'Tracks'),
-              ],
-            );
-          }
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 18),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final isNarrow = constraints.maxWidth < 370;
 
-          return Row(
-            children: [
-              statItem(
-                '12.4K',
-                'Followers',
-                onTap: () => Navigator.pushNamed(context, RouteNames.followers),
-              ),
-              const SizedBox(height: 12),
-              statItem(
-                '450',
-                'Following',
-                onTap: () => Navigator.pushNamed(context, RouteNames.following),
-              ),
-              const SizedBox(height: 12),
-              statItem('86', 'Tracks'),
-            ],
-          );
-        },
-      ),
+              if (isNarrow) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    statItem(
+                      '$followersCount',
+                      'Followers',
+                      onTap: () => Navigator.pushNamed(context, RouteNames.followers),
+                    ),
+                    const SizedBox(height: 12),
+                    statItem(
+                      '$followingCount',
+                      'Following',
+                      onTap: () => Navigator.pushNamed(context, RouteNames.following),
+                    ),
+                    const SizedBox(height: 12),
+                    statItem('$tracksCount', 'Tracks'),
+                  ],
+                );
+              }
+
+              return Row(
+                children: [
+                  statItem(
+                    '$followersCount',
+                    'Followers',
+                    onTap: () => Navigator.pushNamed(context, RouteNames.followers),
+                  ),
+                  const SizedBox(width: 12),
+                  statItem(
+                    '$followingCount',
+                    'Following',
+                    onTap: () => Navigator.pushNamed(context, RouteNames.following),
+                  ),
+                  const SizedBox(width: 12),
+                  statItem('$tracksCount', 'Tracks'),
+                ],
+              );
+            },
+          ),
+        );
+      },
     );
   }
 

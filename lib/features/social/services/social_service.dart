@@ -244,7 +244,13 @@ class MockSocialService implements SocialService {
 
 		final normalized = {
 			...data,
-			'users': data['followers'],
+			'users': (data['followers'] as List?)
+					?.whereType<Map<String, dynamic>>()
+					.map((user) => {
+						...user,
+						'isFollowedBy': true,
+					})
+					.toList(),
 		};
 
 		return SocialUserListResponse.fromJson(normalized);
@@ -276,7 +282,13 @@ class MockSocialService implements SocialService {
 
 		final normalized = {
 			...data,
-			'users': data['following'],
+			'users': (data['following'] as List?)
+					?.whereType<Map<String, dynamic>>()
+					.map((user) => {
+						...user,
+						'isFollowing': true,
+					})
+					.toList(),
 		};
 
 		return SocialUserListResponse.fromJson(normalized);
