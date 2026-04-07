@@ -22,4 +22,7 @@ class RouteNames {
   static const String uploadTrack = '/upload-track';
   static const String editUploadedTrack = '/edit-uploaded-track';
   static const String blockedUsers = '/blocked-users';
+  static const String suggestedUsers = '/suggested-users';
+  static const String publicProfile = '/public-profile';
+  static const String mutualFollowers = '/mutual-followers';
 }

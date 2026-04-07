@@ -10,6 +10,7 @@ import 'providers/feed_provider.dart';
 import 'providers/player_provider.dart';
 import 'providers/profile_provider.dart';
 import 'providers/search_provider.dart';
+import 'providers/social_provider.dart';
 import 'providers/upload_provider.dart';
 import 'routes/app_routes.dart';
 import 'routes/route_names.dart';
@@ -69,6 +70,15 @@ class PulsifyApp extends StatelessWidget {
               userId: authProvider.currentUser?.id,
               username: authProvider.currentUser?.username,
             );
+            return provider;
+          },
+        ),
+
+        ChangeNotifierProxyProvider<AuthProvider, SocialProvider>(
+          create: (_) => SocialProvider(),
+          update: (_, authProvider, socialProvider) {
+            final provider = socialProvider ?? SocialProvider();
+            provider.setCurrentUser(authProvider.currentUser?.id ?? 'me');
             return provider;
           },
         ),

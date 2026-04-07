@@ -134,6 +134,11 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   ];
 
   Future<void> _handleProfileMenuSelection(String value) async {
+    if (value == 'suggested_users') {
+      Navigator.pushNamed(context, RouteNames.suggestedUsers);
+      return;
+    }
+
     if (value == 'blocked_users') {
       Navigator.pushNamed(context, RouteNames.blockedUsers);
     }
@@ -215,6 +220,16 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                 icon: const Icon(Icons.more_vert),
                 onSelected: _handleProfileMenuSelection,
                 itemBuilder: (context) => const [
+                  PopupMenuItem<String>(
+                    value: 'suggested_users',
+                    child: Row(
+                      children: [
+                        Icon(Icons.person_search, size: 20),
+                        SizedBox(width: 8),
+                        Text('Suggested Users'),
+                      ],
+                    ),
+                  ),
                   PopupMenuItem<String>(
                     value: 'blocked_users',
                     child: Row(
