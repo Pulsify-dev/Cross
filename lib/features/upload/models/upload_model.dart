@@ -30,6 +30,7 @@ class UploadModel {
 		this.waveformSamples,
 		this.progressPercent,
 		this.processingErrorMessage,
+		this.isHidden = false,
 		this.artworkBytes,
 	});
 
@@ -49,6 +50,7 @@ class UploadModel {
 	final int? waveformSamples;
 	final double? progressPercent;
 	final String? processingErrorMessage;
+	final bool isHidden;
 	// Local/UI-only image bytes for previews; never sent to or read from backend JSON.
 	final Uint8List? artworkBytes;
 
@@ -71,6 +73,7 @@ class UploadModel {
 		int? waveformSamples,
 		double? progressPercent,
 		String? processingErrorMessage,
+		bool? isHidden,
 		Uint8List? artworkBytes,
 	}) {
 		return UploadModel(
@@ -91,6 +94,7 @@ class UploadModel {
 			progressPercent: progressPercent ?? this.progressPercent,
 			processingErrorMessage:
 					processingErrorMessage ?? this.processingErrorMessage,
+			isHidden: isHidden ?? this.isHidden,
 			artworkBytes: artworkBytes ?? this.artworkBytes,
 		);
 	}
@@ -148,6 +152,8 @@ class UploadModel {
 			),
 			processingErrorMessage:
 					json['error_message']?.toString() ?? json['errorMessage']?.toString(),
+			isHidden: (json['is_hidden'] == true) ||
+						(json['isHidden'] == true),
 			// Intentionally omitted from JSON (local in-memory UI state only).
 			artworkBytes: null,
 		);
@@ -171,6 +177,7 @@ class UploadModel {
 			'waveformSamples': waveformSamples,
 			'progressPercent': progressPercent,
 			'processingErrorMessage': processingErrorMessage,
+			'isHidden': isHidden,
 			// artworkBytes intentionally excluded from JSON serialization.
 		};
 	}

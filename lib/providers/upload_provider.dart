@@ -59,8 +59,13 @@ class UploadProvider extends ChangeNotifier {
 	List<UploadModel> publicArtistTracksForUser(String userId) {
 		final normalizedUserId = userId.trim();
 		if (normalizedUserId.isEmpty) return const <UploadModel>[];
+		final rawTracks =
+				_publicArtistTracksByUserId[normalizedUserId] ?? const <UploadModel>[];
 		return List.unmodifiable(
-			_publicArtistTracksByUserId[normalizedUserId] ?? const <UploadModel>[],
+			_sanitizePublicArtistTracks(
+				rawTracks,
+				artistId: normalizedUserId,
+			),
 		);
 	}
 
@@ -273,16 +278,22 @@ class UploadProvider extends ChangeNotifier {
 				_publicArtistTotalByUserId[normalizedArtistId] = pageResult.total;
 				_publicArtistHasMoreByUserId[normalizedArtistId] = pageResult.hasMore;
 
-				final existingPublicTracks =
-						_publicArtistTracksByUserId[normalizedArtistId] ?? const <UploadModel>[];
+				final existingPublicTracks = _sanitizePublicArtistTracks(
+					_publicArtistTracksByUserId[normalizedArtistId] ?? const <UploadModel>[],
+					artistId: normalizedArtistId,
+				);
+				final incomingTracks = _sanitizePublicArtistTracks(
+					pageResult.tracks,
+					artistId: normalizedArtistId,
+				);
 
 				if (replace || page <= 1) {
-					_publicArtistTracksByUserId[normalizedArtistId] = pageResult.tracks;
+					_publicArtistTracksByUserId[normalizedArtistId] = incomingTracks;
 				} else {
 					final existingById = {
 						for (final track in existingPublicTracks) track.id: track,
 					};
-					for (final track in pageResult.tracks) {
+					for (final track in incomingTracks) {
 						existingById[track.id] = track;
 					}
 					_publicArtistTracksByUserId[normalizedArtistId] = existingById.values.toList();
@@ -329,6 +340,22 @@ class UploadProvider extends ChangeNotifier {
 			limit: limit,
 			replace: false,
 		);
+	}
+
+	List<UploadModel> _sanitizePublicArtistTracks(
+		List<UploadModel> tracks, {
+		required String artistId,
+	}) {
+		final normalizedArtistId = artistId.trim();
+		if (normalizedArtistId.isEmpty) return const <UploadModel>[];
+
+		return tracks.where((track) {
+			final ownerId = track.artistName.trim();
+			if (ownerId != normalizedArtistId) return false;
+			if (track.privacyValue != UploadTrackPrivacy.public) return false;
+			if (track.isHidden) return false;
+			return true;
+		}).toList();
 	}
 
 	Future<UploadModel?> uploadTrack(UploadModel track) async {
