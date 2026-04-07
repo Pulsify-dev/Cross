@@ -6,6 +6,7 @@ import '../../../providers/player_provider.dart';
 import '../../../routes/route_names.dart';
 import '../../feed/widgets/track_tile.dart';
 import '../../player/screens/track_details_screen.dart';
+import '../../../providers/social_provider.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -285,15 +286,16 @@ class _SearchScreenState extends State<SearchScreen>
                     title: Text(user.displayName),
                     subtitle: Text('@${user.username}'),
                     onTap: () async {
-                      final profile = await search.getPublicProfile(user.id);
-                      if (profile != null && context.mounted) {
-                        search.recordUserSearch(_searchController.text);
-                        // Navigator.pushNamed(
-                        //context,
-                        //RouteNames.publicProfile,
-                        //arguments: profile,
-                        //);
-                      }
+                      search.recordUserSearch(_searchController.text);
+                      await context.read<SocialProvider>().loadPublicProfile(
+                        user.id,
+                      );
+                      if (!context.mounted) return;
+                      Navigator.pushNamed(
+                        context,
+                        RouteNames.publicProfile,
+                        arguments: user.id,
+                      );
                     },
                   );
                 },
