@@ -16,12 +16,12 @@ class SearchResultsScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: Text('Results for "$query"')),
       body: Consumer<SearchProvider>(
-        builder: (context, provider, child) {
-          if (provider.isLoading) {
+        builder: (context, searchProvider, child) {
+          if (searchProvider.isLoading) {
             return const Center(child: CircularProgressIndicator());
           }
 
-          if (provider.searchResults.isEmpty) {
+          if (searchProvider.searchResults.isEmpty) {
             return Center(
               child: Text(
                 'No tracks found.',
@@ -35,18 +35,21 @@ class SearchResultsScreen extends StatelessWidget {
           }
 
           return ListView.builder(
-            itemCount: provider.searchResults.length,
+            itemCount: searchProvider.searchResults.length,
             itemBuilder: (context, index) {
-              final track = provider.searchResults[index];
+              final track = searchProvider.searchResults[index];
+
               return TrackTile(
                 track: track,
+                showLike: true,
                 onPlay: () {
                   context.read<PlayerProvider>().playTrack(
                     track,
-                    playlist: provider.searchResults,
+                    playlist: searchProvider.searchResults,
                   );
                 },
                 onDetails: () {
+                  context.read<FeedProvider>().cleanupUnlikedTracks();
                   Navigator.of(
                     context,
                   ).pushNamed(RouteNames.trackDetails, arguments: track);

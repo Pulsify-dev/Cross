@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'core/theme/app_theme.dart';
-import 'features/feed/services/mock_track_service.dart';
+import 'core/services/api_service.dart';
+import 'features/feed/services/api_track_service.dart';
+import 'features/feed/services/api_user_service.dart';
 import 'features/feed/services/track_service.dart';
+import 'features/feed/services/user_service.dart';
 import 'providers/auth_provider.dart';
 import 'providers/engagement_provider.dart';
 import 'providers/feed_provider.dart';
@@ -28,39 +31,39 @@ class PulsifyApp extends StatelessWidget {
         ChangeNotifierProvider(
           create: (_) => AuthProvider()..checkLoginStatus(),
         ),
-
+        Provider<ApiService>(create: (_) => ApiService()),
         Provider<TrackService>(
-          create: (_) => MockTrackService(),
+          create: (context) => ApiTrackService(context.read<ApiService>()),
         ),
-
+        Provider<UserService>(
+          create: (context) => ApiUserService(context.read<ApiService>()),
+        ),
         ChangeNotifierProvider(
           create: (context) => FeedProvider(
             context.read<TrackService>(),
+            context.read<UserService>(),
           ),
         ),
 
         ChangeNotifierProvider(
           create: (context) => SearchProvider(
             context.read<TrackService>(),
+            context.read<UserService>(),
           ),
         ),
 
-        ChangeNotifierProvider(
-          create: (context) => PlayerProvider(
-            trackService: context.read<TrackService>(),
-          ),
+        ChangeNotifierProxyProvider<FeedProvider, PlayerProvider>(
+          create: (context) =>
+              PlayerProvider(trackService: context.read<TrackService>()),
+          update: (context, feedProvider, playerProvider) {
+            playerProvider!.onTrackStarted = feedProvider.addToHistory;
+            return playerProvider;
+          },
         ),
-
         ChangeNotifierProvider(
-          create: (context) => EngagementProvider(
-            context.read<TrackService>(),
-          ),
+          create: (context) => EngagementProvider(context.read<TrackService>()),
         ),
-
-        ChangeNotifierProvider(
-          create: (_) => ProfileProvider(),
-        ),
-
+        ChangeNotifierProvider(create: (_) => ProfileProvider()),
         ChangeNotifierProxyProvider<AuthProvider, UploadProvider>(
           create: (_) => UploadProvider(),
           update: (_, authProvider, uploadProvider) {

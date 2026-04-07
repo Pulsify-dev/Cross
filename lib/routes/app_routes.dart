@@ -13,7 +13,6 @@ import 'package:cross/features/home/screens/main_screen.dart';
 import 'package:cross/features/feed/screens/activity_feed_screen.dart';
 import 'package:cross/features/player/screens/track_details_screen.dart';
 import '../features/feed/models/track.dart';
-import 'package:cross/features/feed/screens/trending_tracks_screen.dart';
 import 'package:cross/features/library/screens/liked_tracks_screen.dart';
 import 'package:cross/features/library/screens/listening_history_screen.dart';
 import 'package:cross/features/search/screens/search_results_screen.dart';
@@ -45,8 +44,6 @@ class AppRoutes {
         return MaterialPageRoute(
           builder: (_) => TrackDetailsScreen(track: track),
         );
-      case RouteNames.trending:
-        return MaterialPageRoute(builder: (_) => const TrendingTracksScreen());
       case RouteNames.likedTracks:
         return MaterialPageRoute(builder: (_) => const LikedTracksScreen());
       case RouteNames.library:

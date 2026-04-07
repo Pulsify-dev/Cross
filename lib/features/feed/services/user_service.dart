@@ -9,4 +9,7 @@ abstract class UserService {
   Future<User?> updateProfile(User user);
   Future<User?> updateProfileImage(String filePath);
   Future<List<User>> getSuggestedArtists();
+  Future<List<User>> searchUsers(String query, {int page = 1, int limit = 20});
+  Future<User?> getPublicProfile(String userId);
+  Future<List<User>> getSuggestedUsers({int page = 1, int limit = 20});
 }

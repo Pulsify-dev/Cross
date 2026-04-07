@@ -12,6 +12,10 @@ class PlayerProvider with ChangeNotifier {
   bool _isPlaying = false;
   Duration _duration = Duration.zero;
   Duration _position = Duration.zero;
+  List<double>? _currentWaveform;
+  Map<String, dynamic>? _currentStatus;
+
+  void Function(Track track)? onTrackStarted;
 
   PlayerProvider({TrackService? trackService}) : _trackService = trackService {
     _player.playerStateStream.listen((state) {
@@ -36,6 +40,8 @@ class PlayerProvider with ChangeNotifier {
   Duration get position => _position;
   List<Track> get queue => _queue;
   int get currentIndex => _currentIndex;
+  List<double>? get currentWaveform => _currentWaveform;
+  Map<String, dynamic>? get currentStatus => _currentStatus;
 
   Future<void> playTrack(Track track, {List<Track>? playlist}) async {
     if (playlist != null) {
@@ -56,10 +62,25 @@ class PlayerProvider with ChangeNotifier {
     }
 
     _currentTrack = track;
+    _currentWaveform = null;
+    _currentStatus = null;
     notifyListeners();
 
-    // Record play in history
+    onTrackStarted?.call(track);
     _trackService?.recordPlay(track.id);
+    _trackService?.getTrackWaveform(track.id).then((wf) {
+      if (_currentTrack?.id == track.id) {
+        _currentWaveform = wf;
+        notifyListeners();
+      }
+    });
+
+    _trackService?.getTrackStatus(track.id).then((status) {
+      if (_currentTrack?.id == track.id) {
+        _currentStatus = status;
+        notifyListeners();
+      }
+    });
 
     try {
       await _player.setUrl(track.streamUrl);

@@ -10,7 +10,6 @@ abstract class TrackService {
   Future<void> unlikeTrack(String trackId);
   Future<List<Track>> getLikedTracks();
 
-  // New methods for Ali's modules
   Future<List<Track>> getActivityFeed();
   Future<List<Track>> getListeningHistory();
   Future<List<Comment>> getComments(String trackId);
@@ -25,7 +24,13 @@ abstract class TrackService {
   Future<void> unlikeComment(String commentId);
   Future<void> recordPlay(String trackId);
   Future<List<User>> getTrackLikes(String trackId);
-  Future<List<User>> getSuggestedArtists();
   Future<List<Track>> getUserTracks(String userId);
+  Future<List<Track>> getArtistTracks(
+    String artistId, {
+    int page = 1,
+    int limit = 20,
+  });
+  Future<List<double>?> getTrackWaveform(String trackId);
+  Future<Map<String, dynamic>> getTrackStatus(String trackId);
   void setCurrentUser(User? user);
 }

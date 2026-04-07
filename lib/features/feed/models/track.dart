@@ -15,6 +15,9 @@ class Track {
   final DateTime createdAt;
   final User? uploader;
   bool isLiked;
+  bool isReposted;
+  final String? status;
+  final List<double>? waveform;
 
   Track({
     required this.id,
@@ -31,6 +34,9 @@ class Track {
     required this.createdAt,
     this.uploader,
     this.isLiked = false,
+    this.isReposted = false,
+    this.status,
+    this.waveform,
   });
 
   factory Track.fromJson(Map<String, dynamic> json) {
@@ -51,6 +57,11 @@ class Track {
           ? User.fromJson(json['uploader'])
           : null,
       isLiked: json['isLiked'] ?? false,
+      isReposted: json['isReposted'] ?? false,
+      status: json['status'],
+      waveform: json['waveform'] != null
+          ? List<double>.from(json['waveform'].map((x) => x.toDouble()))
+          : null,
     );
   }
 }

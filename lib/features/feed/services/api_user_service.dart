@@ -1,0 +1,160 @@
+import '../../../core/services/api_service.dart';
+import '../models/user.dart';
+import 'user_service.dart';
+
+class ApiUserService implements UserService {
+  final ApiService _apiService;
+
+  ApiUserService(this._apiService);
+
+  @override
+  Future<List<User>> searchUsers(
+    String query, {
+    int page = 1,
+    int limit = 20,
+  }) async {
+    try {
+      final response = await _apiService.get(
+        '/users?q=${Uri.encodeComponent(query)}&page=$page&limit=$limit',
+      );
+      if (response != null) {
+        if (response is List) {
+          return response.map((data) => User.fromJson(data)).toList();
+        }
+
+        final List? users =
+            response['users'] ??
+            (response['data'] is List ? response['data'] : null) ??
+            (response['data'] is Map
+                ? (response['data']['users'] ?? response['data']['results'])
+                : null);
+
+        if (users != null) {
+          return users.map((data) => User.fromJson(data)).toList();
+        }
+      }
+    } catch (e) {
+      rethrow;
+    }
+    return [];
+  }
+
+  @override
+  Future<User?> getPublicProfile(String userId) async {
+    try {
+      final response = await _apiService.get('/users/$userId');
+      if (response != null) {
+        if (response['data'] != null) {
+          return User.fromJson(response['data']);
+        }
+        return User.fromJson(response);
+      }
+    } catch (e) {
+      rethrow;
+    }
+    return null;
+  }
+
+  @override
+  Future<List<User>> getSuggestedUsers({int page = 1, int limit = 20}) async {
+    try {
+      final response = await _apiService.get(
+        '/users/suggested?page=$page&limit=$limit',
+      );
+      if (response == null) return [];
+
+      if (response is List) {
+        return response.map((data) => User.fromJson(data)).toList();
+      }
+
+      final List? list =
+          response['suggestedUsers'] ??
+          response['users'] ??
+          (response['data'] is List ? response['data'] : null) ??
+          (response['data'] is Map
+              ? (response['data']['suggestedUsers'] ??
+                    response['data']['users'])
+              : null);
+
+      if (list != null) {
+        return list.map((data) => User.fromJson(data)).toList();
+      }
+    } catch (e) {
+      return [];
+    }
+    return [];
+  }
+
+  @override
+  Future<List<User>> getSuggestedArtists() async {
+    // Suggested artists are now mocked as requested
+    await Future.delayed(const Duration(milliseconds: 400));
+    return [
+      User(
+        id: 'artist_mock_1',
+        username: 'the_weeknd',
+        displayName: 'The Weeknd',
+        profileImageUrl: 'https://i.pravatar.cc/150?u=weeknd',
+        followersCount: 15000000,
+        tracksCount: 84,
+      ),
+      User(
+        id: 'artist_mock_2',
+        username: 'daft_punk',
+        displayName: 'Daft Punk',
+        profileImageUrl: 'https://i.pravatar.cc/150?u=daft',
+        followersCount: 20000000,
+        tracksCount: 120,
+      ),
+      User(
+        id: 'artist_mock_3',
+        username: 'billie_eilish',
+        displayName: 'Billie Eilish',
+        profileImageUrl: 'https://i.pravatar.cc/150?u=billie',
+        followersCount: 11000000,
+        tracksCount: 45,
+      ),
+      User(
+        id: 'artist_mock_4',
+        username: 'kanye_west',
+        displayName: 'Ye',
+        profileImageUrl: 'https://i.pravatar.cc/150?u=ye',
+        followersCount: 18000000,
+        tracksCount: 210,
+      ),
+      User(
+        id: 'artist_mock_5',
+        username: 'lana_del_rey',
+        displayName: 'Lana Del Rey',
+        profileImageUrl: 'https://i.pravatar.cc/150?u=lana',
+        followersCount: 9500000,
+        tracksCount: 62,
+      ),
+    ];
+  }
+
+  @override
+  Future<User?> login(String email, String password) async => null;
+
+  @override
+  Future<User?> register(
+    String username,
+    String email,
+    String password,
+  ) async => null;
+
+  @override
+  Future<void> logout() async {}
+
+  @override
+  Future<User?> getCurrentUser() async => null;
+
+  @override
+  Future<void> forgotPassword(String email) async {}
+
+  @override
+  Future<User?> updateProfile(User user) async => null;
+
+  @override
+  Future<User?> updateProfileImage(String filePath) async => null;
+}

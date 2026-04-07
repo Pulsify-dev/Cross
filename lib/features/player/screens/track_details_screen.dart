@@ -5,6 +5,7 @@ import '../../../providers/player_provider.dart';
 import '../../../providers/feed_provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../utils/number_formatter.dart';
+import '../widgets/waveform_widget.dart';
 
 class TrackDetailsScreen extends StatefulWidget {
   final Track track;
@@ -21,8 +22,6 @@ class _TrackDetailsScreenState extends State<TrackDetailsScreen> {
   @override
   void initState() {
     super.initState();
-    // Use postFrameCallback to check if we should follow the player
-    // This avoids provider build issues
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final player = Provider.of<PlayerProvider>(context, listen: false);
       if (player.currentTrack?.id == widget.track.id) {
@@ -41,8 +40,6 @@ class _TrackDetailsScreenState extends State<TrackDetailsScreen> {
       extendBodyBehindAppBar: true,
       body: Consumer<PlayerProvider>(
         builder: (context, player, child) {
-          // If the player started playing this song while on this screen,
-          // it should start following the player's queue.
           if (!_followingPlayer && player.currentTrack?.id == widget.track.id) {
             _followingPlayer = true;
           }
@@ -52,6 +49,13 @@ class _TrackDetailsScreenState extends State<TrackDetailsScreen> {
               : widget.track;
           final isPlaying =
               player.currentTrack?.id == displayTrack.id && player.isPlaying;
+
+          final status = player.currentTrack?.id == displayTrack.id
+              ? player.currentStatus
+              : null;
+          final waveform = player.currentTrack?.id == displayTrack.id
+              ? player.currentWaveform
+              : null;
 
           return Container(
             width: double.infinity,
@@ -77,13 +81,35 @@ class _TrackDetailsScreenState extends State<TrackDetailsScreen> {
                         borderRadius: BorderRadius.circular(12),
                         child: CachedNetworkImage(
                           imageUrl: displayTrack.artworkUrl ?? '',
-                          width: MediaQuery.of(context).size.width * 0.8,
-                          height: MediaQuery.of(context).size.width * 0.8,
+                          width: MediaQuery.of(context).size.width * 0.7,
+                          height: MediaQuery.of(context).size.width * 0.7,
                           fit: BoxFit.cover,
                         ),
                       ),
                     ),
-                    const SizedBox(height: 48),
+                    const SizedBox(height: 32),
+                    if (status != null && status['status'] != 'Finished')
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.secondary.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          'Transcoding: ${status['progress_percent']}%',
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.secondary,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    const SizedBox(height: 16),
                     Text(
                       displayTrack.title,
                       style: Theme.of(context).textTheme.headlineSmall
@@ -101,20 +127,23 @@ class _TrackDetailsScreenState extends State<TrackDetailsScreen> {
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 48),
-                    Slider(
-                      value: player.currentTrack?.id == displayTrack.id
-                          ? player.position.inSeconds.toDouble()
-                          : 0,
-                      max: player.currentTrack?.id == displayTrack.id
-                          ? player.duration.inSeconds.toDouble()
-                          : displayTrack.duration.inSeconds.toDouble(),
-                      onChanged: (value) {
-                        if (player.currentTrack?.id == displayTrack.id) {
-                          player.seek(Duration(seconds: value.toInt()));
-                        }
-                      },
-                      activeColor: Theme.of(context).colorScheme.primary,
-                    ),
+                    if (waveform != null)
+                      WaveformWidget(
+                        waveform: waveform,
+                        progress: player.currentTrack?.id == displayTrack.id
+                            ? (player.position.inMilliseconds /
+                                      player.duration.inMilliseconds)
+                                  .clamp(0.0, 1.0)
+                            : 0.0,
+                        height: 80,
+                        progressColor: Theme.of(context).colorScheme.primary,
+                      )
+                    else
+                      const SizedBox(
+                        height: 80,
+                        child: Center(child: CircularProgressIndicator()),
+                      ),
+                    const SizedBox(height: 16),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 24),
                       child: Row(
@@ -217,6 +246,32 @@ class _TrackDetailsScreenState extends State<TrackDetailsScreen> {
                                 Text(
                                   NumberFormatter.format(
                                     displayTrack.likeCount,
+                                  ),
+                                  style: const TextStyle(fontSize: 12),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(width: 32),
+                            Column(
+                              children: [
+                                IconButton(
+                                  icon: Icon(
+                                    displayTrack.isReposted
+                                        ? Icons.repeat_on
+                                        : Icons.repeat,
+                                    color: displayTrack.isReposted
+                                        ? Theme.of(context).colorScheme.primary
+                                        : Theme.of(
+                                            context,
+                                          ).colorScheme.onSurface,
+                                  ),
+                                  onPressed: () =>
+                                      feedProvider.toggleRepost(displayTrack),
+                                  tooltip: 'Repost',
+                                ),
+                                Text(
+                                  NumberFormatter.format(
+                                    displayTrack.repostCount,
                                   ),
                                   style: const TextStyle(fontSize: 12),
                                 ),

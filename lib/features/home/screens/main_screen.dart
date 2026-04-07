@@ -5,14 +5,12 @@ import 'package:cross/features/search/screens/search_screen.dart';
 import 'package:cross/features/library/screens/library_screen.dart';
 import 'package:cross/features/messages/screens/messages_screen.dart';
 import 'package:cross/features/profile/screens/user_profile_screen.dart';
+import 'package:cross/features/feed/screens/activity_feed_screen.dart';
 
 class MainScreen extends StatefulWidget {
   final int initialIndex;
 
-  const MainScreen({
-    super.key,
-    this.initialIndex = 0,
-  });
+  const MainScreen({super.key, this.initialIndex = 0});
 
   @override
   State<MainScreen> createState() => _MainScreenState();
@@ -22,11 +20,14 @@ class _MainScreenState extends State<MainScreen> {
   late int _selectedIndex;
 
   late final List<Widget> _screens = [
-    HomeScreen(onProfileTap: () {
-      setState(() {
-        _selectedIndex = 4; // Switch to Profile tab
-      });
-    }),
+    HomeScreen(
+      onProfileTap: () {
+        setState(() {
+          _selectedIndex = 5; // Switch to Profile tab
+        });
+      },
+    ),
+    const ActivityFeedScreen(),
     const SearchScreen(),
     const LibraryScreen(),
     const MessagesScreen(),
@@ -107,43 +108,23 @@ class _MainScreenState extends State<MainScreen> {
     return Container(
       decoration: const BoxDecoration(
         color: AppColors.navBarBackground,
-        border: Border(
-          top: BorderSide(
-            color: AppColors.border,
-            width: 1,
-          ),
-        ),
+        border: Border(top: BorderSide(color: AppColors.border, width: 1)),
       ),
       child: SafeArea(
         top: false,
         child: Row(
           children: [
-            _navItem(
-              icon: Icons.home,
-              label: 'Home',
-              index: 0,
-            ),
-            _navItem(
-              icon: Icons.search,
-              label: 'Search',
-              index: 1,
-            ),
-            _navItem(
-              icon: Icons.library_music,
-              label: 'Playlists',
-              index: 2,
-            ),
+            _navItem(icon: Icons.home, label: 'Home', index: 0),
+            _navItem(icon: Icons.feed, label: 'Activity', index: 1),
+            _navItem(icon: Icons.search, label: 'Search', index: 2),
+            _navItem(icon: Icons.library_music, label: 'Playlists', index: 3),
             _navItem(
               icon: Icons.chat_bubble,
               label: 'Messages',
-              index: 3,
+              index: 4,
               showBadge: true,
             ),
-            _navItem(
-              icon: Icons.person,
-              label: 'Profile',
-              index: 4,
-            ),
+            _navItem(icon: Icons.person, label: 'Profile', index: 5),
           ],
         ),
       ),
@@ -153,10 +134,7 @@ class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: _screens,
-      ),
+      body: IndexedStack(index: _selectedIndex, children: _screens),
       bottomNavigationBar: _buildBottomNavigationBar(),
     );
   }

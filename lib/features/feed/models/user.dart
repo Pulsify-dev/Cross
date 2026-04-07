@@ -23,11 +23,11 @@ class User {
 
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
-      id: json['id'],
-      username: json['username'],
+      id: json['id'] ?? json['_id'] ?? '',
+      username: json['username'] ?? '',
       email: json['email'],
-      displayName: json['displayName'],
-      profileImageUrl: json['profileImageUrl'],
+      displayName: json['displayName'] ?? json['display_name'] ?? 'Unknown',
+      profileImageUrl: json['profileImageUrl'] ?? json['avatar_url'],
       followersCount: json['followersCount'] ?? 0,
       followingCount: json['followingCount'] ?? 0,
       tracksCount: json['tracksCount'] ?? 0,

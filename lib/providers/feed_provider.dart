@@ -1,10 +1,13 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import '../features/feed/models/track.dart';
 import '../features/feed/models/user.dart';
 import '../features/feed/services/track_service.dart';
+import '../features/feed/services/user_service.dart';
 
 class FeedProvider with ChangeNotifier {
   final TrackService _trackService;
+  final UserService _userService;
   List<Track> _trendingTracks = [];
   List<Track> _activityFeed = [];
   List<Track> _listeningHistory = [];
@@ -15,8 +18,9 @@ class FeedProvider with ChangeNotifier {
   String? _error;
   String? _selectedGenre;
   List<User> _suggestedArtists = [];
+  List<User> _suggestedUsers = [];
 
-  FeedProvider(this._trackService);
+  FeedProvider(this._trackService, this._userService);
 
   List<Track> get trendingTracks => _trendingTracks;
   List<Track> get activityFeed => _activityFeed;
@@ -28,6 +32,17 @@ class FeedProvider with ChangeNotifier {
   String? get error => _error;
   String? get selectedGenre => _selectedGenre;
   List<User> get suggestedArtists => _suggestedArtists;
+  List<User> get suggestedUsers => _suggestedUsers;
+
+  final Map<String, int> _trackLikeCounts = {};
+
+  bool isTrackLiked(String trackId) {
+    return _likedTracks.any((t) => t.id == trackId);
+  }
+
+  int getTrackLikeCount(Track track) {
+    return _trackLikeCounts[track.id] ?? track.likeCount;
+  }
 
   Future<void> fetchTrendingTracks() async {
     _isTrendingLoading = true;
@@ -66,11 +81,23 @@ class FeedProvider with ChangeNotifier {
     }
   }
 
+  Future<void> fetchSuggestedUsers() async {
+    _setLoading(true);
+    _error = null;
+    try {
+      _suggestedUsers = await _userService.getSuggestedUsers();
+    } catch (e) {
+      _error = e.toString();
+    } finally {
+      _setLoading(false);
+    }
+  }
+
   Future<void> fetchSuggestedArtists() async {
     _setLoading(true);
     _error = null;
     try {
-      _suggestedArtists = await _trackService.getSuggestedArtists();
+      _suggestedArtists = await _userService.getSuggestedArtists();
     } catch (e) {
       _error = e.toString();
     } finally {
@@ -116,20 +143,54 @@ class FeedProvider with ChangeNotifier {
 
   Future<void> toggleLike(Track track) async {
     final trackId = track.id;
+
     if (track.isLiked) {
       track.isLiked = false;
       track.likeCount--;
+      _likedTracks.removeWhere((t) => t.id == trackId);
       notifyListeners();
-      await _trackService.unlikeTrack(trackId);
+
+      try {
+        await _trackService.unlikeTrack(trackId);
+      } catch (e) {
+        track.isLiked = true;
+        track.likeCount++;
+        _likedTracks.add(track);
+        notifyListeners();
+      }
     } else {
       track.isLiked = true;
       track.likeCount++;
-      if (!_likedTracks.any((t) => t.id == trackId)) {
-        _likedTracks.add(track);
-      }
+      _likedTracks.add(track);
       notifyListeners();
-      await _trackService.likeTrack(trackId);
+
+      try {
+        await _trackService.likeTrack(trackId);
+      } catch (e) {
+        track.isLiked = false;
+        track.likeCount--;
+        _likedTracks.removeWhere((t) => t.id == trackId);
+        notifyListeners();
+      }
     }
+  }
+
+  Future<void> toggleRepost(Track track) async {
+    if (track.isReposted) {
+      track.isReposted = false;
+      track.repostCount--;
+      notifyListeners();
+    } else {
+      track.isReposted = true;
+      track.repostCount++;
+      notifyListeners();
+    }
+  }
+
+  void addToHistory(Track track) {
+    _listeningHistory.removeWhere((t) => t.id == track.id);
+    _listeningHistory.insert(0, track);
+    notifyListeners();
   }
 
   void cleanupUnlikedTracks() {
