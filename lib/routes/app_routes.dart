@@ -24,7 +24,12 @@ import 'package:cross/features/profile/screens/following_screen.dart';
 import 'package:cross/features/upload/screens/upload_track_screen.dart';
 import 'package:cross/features/upload/screens/edit_uploaded_track_screen.dart';
 import 'package:cross/features/profile/screens/blocked_users_screen.dart';
-import 'package:cross/features/playlists/screens/playlist_library_screen.dart';
+import 'package:cross/features/playlists/models/playlist_model.dart';
+import 'package:cross/features/playlists/models/screens/add_track_screen.dart';
+import 'package:cross/features/playlists/models/screens/create_playlist_screen.dart';
+import 'package:cross/features/playlists/models/screens/edit_playlist_screen.dart';
+import 'package:cross/features/playlists/models/screens/playlist_details_screen.dart';
+import 'package:cross/features/playlists/models/screens/playlist_library_screen.dart';
 
 class AppRoutes {
   static Route<dynamic> generateRoute(RouteSettings settings) {
@@ -113,9 +118,6 @@ class AppRoutes {
      return MaterialPageRoute(
     builder: (_) => EditPlaylistScreen(playlist: playlist),
   );
-
-    case RouteNames.addTrack:
-      return MaterialPageRoute(builder: (_) => const AddTrackScreen());
 
       case RouteNames.addTrack:
         return MaterialPageRoute(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cross/core/theme/app_colors.dart';
+import 'package:cross/routes/route_names.dart';
 
 class PlaylistLibraryScreen extends StatelessWidget {
   const PlaylistLibraryScreen({super.key});
@@ -21,12 +22,12 @@ class PlaylistLibraryScreen extends StatelessWidget {
             leading: const Icon(Icons.playlist_play, color: AppColors.primary),
             title: Text(mockData[index]['title']!, style: const TextStyle(color: Colors.white)),
             subtitle: Text(mockData[index]['tracks']!, style: const TextStyle(color: Colors.grey)),
-            floatingActionButton: FloatingActionButton(
-            child: const Icon(Icons.add),
-            onPressed: () {
-            Navigator.pushNamed(context, RouteNames.createPlaylist);
-  },
-),
+            trailing: IconButton(
+              icon: const Icon(Icons.add),
+              onPressed: () {
+                Navigator.pushNamed(context, RouteNames.createPlaylist);
+              },
+            ),
           );
         },
       ),

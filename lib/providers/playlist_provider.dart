@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../models/playlist_model.dart';
+import 'package:cross/features/playlists/models/playlist_model.dart';
 
 class PlaylistProvider extends ChangeNotifier {
   List<Playlist> _playlists = [];
@@ -20,6 +20,13 @@ class PlaylistProvider extends ChangeNotifier {
   // 2. Delete (The 'D' in CRUD)
   void deletePlaylist(String id) {
     _playlists.removeWhere((p) => p.id == id);
+    notifyListeners();
+  }
+
+  void updatePlaylist(String id, String name) {
+    final index = _playlists.indexWhere((p) => p.id == id);
+    if (index == -1) return;
+    _playlists[index].name = name;
     notifyListeners();
   }
 

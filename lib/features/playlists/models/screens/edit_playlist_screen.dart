@@ -1,3 +1,8 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:cross/features/playlists/models/playlist_model.dart';
+import 'package:cross/providers/playlist_provider.dart';
+
 class EditPlaylistScreen extends StatelessWidget {
   final Playlist playlist;
 

@@ -1,4 +1,4 @@
-import '../models/playlist_model.dart';
+import 'package:cross/features/playlists/models/playlist_model.dart';
 
 class MockPlaylistService {
   Future<List<Playlist>> getPlaylists() async {

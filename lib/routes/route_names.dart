@@ -29,4 +29,3 @@ class RouteNames {
   static const String editPlaylist = '/editPlaylist';
   static const String addTrack = '/addTrack';
 }
-}
