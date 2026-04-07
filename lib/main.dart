@@ -14,6 +14,7 @@ import 'providers/upload_provider.dart';
 import 'routes/app_routes.dart';
 import 'routes/route_names.dart';
 import 'providers/playlist_provider.dart';
+import 'package:cross/features/playlists/models/screens/playlist_library_screen.dart';
 
 void main() {
   runApp(const PulsifyApp());
@@ -74,7 +75,8 @@ class PulsifyApp extends StatelessWidget {
         title: 'Pulsify',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.darkTheme,
-        initialRoute: RouteNames.login,
+       // initialRoute: RouteNames.login,
+       home: const PlaylistLibraryScreen(),
         onGenerateRoute: AppRoutes.generateRoute,
       ),
     );

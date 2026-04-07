@@ -41,7 +41,7 @@ class ArtworkPickerCard extends StatelessWidget {
                             fit: BoxFit.cover,
                             width: 92,
                             height: 92,
-                            errorBuilder: (_, __, ___) => const Icon(
+                            errorBuilder: (_, _, _) => const Icon(
                               Icons.add_a_photo_outlined,
                               color: AppColors.iconPrimary,
                               size: 28,

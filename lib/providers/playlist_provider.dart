@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cross/features/playlists/models/playlist_model.dart';
 
 class PlaylistProvider extends ChangeNotifier {
-  List<Playlist> _playlists = [];
+  final List<Playlist> _playlists = [];
   List<Playlist> get playlists => _playlists;
 
   // 1. Create with Privacy Logic
