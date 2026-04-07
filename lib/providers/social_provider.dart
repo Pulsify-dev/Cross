@@ -149,6 +149,45 @@ class SocialProvider extends ChangeNotifier {
 		);
 	}
 
+	Future<void> loadFollowers(
+		String userId, {
+		int page = 1,
+		int limit = 20,
+	}) {
+		return loadList(
+			SocialListType.followers,
+			userId: userId,
+			page: page,
+			limit: limit,
+		);
+	}
+
+	Future<void> loadFollowing(
+		String userId, {
+		int page = 1,
+		int limit = 20,
+	}) {
+		return loadList(
+			SocialListType.following,
+			userId: userId,
+			page: page,
+			limit: limit,
+		);
+	}
+
+	Future<void> loadMutualFollowers(
+		String userId, {
+		int page = 1,
+		int limit = 20,
+	}) {
+		return loadList(
+			SocialListType.mutualFollowers,
+			userId: userId,
+			page: page,
+			limit: limit,
+		);
+	}
+
 	Future<void> loadBlockedUsers({
 		int page = 1,
 		int limit = 20,

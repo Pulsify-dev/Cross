@@ -132,10 +132,36 @@ class MockSocialService implements SocialService {
 
 	@override
 	Future<PublicProfileModel> getPublicProfile(String userId) async {
-		final user = _users[userId];
-		if (user == null) throw const ApiException('User not found.');
+		try {
+			final response = await _apiService.get(
+				ApiEndpoints.profile(userId),
+				authRequired: true,
+			);
 
-		return _buildProfile(user.id);
+			if (response is! Map<String, dynamic>) {
+				throw const ApiException('Invalid public profile response');
+			}
+
+			final payload = _extractPublicProfilePayload(response);
+			final normalized = _normalizePublicProfilePayload(payload);
+			return PublicProfileModel.fromJson(normalized);
+		} on ApiException catch (e) {
+			if (e.statusCode == 403) {
+				throw const ApiException(
+					'Profile is not accessible.',
+					statusCode: 403,
+				);
+			}
+
+			if (e.statusCode == 404) {
+				throw const ApiException(
+					'Profile is unavailable.',
+					statusCode: 404,
+				);
+			}
+
+			rethrow;
+		}
 	}
 
 	@override
@@ -163,10 +189,33 @@ class MockSocialService implements SocialService {
 		int page = 1,
 		int limit = 20,
 	}) async {
-		final targetFollowers = _followersOf(userId);
-		final currentFollowers = _followersOf(_currentUserId);
-		final mutualIds = targetFollowers.intersection(currentFollowers).toList();
-		return _buildUserListResponse(mutualIds, page: page, limit: limit, subtitle: 'Mutual follower');
+		if (_users.containsKey(userId)) {
+			final targetFollowers = _followersOf(userId);
+			final currentFollowers = _followersOf(_currentUserId);
+			final mutualIds = targetFollowers.intersection(currentFollowers).toList();
+			return _buildUserListResponse(mutualIds, page: page, limit: limit, subtitle: 'Mutual follower');
+		}
+
+		final response = await _apiService.get(
+			ApiEndpoints.mutualFollowers(userId, page: page, limit: limit),
+			authRequired: true,
+		);
+
+		if (response is! Map<String, dynamic>) {
+			throw const ApiException('Invalid mutual followers response');
+		}
+
+		final data = response['data'];
+		if (data is! Map<String, dynamic>) {
+			throw const ApiException('Invalid mutual followers payload');
+		}
+
+		final normalized = {
+			...data,
+			'users': data['mutualFollowers'],
+		};
+
+		return SocialUserListResponse.fromJson(normalized);
 	}
 
 	@override
@@ -373,6 +422,159 @@ class MockSocialService implements SocialService {
 
 		final relation = await getRelationshipStatus(userId);
 		return relation.copyWith(isBlockedByMe: false);
+	}
+
+	Map<String, dynamic> _extractPublicProfilePayload(Map<String, dynamic> response) {
+		final data = response['data'];
+
+		if (data is Map<String, dynamic>) {
+			final nestedUser = data['user'];
+			if (nestedUser is Map<String, dynamic>) {
+				return {
+					...data,
+					...nestedUser,
+				};
+			}
+
+			final nestedProfile = data['profile'];
+			if (nestedProfile is Map<String, dynamic>) {
+				return {
+					...data,
+					...nestedProfile,
+				};
+			}
+
+			final nestedPublicProfile = data['publicProfile'];
+			if (nestedPublicProfile is Map<String, dynamic>) {
+				return {
+					...data,
+					...nestedPublicProfile,
+				};
+			}
+
+			return data;
+		}
+
+		if (response['user'] is Map<String, dynamic>) {
+			return {
+				...response,
+				...(response['user'] as Map<String, dynamic>),
+			};
+		}
+
+		if (response.containsKey('_id') || response.containsKey('id')) {
+			return response;
+		}
+
+		throw const ApiException('Invalid public profile payload');
+	}
+
+	Map<String, dynamic> _normalizePublicProfilePayload(Map<String, dynamic> raw) {
+		final socialCounts = raw['socialCounts'];
+		final socialCountsMap =
+				socialCounts is Map<String, dynamic> ? socialCounts : const <String, dynamic>{};
+
+		final counts = raw['counts'];
+		final countsMap = counts is Map<String, dynamic> ? counts : const <String, dynamic>{};
+
+		return {
+			'id': raw['id'] ?? raw['_id'] ?? '',
+			'username': raw['username'] ?? '',
+			'displayName': raw['displayName'] ?? raw['display_name'] ?? '',
+			'bio': raw['bio'] ?? '',
+			'avatarUrl': raw['avatarUrl'] ?? raw['avatar_url'] ?? '',
+			'coverUrl': raw['coverUrl'] ?? raw['cover_url'] ?? '',
+			'isVerified': raw['isVerified'] ?? raw['is_verified'] ?? false,
+			'followersCount': _firstInt(
+				[
+					raw['followersCount'],
+					raw['followers_count'],
+					socialCountsMap['followersCount'],
+					socialCountsMap['followers_count'],
+					countsMap['followersCount'],
+					countsMap['followers_count'],
+				],
+				fallback: 0,
+			),
+			'followingCount': _firstInt(
+				[
+					raw['followingCount'],
+					raw['following_count'],
+					socialCountsMap['followingCount'],
+					socialCountsMap['following_count'],
+					countsMap['followingCount'],
+					countsMap['following_count'],
+				],
+				fallback: 0,
+			),
+			'trackCount': _firstInt(
+				[
+					raw['trackCount'],
+					raw['track_count'],
+					socialCountsMap['trackCount'],
+					socialCountsMap['track_count'],
+					countsMap['trackCount'],
+					countsMap['track_count'],
+				],
+				fallback: 0,
+			),
+			'playlistCount': _firstInt(
+				[
+					raw['playlistCount'],
+					raw['playlist_count'],
+					socialCountsMap['playlistCount'],
+					socialCountsMap['playlist_count'],
+					countsMap['playlistCount'],
+					countsMap['playlist_count'],
+				],
+				fallback: 0,
+			),
+			'favoriteGenres': _toStringList(raw['favoriteGenres'] ?? raw['favorite_genres']),
+			'uploadedTracks': _toStringList(
+				raw['uploadedTracks'] ?? raw['uploaded_tracks'] ?? raw['tracks'],
+			),
+			'playlists': _toStringList(raw['playlists']),
+		};
+	}
+
+	int _firstInt(List<dynamic> values, {required int fallback}) {
+		for (final value in values) {
+			if (value is int) return value;
+			if (value is num) return value.toInt();
+			if (value == null) continue;
+			final parsed = int.tryParse(value.toString());
+			if (parsed != null) return parsed;
+		}
+
+		return fallback;
+	}
+
+	List<String> _toStringList(dynamic value) {
+		if (value is! List) return const <String>[];
+
+		final result = <String>[];
+		for (final item in value) {
+			if (item == null) continue;
+			if (item is String) {
+				final trimmed = item.trim();
+				if (trimmed.isNotEmpty) result.add(trimmed);
+				continue;
+			}
+
+			if (item is Map<String, dynamic>) {
+				final candidate =
+						item['title'] ?? item['name'] ?? item['display_name'] ?? item['username'];
+				if (candidate != null && candidate.toString().trim().isNotEmpty) {
+					result.add(candidate.toString().trim());
+					continue;
+				}
+			}
+
+			final fallback = item.toString().trim();
+			if (fallback.isNotEmpty) result.add(fallback);
+		}
+
+		return result;
 	}
 
 	PublicProfileModel _buildProfile(String userId) {

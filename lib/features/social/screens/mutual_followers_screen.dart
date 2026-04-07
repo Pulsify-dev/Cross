@@ -25,10 +25,7 @@ class _MutualFollowersScreenState extends State<MutualFollowersScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      context.read<SocialProvider>().loadList(
-            SocialListType.mutualFollowers,
-            userId: widget.userId,
-          );
+      context.read<SocialProvider>().loadMutualFollowers(widget.userId);
     });
   }
 
@@ -74,10 +71,7 @@ class _MutualFollowersScreenState extends State<MutualFollowersScreen> {
                       title: 'Could not load mutual followers',
                       message: error,
                       actionLabel: 'Retry',
-                      onAction: () => provider.loadList(
-                        SocialListType.mutualFollowers,
-                        userId: widget.userId,
-                      ),
+                      onAction: () => provider.loadMutualFollowers(widget.userId),
                     );
                   }
 
