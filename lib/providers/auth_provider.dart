@@ -11,12 +11,14 @@ class AuthProvider extends ChangeNotifier {
 
   UserModel? _currentUser;
   bool _isLoading = false;
+  bool _isSocialLoading = false;
   bool _isLoggedIn = false;
   String? _errorMessage;
   String? _successMessage;
 
   UserModel? get currentUser => _currentUser;
   bool get isLoading => _isLoading;
+  bool get isSocialLoading => _isSocialLoading;
   bool get isLoggedIn => _isLoggedIn;
   String? get errorMessage => _errorMessage;
   String? get successMessage => _successMessage;
@@ -79,6 +81,7 @@ class AuthProvider extends ChangeNotifier {
     required String username,
     required String email,
     required String password,
+    required String captchaToken,
   }) async {
     _setLoading(true);
     _clearMessages();
@@ -88,13 +91,17 @@ class AuthProvider extends ChangeNotifier {
         username: username,
         email: email,
         password: password,
+        captchaToken: captchaToken,
       );
 
       _currentUser = response.user;
       _successMessage = response.message ??
           'Registration successful. Please check your email to verify.';
 
-      await _persistTokens(response);
+      // Register response may not include tokens; keep existing session untouched.
+      if (response.accessToken != null && response.accessToken!.isNotEmpty) {
+        await _persistTokens(response);
+      }
 
       notifyListeners();
       return true;
@@ -104,6 +111,39 @@ class AuthProvider extends ChangeNotifier {
       return false;
     } finally {
       _setLoading(false);
+    }
+  }
+
+  Future<bool> socialLogin({
+    required String provider,
+    required String token,
+  }) async {
+    _isSocialLoading = true;
+    _clearMessages();
+    notifyListeners();
+
+    try {
+      final response = await _authService.socialLogin(
+        provider: provider,
+        token: token,
+      );
+
+      if (response.user == null) {
+        throw const ApiException('Social login response is missing user data.');
+      }
+
+      _currentUser = response.user;
+      await _persistTokens(response);
+
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _errorMessage = _getErrorMessage(e, fallback: 'Social login failed.');
+      notifyListeners();
+      return false;
+    } finally {
+      _isSocialLoading = false;
+      notifyListeners();
     }
   }
 

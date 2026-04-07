@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cross/core/theme/app_colors.dart';
+import 'package:cross/features/auth/screens/captcha_challenge_screen.dart';
 import 'package:cross/features/auth/widgets/auth_text_field.dart';
 import 'package:cross/providers/auth_provider.dart';
 import 'package:cross/routes/route_names.dart';
@@ -22,6 +23,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   bool isPasswordHidden = true;
   bool isConfirmPasswordHidden = true;
+  bool isCaptchaChecked = false;
+  String? captchaToken;
+  String? captchaValidationMessage;
 
   @override
   void dispose() {
@@ -37,11 +41,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return;
     }
 
+    if (captchaToken == null || captchaToken!.isEmpty) {
+      setState(() {
+        captchaValidationMessage = 'Please complete CAPTCHA before creating an account.';
+      });
+      return;
+    }
+
     final authProvider = context.read<AuthProvider>();
     final isSuccess = await authProvider.register(
       username: nameController.text.trim(),
       email: emailController.text.trim(),
       password: passwordController.text,
+      captchaToken: captchaToken!,
     );
 
     if (!mounted) {
@@ -64,12 +76,58 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return;
     }
 
+    final backendError = authProvider.errorMessage ?? 'Registration failed.';
+    final isCaptchaError = backendError.toLowerCase().contains('captcha');
+    if (isCaptchaError) {
+      setState(() {
+        isCaptchaChecked = false;
+        captchaToken = null;
+        captchaValidationMessage = 'CAPTCHA expired or invalid. Please complete it again.';
+      });
+    }
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(authProvider.errorMessage ?? 'Registration failed.'),
+        content: Text(backendError),
         behavior: SnackBarBehavior.floating,
       ),
     );
+  }
+
+  Future<void> _onCaptchaChanged(bool? value) async {
+    if (value == null || value == false) {
+      setState(() {
+        isCaptchaChecked = false;
+        captchaToken = null;
+        captchaValidationMessage = null;
+      });
+      return;
+    }
+
+    final token = await Navigator.of(context).push<String>(
+      MaterialPageRoute<String>(
+        builder: (_) => const CaptchaChallengeScreen(),
+      ),
+    );
+
+    if (!mounted) {
+      return;
+    }
+
+    if (token == null || token.isEmpty) {
+      setState(() {
+        isCaptchaChecked = false;
+        captchaToken = null;
+        captchaValidationMessage = 'CAPTCHA is required to continue.';
+      });
+      return;
+    }
+
+    setState(() {
+      isCaptchaChecked = true;
+      captchaToken = token;
+      captchaValidationMessage = null;
+    });
   }
 
   void _goToLogin() {
@@ -184,8 +242,63 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         prefixIcon: Icons.replay_rounded,
                         controller: confirmPasswordController,
                         obscureText: isConfirmPasswordHidden,
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            isConfirmPasswordHidden
+                                ? Icons.visibility_outlined
+                                : Icons.visibility_off_outlined,
+                            color: AppColors.iconSecondary,
+                            size: 20,
+                          ),
+                          onPressed: () => setState(
+                            () => isConfirmPasswordHidden = !isConfirmPasswordHidden,
+                          ),
+                        ),
                         validator: (value) => value != passwordController.text ? 'Passwords do not match' : null,
                       ),
+                      const SizedBox(height: 14),
+
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: AppColors.border),
+                          color: AppColors.surfaceElevated,
+                        ),
+                        child: Row(
+                          children: [
+                            Checkbox(
+                              value: isCaptchaChecked,
+                              onChanged: isLoading ? null : _onCaptchaChanged,
+                              activeColor: AppColors.primary,
+                              side: const BorderSide(color: AppColors.border),
+                            ),
+                            Expanded(
+                              child: Text(
+                                'I am not a robot',
+                                style: textTheme.bodyMedium?.copyWith(
+                                  color: AppColors.textPrimary,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (captchaValidationMessage != null) ...[
+                        const SizedBox(height: 8),
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            captchaValidationMessage!,
+                            style: textTheme.bodySmall?.copyWith(
+                              color: Colors.redAccent,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 30),
 
                       // Gradient Button

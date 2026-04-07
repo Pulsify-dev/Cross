@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cross/features/auth/services/social_sdk_service.dart';
 import 'package:cross/core/theme/app_colors.dart';
 import 'package:cross/providers/auth_provider.dart';
 import 'package:cross/features/auth/widgets/auth_text_field.dart';
@@ -18,6 +19,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
+  final SocialSdkService _socialSdkService = SocialSdkService();
 
   bool isPasswordHidden = true;
 
@@ -64,18 +66,85 @@ class _LoginScreenState extends State<LoginScreen> {
     Navigator.pushNamed(context, RouteNames.forgotPassword);
   }
 
+  Future<void> _handleSocialLogin({
+    required String provider,
+    required Future<String?> Function() resolveToken,
+  }) async {
+    final authProvider = context.read<AuthProvider>();
+    if (authProvider.isSocialLoading) {
+      return;
+    }
+
+    String? token;
+    try {
+      token = await resolveToken();
+    } catch (e) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString().replaceFirst('Exception: ', '')),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    if (!mounted || token == null || token.isEmpty) {
+      return;
+    }
+
+    final isSuccess = await authProvider.socialLogin(
+      provider: provider,
+      token: token,
+    );
+
+    if (!mounted) {
+      return;
+    }
+
+    if (isSuccess) {
+      Navigator.pushReplacementNamed(context, RouteNames.mainScreen);
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(authProvider.errorMessage ?? 'Social login failed.'),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
   void _handleGoogleLogin() {
-    // TODO: implement Google sign in
+    _handleSocialLogin(
+      provider: 'google',
+      resolveToken: _socialSdkService.getGoogleProviderToken,
+    );
   }
 
   void _handleAppleLogin() {
-    // TODO: implement Apple sign in
+    _handleSocialLogin(
+      provider: 'apple',
+      resolveToken: _socialSdkService.getAppleProviderToken,
+    );
+  }
+
+  void _handleFacebookLogin() {
+    _handleSocialLogin(
+      provider: 'facebook',
+      resolveToken: _socialSdkService.getFacebookProviderToken,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     final isLoading = context.select<AuthProvider, bool>((p) => p.isLoading);
+    final isSocialLoading = context.select<AuthProvider, bool>(
+      (p) => p.isSocialLoading,
+    );
 
     return Scaffold(
       backgroundColor: AppColors.backgroundAlt,
@@ -320,7 +389,19 @@ class _LoginScreenState extends State<LoginScreen> {
                               color: Colors.white,
                               size: 22,
                             ),
-                            onPressed: _handleGoogleLogin,
+                            onPressed: isSocialLoading ? null : _handleGoogleLogin,
+                            isLoading: isSocialLoading,
+                          ),
+                          const SizedBox(width: 12),
+                          SocialAuthButton(
+                            text: 'Facebook',
+                            icon: const Icon(
+                              Icons.facebook_rounded,
+                              color: Colors.white,
+                              size: 18,
+                            ),
+                            onPressed: isSocialLoading ? null : _handleFacebookLogin,
+                            isLoading: isSocialLoading,
                           ),
                           const SizedBox(width: 12),
                           SocialAuthButton(
@@ -330,7 +411,8 @@ class _LoginScreenState extends State<LoginScreen> {
                               color: Colors.white,
                               size: 18,
                             ),
-                            onPressed: _handleAppleLogin,
+                            onPressed: isSocialLoading ? null : _handleAppleLogin,
+                            isLoading: isSocialLoading,
                           ),
                         ],
                       ),

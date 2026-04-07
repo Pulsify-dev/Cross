@@ -1,6 +1,7 @@
 class ApiEndpoints {
   static const String register = '/auth/register';
   static const String login = '/auth/login';
+  static String socialLogin(String provider) => '/auth/social/$provider';
   static const String verifyEmail = '/auth/verify-email';
   static const String refreshToken = '/auth/refresh';
   static const String logout = '/auth/logout';
