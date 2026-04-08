@@ -707,8 +707,8 @@ class UploadService {
 
 		debugPrint(
 			'[UploadService.createTrack] Sending multipart request with '
-			'fields=$fields, repeatedFieldKeys=${repeatedFields.map((e) => e.key).toList()}, '
-			'files=${files.map((file) => '${file.field}:${file.filename ?? 'unknown'}').toList()}, '
+			'fields=$fields, repeatedFields=${repeatedFields.map((e) => '${e.key}:${e.value}').toList()}, '
+			'files=${files.map((file) => '${file.field}:${file.filename ?? 'unknown'}(length=${file.length})').toList()}, '
 			'numericCandidates=$numericMetadataCandidates, '
 			'numericFieldKeysSent=${sentFieldKeys.where((key) => key.contains('duration') || key.contains('bitrate') || key.contains('size') || key.contains('sample') || key.contains('progress')).toList()}',
 		);
