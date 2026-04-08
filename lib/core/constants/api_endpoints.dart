@@ -7,6 +7,12 @@ class ApiEndpoints {
   static const String forgotPassword = '/auth/forgot-password';
   static const String resetPassword = '/auth/reset-password';
 
+  static const String myProfile = '/users/me';
+  static const String uploadAvatar = '/users/me/avatar';
+  static const String changePassword = '/users/me/password';
+  static const String confirmEmailChange = '/users/confirm-email-change';
+  static const String searchUsers = '/users/search';
+  static String publicProfile(String userId) => '/users/$userId';
   static String profile(String userId) => '/users/$userId';
   static String editProfile(String userId) => '/users/$userId/edit';
   static String followers(String userId, {int? page, int? limit}) =>

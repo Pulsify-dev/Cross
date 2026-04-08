@@ -1,0 +1,830 @@
+﻿diff --git a/lib/features/auth/models/auth_response_model.dart b/lib/features/auth/models/auth_response_model.dart
+index 7daab9c..e6108df 100644
+--- a/lib/features/auth/models/auth_response_model.dart
++++ b/lib/features/auth/models/auth_response_model.dart
+@@ -1,21 +1,30 @@
+ import 'package:cross/features/auth/models/user_model.dart';
+ 
+ class AuthResponseModel {
+-  final String accessToken;
+-  final String refreshToken;
+-  final UserModel user;
++  final String? accessToken;
++  final String? refreshToken;
++  final UserModel? user;
++  final String? message;
+ 
+   const AuthResponseModel({
+-    required this.accessToken,
+-    required this.refreshToken,
+-    required this.user,
++    this.accessToken,
++    this.refreshToken,
++    this.user,
++    this.message,
+   });
+ 
+   factory AuthResponseModel.fromJson(Map<String, dynamic> json) {
++    final userJson = json['user'];
++
+     return AuthResponseModel(
+-      accessToken: json['accessToken']?.toString() ?? '',
+-      refreshToken: json['refreshToken']?.toString() ?? '',
+-      user: UserModel.fromJson(json['user'] ?? {}),
++      accessToken:
++          json['access_token']?.toString() ?? json['accessToken']?.toString(),
++      refreshToken: json['refresh_token']?.toString() ??
++          json['refreshToken']?.toString(),
++      user: userJson is Map<String, dynamic>
++          ? UserModel.fromJson(userJson)
++          : null,
++      message: json['message']?.toString(),
+     );
+   }
+ 
+@@ -23,7 +32,8 @@ class AuthResponseModel {
+     return {
+       'accessToken': accessToken,
+       'refreshToken': refreshToken,
+-      'user': user.toJson(),
++      'user': user?.toJson(),
++      'message': message,
+     };
+   }
+ }
+\ No newline at end of file
+diff --git a/lib/features/auth/models/user_model.dart b/lib/features/auth/models/user_model.dart
+index 317c42d..bb84c71 100644
+--- a/lib/features/auth/models/user_model.dart
++++ b/lib/features/auth/models/user_model.dart
+@@ -15,11 +15,12 @@ class UserModel {
+ 
+   factory UserModel.fromJson(Map<String, dynamic> json) {
+     return UserModel(
+-      id: json['id']?.toString() ?? '',
++      id: json['user_id']?.toString() ?? json['id']?.toString() ?? '',
+       username: json['username']?.toString() ?? '',
+       email: json['email']?.toString() ?? '',
+-      profileImageUrl: json['profileImageUrl']?.toString(),
+-      isVerified: json['isVerified'] ?? false,
++      profileImageUrl:
++          json['avatar_url']?.toString() ?? json['profileImageUrl']?.toString(),
++      isVerified: json['is_verified'] == true || json['isVerified'] == true,
+     );
+   }
+ 
+diff --git a/lib/features/auth/screens/forgot_password_screen.dart b/lib/features/auth/screens/forgot_password_screen.dart
+index bf86222..c0b2eb3 100644
+--- a/lib/features/auth/screens/forgot_password_screen.dart
++++ b/lib/features/auth/screens/forgot_password_screen.dart
+@@ -1,8 +1,9 @@
+ import 'package:flutter/material.dart';
+ import 'package:cross/core/theme/app_colors.dart';
+-import 'package:cross/features/auth/services/auth_service.dart';
+ import 'package:cross/features/auth/widgets/auth_text_field.dart';
++import 'package:cross/providers/auth_provider.dart';
+ import 'package:cross/routes/route_names.dart';
++import 'package:provider/provider.dart';
+ 
+ class ForgotPasswordScreen extends StatefulWidget {
+   const ForgotPasswordScreen({super.key});
+@@ -14,9 +15,6 @@ class ForgotPasswordScreen extends StatefulWidget {
+ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
+   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+   final TextEditingController emailController = TextEditingController();
+-  final AuthService _authService = AuthService();
+-
+-  bool isLoading = false;
+ 
+   @override
+   void dispose() {
+@@ -27,38 +25,32 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
+   Future<void> _handleSendResetLink() async {
+     if (!_formKey.currentState!.validate()) return;
+ 
+-    setState(() {
+-      isLoading = true;
+-    });
+-
+-    try {
+-      await _authService.sendPasswordReset(
+-        email: emailController.text.trim(),
+-      );
++    final authProvider = context.read<AuthProvider>();
++    final isSuccess = await authProvider.sendPasswordReset(
++      email: emailController.text.trim(),
++    );
+ 
+-      if (!mounted) return;
++    if (!mounted) return;
+ 
++    if (isSuccess) {
+       ScaffoldMessenger.of(context).showSnackBar(
+-        const SnackBar(
+-          content: Text('Password reset link sent to your email'),
++        SnackBar(
++          content: Text(
++            authProvider.successMessage ??
++                'If that email address is in our database, we will send you a link to reset your password.',
++          ),
+         ),
+       );
+-    } catch (e) {
+-      if (!mounted) return;
++      return;
++    }
+ 
+-      ScaffoldMessenger.of(context).showSnackBar(
+-        const SnackBar(
+-          content: Text('Something went wrong. Please try again.'),
++    ScaffoldMessenger.of(context).showSnackBar(
++      SnackBar(
++        content: Text(
++          authProvider.errorMessage ?? 'Something went wrong. Please try again.',
+         ),
+-      );
+-    } finally {
+-      // ignore: control_flow_in_finally
+-      if (!mounted) return;
+-
+-      setState(() {
+-        isLoading = false;
+-      });
+-    }
++      ),
++    );
+   }
+ 
+   void _goBackToLogin() {
+@@ -68,6 +60,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
+   @override
+   Widget build(BuildContext context) {
+     final textTheme = Theme.of(context).textTheme;
++    final isLoading = context.select<AuthProvider, bool>((p) => p.isLoading);
+ 
+     return Scaffold(
+       backgroundColor: AppColors.backgroundAlt,
+diff --git a/lib/features/auth/screens/login_screen.dart b/lib/features/auth/screens/login_screen.dart
+index f071566..d27e746 100644
+--- a/lib/features/auth/screens/login_screen.dart
++++ b/lib/features/auth/screens/login_screen.dart
+@@ -1,8 +1,10 @@
+ import 'package:flutter/material.dart';
+ import 'package:cross/core/theme/app_colors.dart';
++import 'package:cross/providers/auth_provider.dart';
+ import 'package:cross/features/auth/widgets/auth_text_field.dart';
+ import 'package:cross/features/auth/widgets/social_auth_button.dart';
+ import 'package:cross/routes/route_names.dart';
++import 'package:provider/provider.dart';
+ 
+ class LoginScreen extends StatefulWidget {
+   const LoginScreen({super.key});
+@@ -26,10 +28,32 @@ class _LoginScreenState extends State<LoginScreen> {
+     super.dispose();
+   }
+ 
+-  void _handleLogin() {
+-    if (_formKey.currentState!.validate()) {
++  Future<void> _handleLogin() async {
++    if (!_formKey.currentState!.validate()) {
++      return;
++    }
++
++    final authProvider = context.read<AuthProvider>();
++    final isSuccess = await authProvider.login(
++      email: emailController.text.trim(),
++      password: passwordController.text,
++    );
++
++    if (!mounted) {
++      return;
++    }
++
++    if (isSuccess) {
+       Navigator.pushReplacementNamed(context, RouteNames.mainScreen);
++      return;
+     }
++
++    ScaffoldMessenger.of(context).showSnackBar(
++      SnackBar(
++        content: Text(authProvider.errorMessage ?? 'Login failed.'),
++        behavior: SnackBarBehavior.floating,
++      ),
++    );
+   }
+ 
+   void _goToSignUp() {
+@@ -51,6 +75,7 @@ class _LoginScreenState extends State<LoginScreen> {
+   @override
+   Widget build(BuildContext context) {
+     final textTheme = Theme.of(context).textTheme;
++    final isLoading = context.select<AuthProvider, bool>((p) => p.isLoading);
+ 
+     return Scaffold(
+       backgroundColor: AppColors.backgroundAlt,
+@@ -226,7 +251,7 @@ class _LoginScreenState extends State<LoginScreen> {
+                           ],
+                         ),
+                         child: ElevatedButton(
+-                          onPressed: _handleLogin,
++                          onPressed: isLoading ? null : _handleLogin,
+                           style: ElevatedButton.styleFrom(
+                             backgroundColor: Colors.transparent,
+                             shadowColor: Colors.transparent,
+@@ -236,13 +261,24 @@ class _LoginScreenState extends State<LoginScreen> {
+                               borderRadius: BorderRadius.circular(28),
+                             ),
+                           ),
+-                          child: Text(
+-                            'Log In',
+-                            style: textTheme.labelLarge?.copyWith(
+-                              color: Colors.white,
+-                              fontWeight: FontWeight.w700,
+-                            ),
+-                          ),
++                          child: isLoading
++                              ? const SizedBox(
++                                  width: 22,
++                                  height: 22,
++                                  child: CircularProgressIndicator(
++                                    strokeWidth: 2.2,
++                                    valueColor: AlwaysStoppedAnimation<Color>(
++                                      Colors.white,
++                                    ),
++                                  ),
++                                )
++                              : Text(
++                                  'Log In',
++                                  style: textTheme.labelLarge?.copyWith(
++                                    color: Colors.white,
++                                    fontWeight: FontWeight.w700,
++                                  ),
++                                ),
+                         ),
+                       ),
+ 
+diff --git a/lib/features/auth/screens/register_screen.dart b/lib/features/auth/screens/register_screen.dart
+index e452643..a1248e1 100644
+--- a/lib/features/auth/screens/register_screen.dart
++++ b/lib/features/auth/screens/register_screen.dart
+@@ -1,7 +1,9 @@
+ import 'package:flutter/material.dart';
+ import 'package:cross/core/theme/app_colors.dart';
+ import 'package:cross/features/auth/widgets/auth_text_field.dart';
++import 'package:cross/providers/auth_provider.dart';
+ import 'package:cross/routes/route_names.dart';
++import 'package:provider/provider.dart';
+ 
+ class RegisterScreen extends StatefulWidget {
+   const RegisterScreen({super.key});
+@@ -30,20 +32,44 @@ class _RegisterScreenState extends State<RegisterScreen> {
+     super.dispose();
+   }
+ 
+-  void _handleRegister() {
+-    if (_formKey.currentState!.validate()) {
+-      // 1. Show Success Message
++  Future<void> _handleRegister() async {
++    if (!_formKey.currentState!.validate()) {
++      return;
++    }
++
++    final authProvider = context.read<AuthProvider>();
++    final isSuccess = await authProvider.register(
++      username: nameController.text.trim(),
++      email: emailController.text.trim(),
++      password: passwordController.text,
++    );
++
++    if (!mounted) {
++      return;
++    }
++
++    if (isSuccess) {
+       ScaffoldMessenger.of(context).showSnackBar(
+-        const SnackBar(
+-          content: Text('Account created successfully!'),
++        SnackBar(
++          content: Text(
++            authProvider.successMessage ??
++                'Registration successful. Please check your email to verify.',
++          ),
+           backgroundColor: AppColors.primary,
+           behavior: SnackBarBehavior.floating,
+         ),
+       );
+ 
+-      // 2. Redirect back to Login
+       Navigator.pushReplacementNamed(context, RouteNames.login);
++      return;
+     }
++
++    ScaffoldMessenger.of(context).showSnackBar(
++      SnackBar(
++        content: Text(authProvider.errorMessage ?? 'Registration failed.'),
++        behavior: SnackBarBehavior.floating,
++      ),
++    );
+   }
+ 
+   void _goToLogin() {
+@@ -53,6 +79,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
+   @override
+   Widget build(BuildContext context) {
+     final textTheme = Theme.of(context).textTheme;
++    final isLoading = context.select<AuthProvider, bool>((p) => p.isLoading);
+ 
+     return Scaffold(
+       backgroundColor: AppColors.backgroundAlt,
+@@ -170,14 +197,31 @@ class _RegisterScreenState extends State<RegisterScreen> {
+                           boxShadow: const [BoxShadow(color: AppColors.glow, blurRadius: 18, spreadRadius: 1)],
+                         ),
+                         child: ElevatedButton(
+-                          onPressed: _handleRegister,
++                          onPressed: isLoading ? null : _handleRegister,
+                           style: ElevatedButton.styleFrom(
+                             backgroundColor: Colors.transparent,
+                             shadowColor: Colors.transparent,
+                             padding: const EdgeInsets.symmetric(vertical: 17),
+                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+                           ),
+-                          child: const Text('Create Account', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
++                          child: isLoading
++                              ? const SizedBox(
++                                  width: 22,
++                                  height: 22,
++                                  child: CircularProgressIndicator(
++                                    strokeWidth: 2.2,
++                                    valueColor: AlwaysStoppedAnimation<Color>(
++                                      Colors.white,
++                                    ),
++                                  ),
++                                )
++                              : const Text(
++                                  'Create Account',
++                                  style: TextStyle(
++                                    color: Colors.white,
++                                    fontWeight: FontWeight.bold,
++                                  ),
++                                ),
+                         ),
+                       ),
+                     ],
+diff --git a/lib/features/auth/services/auth_service.dart b/lib/features/auth/services/auth_service.dart
+index b63380f..9bb9a35 100644
+--- a/lib/features/auth/services/auth_service.dart
++++ b/lib/features/auth/services/auth_service.dart
+@@ -1,81 +1,128 @@
++import 'package:cross/core/constants/api_endpoints.dart';
++import 'package:cross/core/services/api_service.dart';
+ import 'package:cross/features/auth/models/auth_response_model.dart';
+-import 'package:cross/features/auth/models/user_model.dart';
+ 
+ class AuthService {
++  AuthService({ApiService? apiService}) : _apiService = apiService ?? ApiService();
++
++  final ApiService _apiService;
++
+   Future<AuthResponseModel> login({
+     required String email,
+     required String password,
+   }) async {
+-    await Future.delayed(const Duration(milliseconds: 500));
+-
+-    return AuthResponseModel(
+-      accessToken: 'mock_access_token',
+-      refreshToken: 'mock_refresh_token',
+-      user: UserModel(
+-        id: '1',
+-        username: 'mohammad',
+-        email: email,
+-        isVerified: true,
+-      ),
++    final response = await _apiService.post(
++      ApiEndpoints.login,
++      body: {
++        'email': email,
++        'password': password,
++      },
+     );
++
++    if (response is! Map<String, dynamic>) {
++      throw const ApiException('Invalid login response.');
++    }
++
++    return AuthResponseModel.fromJson(response);
+   }
+ 
+   Future<AuthResponseModel> register({
+     required String username,
+     required String email,
+     required String password,
++    String captchaToken = 'mock-token',
+   }) async {
+-    await Future.delayed(const Duration(milliseconds: 500));
+-
+-    return AuthResponseModel(
+-      accessToken: 'mock_access_token',
+-      refreshToken: 'mock_refresh_token',
+-      user: UserModel(
+-        id: '2',
+-        username: username,
+-        email: email,
+-        isVerified: false,
+-      ),
++    final response = await _apiService.post(
++      ApiEndpoints.register,
++      body: {
++        'username': username,
++        'email': email,
++        'password': password,
++        // TODO: Replace this with real CAPTCHA token generation when backend CAPTCHA is finalized in app.
++        'captcha_token': captchaToken,
++      },
+     );
++
++    if (response is! Map<String, dynamic>) {
++      throw const ApiException('Invalid registration response.');
++    }
++
++    return AuthResponseModel.fromJson(response);
+   }
+ 
+-  Future<void> sendPasswordReset({
+-    required String email,
++  Future<String> verifyEmail({
++    required String token,
+   }) async {
+-    await Future.delayed(const Duration(milliseconds: 500));
++    final response = await _apiService.post(
++      ApiEndpoints.verifyEmail,
++      body: {'token': token},
++    );
++
++    if (response is! Map<String, dynamic>) {
++      throw const ApiException('Invalid verify email response.');
++    }
++
++    return response['message']?.toString() ?? 'Email verification completed.';
+   }
+ 
+-  Future<AuthResponseModel> loginWithGoogle() async {
+-    await Future.delayed(const Duration(milliseconds: 500));
+-
+-    return const AuthResponseModel(
+-      accessToken: 'google_mock_access_token',
+-      refreshToken: 'google_mock_refresh_token',
+-      user: UserModel(
+-        id: '3',
+-        username: 'google_user',
+-        email: 'googleuser@example.com',
+-        isVerified: true,
+-      ),
++  Future<AuthResponseModel> refreshToken({
++    required String refreshToken,
++  }) async {
++    final response = await _apiService.post(
++      ApiEndpoints.refreshToken,
++      body: {'refresh_token': refreshToken},
+     );
++
++    if (response is! Map<String, dynamic>) {
++      throw const ApiException('Invalid refresh token response.');
++    }
++
++    return AuthResponseModel.fromJson(response);
+   }
+ 
+-  Future<AuthResponseModel> loginWithApple() async {
+-    await Future.delayed(const Duration(milliseconds: 500));
+-
+-    return const AuthResponseModel(
+-      accessToken: 'apple_mock_access_token',
+-      refreshToken: 'apple_mock_refresh_token',
+-      user: UserModel(
+-        id: '4',
+-        username: 'apple_user',
+-        email: 'appleuser@example.com',
+-        isVerified: true,
+-      ),
++  Future<String> sendPasswordReset({
++    required String email,
++  }) async {
++    final response = await _apiService.post(
++      ApiEndpoints.forgotPassword,
++      body: {'email': email},
++    );
++
++    if (response is! Map<String, dynamic>) {
++      throw const ApiException('Invalid forgot password response.');
++    }
++
++    return response['message']?.toString() ??
++        'If that email address is in our database, we will send you a link to reset your password.';
++  }
++
++  Future<String> resetPassword({
++    required String token,
++    required String newPassword,
++  }) async {
++    final response = await _apiService.post(
++      ApiEndpoints.resetPassword,
++      body: {
++        'token': token,
++        'new_password': newPassword,
++      },
+     );
++
++    if (response is! Map<String, dynamic>) {
++      throw const ApiException('Invalid reset password response.');
++    }
++
++    return response['message']?.toString() ??
++        'Password has been successfully reset. You can now log in.';
+   }
+ 
+-  Future<void> logout() async {
+-    await Future.delayed(const Duration(milliseconds: 300));
++  Future<void> logout({
++    required String refreshToken,
++  }) async {
++    await _apiService.post(
++      ApiEndpoints.logout,
++      body: {'refresh_token': refreshToken},
++      authRequired: true,
++    );
+   }
+ }
+\ No newline at end of file
+diff --git a/lib/main.dart b/lib/main.dart
+index b8d845a..31f6d86 100644
+--- a/lib/main.dart
++++ b/lib/main.dart
+@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
+ import 'core/theme/app_theme.dart';
+ import 'features/feed/services/mock_track_service.dart';
+ import 'features/feed/services/track_service.dart';
++import 'providers/auth_provider.dart';
+ import 'providers/engagement_provider.dart';
+ import 'providers/feed_provider.dart';
+ import 'providers/player_provider.dart';
+@@ -23,6 +24,10 @@ class PulsifyApp extends StatelessWidget {
+   Widget build(BuildContext context) {
+     return MultiProvider(
+       providers: [
++        ChangeNotifierProvider(
++          create: (_) => AuthProvider()..checkLoginStatus(),
++        ),
++
+         Provider<TrackService>(
+           create: (_) => MockTrackService(),
+         ),
+diff --git a/lib/providers/auth_provider.dart b/lib/providers/auth_provider.dart
+index 21cb90b..44addc4 100644
+--- a/lib/providers/auth_provider.dart
++++ b/lib/providers/auth_provider.dart
+@@ -1,5 +1,7 @@
+ import 'package:flutter/material.dart';
++import 'package:cross/core/services/api_service.dart';
+ import 'package:cross/core/services/session_service.dart';
++import 'package:cross/features/auth/models/auth_response_model.dart';
+ import 'package:cross/features/auth/models/user_model.dart';
+ import 'package:cross/features/auth/services/auth_service.dart';
+ 
+@@ -11,14 +13,17 @@ class AuthProvider extends ChangeNotifier {
+   bool _isLoading = false;
+   bool _isLoggedIn = false;
+   String? _errorMessage;
++  String? _successMessage;
+ 
+   UserModel? get currentUser => _currentUser;
+   bool get isLoading => _isLoading;
+   bool get isLoggedIn => _isLoggedIn;
+   String? get errorMessage => _errorMessage;
++  String? get successMessage => _successMessage;
+ 
+   Future<void> checkLoginStatus() async {
+-    _isLoggedIn = await _sessionService.isLoggedIn();
++    _isLoggedIn = await _sessionService.isLoggedIn() &&
++        (await _sessionService.getAccessToken()) != null;
+     notifyListeners();
+   }
+ 
+@@ -27,7 +32,7 @@ class AuthProvider extends ChangeNotifier {
+     required String password,
+   }) async {
+     _setLoading(true);
+-    _clearError();
++    _clearMessages();
+ 
+     try {
+       final response = await _authService.login(
+@@ -35,17 +40,17 @@ class AuthProvider extends ChangeNotifier {
+         password: password,
+       );
+ 
+-      _currentUser = response.user;
+-      _isLoggedIn = true;
++      if (response.user == null) {
++        throw const ApiException('Login response is missing user data.');
++      }
+ 
+-      await _sessionService.saveAccessToken(response.accessToken);
+-      await _sessionService.saveRefreshToken(response.refreshToken);
+-      await _sessionService.setLoggedIn(true);
++      _currentUser = response.user;
++      await _persistTokens(response);
+ 
+       notifyListeners();
+       return true;
+     } catch (e) {
+-      _errorMessage = 'Login failed';
++      _errorMessage = _getErrorMessage(e, fallback: 'Login failed.');
+       notifyListeners();
+       return false;
+     } finally {
+@@ -59,7 +64,7 @@ class AuthProvider extends ChangeNotifier {
+     required String password,
+   }) async {
+     _setLoading(true);
+-    _clearError();
++    _clearMessages();
+ 
+     try {
+       final response = await _authService.register(
+@@ -69,16 +74,15 @@ class AuthProvider extends ChangeNotifier {
+       );
+ 
+       _currentUser = response.user;
+-      _isLoggedIn = true;
++      _successMessage = response.message ??
++          'Registration successful. Please check your email to verify.';
+ 
+-      await _sessionService.saveAccessToken(response.accessToken);
+-      await _sessionService.saveRefreshToken(response.refreshToken);
+-      await _sessionService.setLoggedIn(true);
++      await _persistTokens(response);
+ 
+       notifyListeners();
+       return true;
+     } catch (e) {
+-      _errorMessage = 'Registration failed';
++      _errorMessage = _getErrorMessage(e, fallback: 'Registration failed.');
+       notifyListeners();
+       return false;
+     } finally {
+@@ -90,14 +94,84 @@ class AuthProvider extends ChangeNotifier {
+     required String email,
+   }) async {
+     _setLoading(true);
+-    _clearError();
++    _clearMessages();
+ 
+     try {
+-      await _authService.sendPasswordReset(email: email);
++      _successMessage = await _authService.sendPasswordReset(email: email);
+       notifyListeners();
+       return true;
+     } catch (e) {
+-      _errorMessage = 'Failed to send reset link';
++      _errorMessage =
++          _getErrorMessage(e, fallback: 'Failed to send reset link.');
++      notifyListeners();
++      return false;
++    } finally {
++      _setLoading(false);
++    }
++  }
++
++  Future<bool> verifyEmail({
++    required String token,
++  }) async {
++    _setLoading(true);
++    _clearMessages();
++
++    try {
++      _successMessage = await _authService.verifyEmail(token: token);
++      notifyListeners();
++      return true;
++    } catch (e) {
++      _errorMessage =
++          _getErrorMessage(e, fallback: 'Email verification failed.');
++      notifyListeners();
++      return false;
++    } finally {
++      _setLoading(false);
++    }
++  }
++
++  Future<bool> resetPassword({
++    required String token,
++    required String newPassword,
++  }) async {
++    _setLoading(true);
++    _clearMessages();
++
++    try {
++      _successMessage = await _authService.resetPassword(
++        token: token,
++        newPassword: newPassword,
++      );
++      notifyListeners();
++      return true;
++    } catch (e) {
++      _errorMessage =
++          _getErrorMessage(e, fallback: 'Password reset failed.');
++      notifyListeners();
++      return false;
++    } finally {
++      _setLoading(false);
++    }
++  }
++
++  Future<bool> refreshSession() async {
++    _setLoading(true);
++    _clearMessages();
++
++    try {
++      final savedRefreshToken = await _sessionService.getRefreshToken();
++      if (savedRefreshToken == null || savedRefreshToken.isEmpty) {
++        throw const ApiException('Session expired. Please log in again.');
++      }
++
++      final refreshed =
++          await _authService.refreshToken(refreshToken: savedRefreshToken);
++      await _persistTokens(refreshed);
++      notifyListeners();
++      return true;
++    } catch (e) {
++      _errorMessage =
++          _getErrorMessage(e, fallback: 'Session refresh failed.');
+       notifyListeners();
+       return false;
+     } finally {
+@@ -107,10 +181,13 @@ class AuthProvider extends ChangeNotifier {
+ 
+   Future<void> logout() async {
+     _setLoading(true);
+-    _clearError();
++    _clearMessages();
+ 
+     try {
+-      await _authService.logout();
++      final refreshToken = await _sessionService.getRefreshToken();
++      if (refreshToken != null && refreshToken.isNotEmpty) {
++        await _authService.logout(refreshToken: refreshToken);
++      }
+       await _sessionService.clearSession();
+ 
+       _currentUser = null;
+@@ -118,7 +195,7 @@ class AuthProvider extends ChangeNotifier {
+ 
+       notifyListeners();
+     } catch (e) {
+-      _errorMessage = 'Logout failed';
++      _errorMessage = _getErrorMessage(e, fallback: 'Logout failed.');
+       notifyListeners();
+     } finally {
+       _setLoading(false);
+@@ -130,7 +207,39 @@ class AuthProvider extends ChangeNotifier {
+     notifyListeners();
+   }
+ 
+-  void _clearError() {
++  void clearMessages() {
++    _clearMessages();
++    notifyListeners();
++  }
++
++  Future<void> _persistTokens(AuthResponseModel response) async {
++    final accessToken = response.accessToken;
++    final refreshToken = response.refreshToken;
++
++    if (accessToken != null && accessToken.isNotEmpty) {
++      await _sessionService.saveAccessToken(accessToken);
++    }
++
++    if (refreshToken != null && refreshToken.isNotEmpty) {
++      await _sessionService.saveRefreshToken(refreshToken);
++    }
++
++    final hasValidSession =
++        accessToken != null && accessToken.isNotEmpty &&
++        refreshToken != null && refreshToken.isNotEmpty;
++    _isLoggedIn = hasValidSession;
++    await _sessionService.setLoggedIn(hasValidSession);
++  }
++
++  void _clearMessages() {
+     _errorMessage = null;
++    _successMessage = null;
++  }
++
++  String _getErrorMessage(Object error, {required String fallback}) {
++    if (error is ApiException) {
++      return error.message;
++    }
++    return fallback;
+   }
+ }
+\ No newline at end of file

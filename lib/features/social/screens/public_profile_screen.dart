@@ -123,6 +123,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                                   const SizedBox(height: 8),
                                   _buildStatsRow(
                                     context: context,
+                                    targetUserId: profile.id,
                                     followers: profile.followersCount,
                                     following: profile.followingCount,
                                     tracks: profile.trackCount,
@@ -236,6 +237,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
 
   Widget _buildStatsRow({
     required BuildContext context,
+    required String targetUserId,
     required int followers,
     required int following,
     required int tracks,
@@ -288,7 +290,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
           () => Navigator.pushNamed(
             context,
             RouteNames.followers,
-            arguments: widget.userId,
+            arguments: targetUserId,
           ),
         ),
         const SizedBox(width: 12),
@@ -298,7 +300,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
           () => Navigator.pushNamed(
             context,
             RouteNames.following,
-            arguments: widget.userId,
+            arguments: targetUserId,
           ),
         ),
         const SizedBox(width: 12),

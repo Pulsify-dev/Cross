@@ -1,6 +1,14 @@
 //import 'dart:ffi';
 //import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import '/providers/feed_provider.dart';
+import '/providers/player_provider.dart';
+import '/providers/profile_provider.dart';
+import '/features/profile/models/profile_data.dart';
+import '/routes/route_names.dart';
+import '../models/track.dart';
 import '../widgets/trending_track_widget.dart';
 import '../widgets/suggested_users_widget.dart';
 import '../widgets/listening_history_widget.dart';
@@ -17,6 +25,17 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final feedProvider = context.read<FeedProvider>();
+      if (feedProvider.trendingTracks.isEmpty) {
+        feedProvider.fetchTrendingTracks();
+      }
+
+      final profileProvider = context.read<ProfileProvider>();
+      if (profileProvider.profile == null) {
+        profileProvider.loadMyProfile();
+      }
+    });
   }
 
   @override
@@ -53,14 +72,27 @@ class _HomeScreenState extends State<HomeScreen> {
                       width: 2,
                     ),
                   ),
-                  child: CircleAvatar(
-                    radius: 16,
-                    backgroundColor: Theme.of(context).colorScheme.surface,
-                    child: Icon(
-                      Icons.person,
-                      size: 20,
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
+                  child: Consumer<ProfileProvider>(
+                    builder: (context, profileProvider, _) {
+                      final profile = profileProvider.profile;
+                      return CircleAvatar(
+                        radius: 16,
+                        backgroundImage: avatarImage(
+                          path: profile?.avatarPath,
+                          bytes: profile?.avatarBytes,
+                        ),
+                        backgroundColor: Theme.of(context).colorScheme.surface,
+                        child:
+                            profile?.avatarPath == null &&
+                                profile?.avatarBytes == null
+                            ? Icon(
+                                Icons.person,
+                                size: 20,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              )
+                            : null,
+                      );
+                    },
                   ),
                 ),
               ),

@@ -9,6 +9,11 @@ class ProfileData {
     required this.username,
     required this.bio,
     required this.email,
+    this.displayName,
+    this.location,
+    this.favoriteGenres,
+    this.socialLinks,
+    this.isPrivate,
   });
 
   final String? avatarPath;
@@ -16,6 +21,11 @@ class ProfileData {
   final String username;
   final String bio;
   final String email;
+  final String? displayName;
+  final String? location;
+  final List<String>? favoriteGenres;
+  final Map<String, String>? socialLinks;
+  final bool? isPrivate;
 
   ProfileData copyWith({
     String? avatarPath,
@@ -23,6 +33,11 @@ class ProfileData {
     String? username,
     String? bio,
     String? email,
+    String? displayName,
+    String? location,
+    List<String>? favoriteGenres,
+    Map<String, String>? socialLinks,
+    bool? isPrivate,
   }) {
     return ProfileData(
       avatarPath: avatarPath ?? this.avatarPath,
@@ -30,6 +45,11 @@ class ProfileData {
       username: username ?? this.username,
       bio: bio ?? this.bio,
       email: email ?? this.email,
+      displayName: displayName ?? this.displayName,
+      location: location ?? this.location,
+      favoriteGenres: favoriteGenres ?? this.favoriteGenres,
+      socialLinks: socialLinks ?? this.socialLinks,
+      isPrivate: isPrivate ?? this.isPrivate,
     );
   }
 
@@ -44,6 +64,11 @@ class ProfileData {
       username: _extractString(profileJson, ['username', 'name']),
       bio: _extractString(profileJson, ['bio', 'description', 'about']),
       email: _extractString(profileJson, ['email']),
+      displayName: _extractString(profileJson, ['display_name', 'displayName']),
+      location: _extractString(profileJson, ['location']),
+      favoriteGenres: _extractList(profileJson, ['favorite_genres', 'favoriteGenres']),
+      socialLinks: _extractMap(profileJson, ['social_links', 'socialLinks']),
+      isPrivate: _extractBool(profileJson, ['is_private', 'isPrivate']),
     );
   }
 
@@ -53,6 +78,11 @@ class ProfileData {
       'username': username,
       'bio': bio,
       'email': email,
+      'display_name': displayName,
+      'location': location,
+      'favorite_genres': favoriteGenres,
+      'social_links': socialLinks,
+      'is_private': isPrivate,
     };
   }
 
@@ -85,6 +115,45 @@ class ProfileData {
     }
 
     return '';
+  }
+
+  static List<String>? _extractList(
+    Map<String, dynamic> json,
+    List<String> keys,
+  ) {
+    for (final key in keys) {
+      final value = json[key];
+      if (value is List) {
+        return value.map((item) => item.toString()).toList();
+      }
+    }
+    return null;
+  }
+
+  static Map<String, String>? _extractMap(
+    Map<String, dynamic> json,
+    List<String> keys,
+  ) {
+    for (final key in keys) {
+      final value = json[key];
+      if (value is Map) {
+        return value.cast<String, String>();
+      }
+    }
+    return null;
+  }
+
+  static bool? _extractBool(
+    Map<String, dynamic> json,
+    List<String> keys,
+  ) {
+    for (final key in keys) {
+      final value = json[key];
+      if (value is bool) {
+        return value;
+      }
+    }
+    return null;
   }
 }
 
