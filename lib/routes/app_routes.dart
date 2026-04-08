@@ -21,6 +21,12 @@ import 'package:cross/features/player/screens/track_comments_screen.dart';
 import 'package:cross/features/player/screens/track_likes_screen.dart';
 import 'package:cross/features/profile/screens/followers_screen.dart';
 import 'package:cross/features/profile/screens/following_screen.dart';
+import 'package:cross/features/upload/screens/upload_track_screen.dart';
+import 'package:cross/features/upload/screens/edit_uploaded_track_screen.dart';
+import 'package:cross/features/profile/screens/blocked_users_screen.dart';
+import 'package:cross/features/profile/screens/suggested_users_screen.dart';
+import 'package:cross/features/social/screens/mutual_followers_screen.dart';
+import 'package:cross/features/social/screens/public_profile_screen.dart';
 
 class AppRoutes {
   static Route<dynamic> generateRoute(RouteSettings settings) {
@@ -76,10 +82,48 @@ class AppRoutes {
       case RouteNames.editProfile:
         return MaterialPageRoute(builder: (_) => const EditProfileScreen());
       case RouteNames.followers:
-        return MaterialPageRoute(builder: (_) => const FollowersScreen());
+        final targetUserId = settings.arguments is String
+            ? settings.arguments as String
+            : null;
+        return MaterialPageRoute(
+          builder: (_) => FollowersScreen(targetUserId: targetUserId),
+        );
 
       case RouteNames.following:
-        return MaterialPageRoute(builder: (_) => const FollowingScreen());
+        final targetUserId = settings.arguments is String
+            ? settings.arguments as String
+            : null;
+        return MaterialPageRoute(
+          builder: (_) => FollowingScreen(targetUserId: targetUserId),
+        );
+
+      case RouteNames.uploadTrack:
+        return MaterialPageRoute(builder: (_) => const UploadTrackScreen());
+      case RouteNames.editUploadedTrack:
+        final trackId = settings.arguments is String
+            ? settings.arguments as String
+            : '';
+        return MaterialPageRoute(
+          builder: (_) => EditUploadedTrackScreen(trackId: trackId),
+        );
+      case RouteNames.blockedUsers:
+        return MaterialPageRoute(builder: (_) => const BlockedUsersScreen());
+      case RouteNames.suggestedUsers:
+        return MaterialPageRoute(builder: (_) => const SuggestedUsersScreen());
+      case RouteNames.publicProfile:
+        final userId = settings.arguments is String
+            ? settings.arguments as String
+            : '';
+        return MaterialPageRoute(
+          builder: (_) => PublicProfileScreen(userId: userId),
+        );
+      case RouteNames.mutualFollowers:
+        final userId = settings.arguments is String
+            ? settings.arguments as String
+            : '';
+        return MaterialPageRoute(
+          builder: (_) => MutualFollowersScreen(userId: userId),
+        );
 
       default:
         return MaterialPageRoute(

@@ -1,8 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:cross/core/theme/app_colors.dart';
+import 'package:cross/features/social/widgets/social_list_state_view.dart';
+import 'package:cross/features/social/widgets/social_user_tile.dart';
+import 'package:cross/providers/social_provider.dart';
+import 'package:cross/routes/route_names.dart';
+import 'package:provider/provider.dart';
 
 class FollowersScreen extends StatefulWidget {
-  const FollowersScreen({super.key});
+  const FollowersScreen({
+    super.key,
+    this.targetUserId,
+  });
+
+  final String? targetUserId;
 
   @override
   State<FollowersScreen> createState() => _FollowersScreenState();
@@ -10,47 +20,25 @@ class FollowersScreen extends StatefulWidget {
 
 class _FollowersScreenState extends State<FollowersScreen> {
   final TextEditingController _searchController = TextEditingController();
-
-  final List<Map<String, dynamic>> _followers = [
-    {
-      'name': 'Alex Rivera',
-      'subtitle': 'Follows you',
-      'image': 'https://i.pravatar.cc/150?img=32',
-      'isFollowing': true,
-    },
-    {
-      'name': 'Jordan Smith',
-      'subtitle': 'Follows you',
-      'image': 'https://i.pravatar.cc/150?img=12',
-      'isFollowing': false,
-    },
-    {
-      'name': 'Sarah Chen',
-      'subtitle': 'Follows you',
-      'image': 'https://i.pravatar.cc/150?img=5',
-      'isFollowing': false,
-    },
-    {
-      'name': 'Marcus Wright',
-      'subtitle': 'Follows you',
-      'image': 'https://i.pravatar.cc/150?img=15',
-      'isFollowing': true,
-    },
-    {
-      'name': 'Riley Taylor',
-      'subtitle': 'Follows you',
-      'image': 'https://i.pravatar.cc/150?img=20',
-      'isFollowing': false,
-    },
-  ];
+  String? _targetUserId;
 
   String get _query => _searchController.text.trim().toLowerCase();
 
-  List<Map<String, dynamic>> get _filteredFollowers {
-    if (_query.isEmpty) return _followers;
-    return _followers
-        .where((user) => (user['name'] as String).toLowerCase().contains(_query))
-        .toList();
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final provider = context.read<SocialProvider>();
+      _targetUserId =
+          widget.targetUserId != null && widget.targetUserId!.trim().isNotEmpty
+              ? widget.targetUserId!.trim()
+              : provider.currentUserId;
+      provider.loadList(
+        SocialListType.followers,
+        userId: _targetUserId ?? provider.currentUserId,
+      );
+    });
   }
 
   @override
@@ -59,16 +47,8 @@ class _FollowersScreenState extends State<FollowersScreen> {
     super.dispose();
   }
 
-  /*void _toggleFollow(int index) {
-    setState(() {
-      _filteredFollowers[index]['isFollowing'] = !_filteredFollowers[index]['isFollowing'];
-    });
-  }*/
-
   @override
   Widget build(BuildContext context) {
-    final filtered = _filteredFollowers;
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Followers'),
@@ -87,20 +67,70 @@ class _FollowersScreenState extends State<FollowersScreen> {
             _buildSearchBar(),
             const SizedBox(height: 16),
             Expanded(
-              child: ListView.separated(
-                itemCount: filtered.length,
-                separatorBuilder: (_, _) => const SizedBox(height: 10),
-                itemBuilder: (context, index) {
-                  final user = filtered[index];
-                  return _buildUserTile(
-                    name: user['name'],
-                    subtitle: user['subtitle'],
-                    imageUrl: user['image'],
-                    isFollowing: user['isFollowing'],
-                    onPressed: () {
-                      setState(() {
-                        user['isFollowing'] = !user['isFollowing'];
-                      });
+              child: Consumer<SocialProvider>(
+                builder: (context, provider, _) {
+                  final users = provider.followers
+                      .where((user) =>
+                          _query.isEmpty ||
+                          user.displayName.toLowerCase().contains(_query) ||
+                          user.username.toLowerCase().contains(_query))
+                      .toList();
+
+                  if (provider.isListLoading(SocialListType.followers)) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  final error = provider.listError(SocialListType.followers);
+                  if (error != null && users.isEmpty) {
+                    return SocialListStateView(
+                      icon: Icons.error_outline,
+                      title: 'Could not load followers',
+                      message: error,
+                      actionLabel: 'Retry',
+                      onAction: () => provider.loadList(
+                        SocialListType.followers,
+                        userId: _targetUserId ?? provider.currentUserId,
+                      ),
+                    );
+                  }
+
+                  if (users.isEmpty) {
+                    return const SocialListStateView(
+                      icon: Icons.people_outline,
+                      title: 'No followers yet',
+                      message: 'Followers will show up here when people follow you.',
+                    );
+                  }
+
+                  return ListView.separated(
+                    itemCount: users.length,
+                    separatorBuilder: (_, _) => const SizedBox(height: 10),
+                    itemBuilder: (context, index) {
+                      final user = users[index];
+                      final isSelf = user.id == provider.currentUserId;
+                      return SocialUserTile(
+                        name: user.displayName,
+                        subtitle: user.subtitle,
+                        avatarUrl: user.avatarUrl,
+                        actionLabel: user.isFollowing ? 'Following' : 'Follow',
+                        actionActive: !user.isFollowing,
+                        showAction: !isSelf,
+                        onTap: () => Navigator.pushNamed(
+                          context,
+                          RouteNames.publicProfile,
+                          arguments: user.id,
+                        ),
+                        onAction: isSelf
+                            ? null
+                            : () {
+                          if (user.isFollowing) {
+                            provider.unfollowUser(user.id);
+                          } else {
+                            provider.followUser(user.id);
+                          }
+                        },
+                        isActionLoading: provider.isMutatingRelationship,
+                      );
                     },
                   );
                 },
@@ -134,87 +164,4 @@ class _FollowersScreenState extends State<FollowersScreen> {
     );
   }
 
-  Widget _buildUserTile({
-    required String name,
-    required String subtitle,
-    required String imageUrl,
-    required bool isFollowing,
-    required VoidCallback onPressed,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceSoft,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 24,
-            backgroundImage: NetworkImage(imageUrl),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  name,
-                  style: const TextStyle(
-                    color: AppColors.textPrimary,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 15,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  subtitle,
-                  style: const TextStyle(
-                    color: AppColors.primary,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          _buildFollowButton(
-            label: isFollowing ? 'Following' : 'Follow',
-            active: !isFollowing,
-            onPressed: onPressed,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFollowButton({
-    required String label,
-    required bool active,
-    required VoidCallback onPressed,
-  }) {
-    return ElevatedButton(
-      onPressed: onPressed,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: active ? AppColors.primary : AppColors.surfaceElevated,
-        foregroundColor: Colors.white,
-        elevation: active ? 6 : 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-          side: BorderSide(
-            color: active ? AppColors.primary : AppColors.border,
-          ),
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-      ),
-      child: Text(
-        label,
-        style: const TextStyle(
-          fontWeight: FontWeight.w700,
-          fontSize: 12,
-        ),
-      ),
-    );
-  }
 }

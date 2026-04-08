@@ -22,9 +22,26 @@ class AuthProvider extends ChangeNotifier {
   String? get successMessage => _successMessage;
 
   Future<void> checkLoginStatus() async {
-    _isLoggedIn = await _sessionService.isLoggedIn() &&
-        (await _sessionService.getAccessToken()) != null;
-    notifyListeners();
+    await restoreSession();
+  }
+
+  Future<void> restoreSession() async {
+    _setLoading(true);
+
+    try {
+      final hasRefreshToken = await _sessionService.hasRefreshToken();
+      if (!hasRefreshToken) {
+        await _sessionService.clearSession();
+        _currentUser = null;
+        _isLoggedIn = false;
+        notifyListeners();
+        return;
+      }
+
+      await refreshSession();
+    } finally {
+      _setLoading(false);
+    }
   }
 
   Future<bool> login({
@@ -172,6 +189,9 @@ class AuthProvider extends ChangeNotifier {
     } catch (e) {
       _errorMessage =
           _getErrorMessage(e, fallback: 'Session refresh failed.');
+      await _sessionService.clearSession();
+      _currentUser = null;
+      _isLoggedIn = false;
       notifyListeners();
       return false;
     } finally {
@@ -183,19 +203,33 @@ class AuthProvider extends ChangeNotifier {
     _setLoading(true);
     _clearMessages();
 
+    String? backendError;
+
     try {
       final refreshToken = await _sessionService.getRefreshToken();
       if (refreshToken != null && refreshToken.isNotEmpty) {
         await _authService.logout(refreshToken: refreshToken);
       }
+    } catch (e) {
+      backendError = _getErrorMessage(e, fallback: 'Logout failed.');
+    }
+
+    try {
       await _sessionService.clearSession();
 
       _currentUser = null;
       _isLoggedIn = false;
 
+      if (backendError != null && backendError.isNotEmpty) {
+        _errorMessage = backendError;
+      }
+
       notifyListeners();
     } catch (e) {
-      _errorMessage = _getErrorMessage(e, fallback: 'Logout failed.');
+      _errorMessage = _getErrorMessage(
+        e,
+        fallback: 'Failed to clear local session.',
+      );
       notifyListeners();
     } finally {
       _setLoading(false);
@@ -214,19 +248,26 @@ class AuthProvider extends ChangeNotifier {
 
   Future<void> _persistTokens(AuthResponseModel response) async {
     final accessToken = response.accessToken;
-    final refreshToken = response.refreshToken;
-
-    if (accessToken != null && accessToken.isNotEmpty) {
-      await _sessionService.saveAccessToken(accessToken);
+    if (accessToken == null || accessToken.isEmpty) {
+      throw const ApiException('Auth response is missing access token.');
     }
 
-    if (refreshToken != null && refreshToken.isNotEmpty) {
-      await _sessionService.saveRefreshToken(refreshToken);
+    final refreshToken = response.refreshToken;
+    final existingRefreshToken = await _sessionService.getRefreshToken();
+    final effectiveRefreshToken =
+        (refreshToken != null && refreshToken.isNotEmpty)
+            ? refreshToken
+            : existingRefreshToken;
+
+    await _sessionService.saveAccessToken(accessToken);
+
+    if (effectiveRefreshToken != null && effectiveRefreshToken.isNotEmpty) {
+      await _sessionService.saveRefreshToken(effectiveRefreshToken);
     }
 
     final hasValidSession =
-        accessToken != null && accessToken.isNotEmpty &&
-        refreshToken != null && refreshToken.isNotEmpty;
+      accessToken.isNotEmpty &&
+        effectiveRefreshToken != null && effectiveRefreshToken.isNotEmpty;
     _isLoggedIn = hasValidSession;
     await _sessionService.setLoggedIn(hasValidSession);
   }

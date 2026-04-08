@@ -5,6 +5,8 @@ import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '/providers/feed_provider.dart';
 import '/providers/player_provider.dart';
+import '/providers/profile_provider.dart';
+import '/features/profile/models/profile_data.dart';
 import '/routes/route_names.dart';
 import '../models/track.dart';
 
@@ -31,9 +33,14 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final provider = context.read<FeedProvider>();
-      if (provider.trendingTracks.isEmpty) {
-        provider.fetchTrendingTracks();
+      final feedProvider = context.read<FeedProvider>();
+      if (feedProvider.trendingTracks.isEmpty) {
+        feedProvider.fetchTrendingTracks();
+      }
+
+      final profileProvider = context.read<ProfileProvider>();
+      if (profileProvider.profile == null) {
+        profileProvider.loadMyProfile();
       }
     });
   }
@@ -54,6 +61,13 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         actions: [
+          IconButton(
+            onPressed: () {
+              Navigator.of(context).pushNamed(RouteNames.uploadTrack);
+            },
+            icon: const Icon(Icons.upload),
+            tooltip: 'Upload',
+          ),
           Padding(
             padding: const EdgeInsets.only(right: 16.0),
             child: GestureDetector(
@@ -72,14 +86,25 @@ class _HomeScreenState extends State<HomeScreen> {
                       width: 2,
                     ),
                   ),
-                  child: CircleAvatar(
-                    radius: 16,
-                    backgroundColor: Theme.of(context).colorScheme.surface,
-                    child: Icon(
-                      Icons.person,
-                      size: 20,
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
+                  child: Consumer<ProfileProvider>(
+                    builder: (context, profileProvider, _) {
+                      final profile = profileProvider.profile;
+                      return CircleAvatar(
+                        radius: 16,
+                        backgroundImage: avatarImage(
+                          path: profile?.avatarPath,
+                          bytes: profile?.avatarBytes,
+                        ),
+                        backgroundColor: Theme.of(context).colorScheme.surface,
+                        child: profile?.avatarPath == null && profile?.avatarBytes == null
+                            ? Icon(
+                                Icons.person,
+                                size: 20,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              )
+                            : null,
+                      );
+                    },
                   ),
                 ),
               ),
