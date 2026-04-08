@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:cross/core/services/profile_service.dart';
 import 'package:cross/features/profile/models/profile_data.dart';
@@ -23,6 +24,65 @@ class ProfileProvider extends ChangeNotifier {
 
     try {
       _profile = await _profileService.getProfile(userId: userId);
+    } catch (e) {
+      _errorMessage = e.toString();
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> loadMyProfile() async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      _profile = await _profileService.getMyProfile();
+    } catch (e) {
+      _errorMessage = e.toString();
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> updateMyProfile({
+    String? displayName,
+    String? bio,
+    String? location,
+    List<String>? favoriteGenres,
+    Map<String, String>? socialLinks,
+    bool? isPrivate,
+  }) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      _profile = await _profileService.updateMyProfile(
+        displayName: displayName,
+        bio: bio,
+        location: location,
+        favoriteGenres: favoriteGenres,
+        socialLinks: socialLinks,
+        isPrivate: isPrivate,
+      );
+    } catch (e) {
+      _errorMessage = e.toString();
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> uploadAvatar(Uint8List avatarBytes) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      _profile = await _profileService.uploadAvatar(avatarBytes);
     } catch (e) {
       _errorMessage = e.toString();
     } finally {

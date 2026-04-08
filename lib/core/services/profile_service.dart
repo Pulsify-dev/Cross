@@ -25,6 +25,72 @@ class ProfileService {
     }
   }
 
+  Future<ProfileData> getMyProfile() async {
+    try {
+      final response = await _apiService.get(
+        ApiEndpoints.myProfile,
+        authRequired: true,
+      );
+
+      return ProfileData.fromJson(response);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<ProfileData> updateMyProfile({
+    String? displayName,
+    String? bio,
+    String? location,
+    List<String>? favoriteGenres,
+    Map<String, String>? socialLinks,
+    bool? isPrivate,
+  }) async {
+    try {
+      final Map<String, dynamic> body = {};
+
+      if (displayName != null) body['display_name'] = displayName;
+      if (bio != null) body['bio'] = bio;
+      if (location != null) body['location'] = location;
+      if (favoriteGenres != null) body['favorite_genres'] = favoriteGenres;
+      if (socialLinks != null) body['social_links'] = socialLinks;
+      if (isPrivate != null) body['is_private'] = isPrivate;
+
+      final response = await _apiService.patch(
+        ApiEndpoints.myProfile,
+        body: body,
+        authRequired: true,
+      );
+
+      return ProfileData.fromJson(response);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<ProfileData> uploadAvatar(Uint8List avatarBytes) async {
+    try {
+      final files = <http.MultipartFile>[
+        http.MultipartFile.fromBytes(
+          'file',
+          avatarBytes,
+          filename: 'avatar.jpg',
+          contentType: MediaType('image', 'jpeg'),
+        ),
+      ];
+
+      final response = await _apiService.postMultipart(
+        ApiEndpoints.uploadAvatar,
+        files: files,
+        authRequired: true,
+      );
+
+      return ProfileData.fromJson(response);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   Future<ProfileData> updateProfile({
     required String userId,
     String? username,
