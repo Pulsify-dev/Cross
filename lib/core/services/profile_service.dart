@@ -171,4 +171,43 @@ class ProfileService {
       rethrow;
     }
   }
+
+  Future<void> confirmEmailChange({required String token}) async {
+    try {
+      final endpoint = '${ApiEndpoints.confirmEmailChange}?token=$token';
+      await _apiService.get(endpoint, authRequired: false);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<List<ProfileData>> searchUsers({required String query}) async {
+    try {
+      final endpoint = '${ApiEndpoints.searchUsers}?q=$query';
+      final response = await _apiService.get(
+        endpoint,
+        authRequired: true,
+      );
+
+      if (response is List) {
+        return response.map((item) => ProfileData.fromJson(item)).toList();
+      }
+      return [];
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<ProfileData> getPublicProfile({required String userId}) async {
+    try {
+      final response = await _apiService.get(
+        ApiEndpoints.publicProfile(userId),
+        authRequired: false,
+      );
+
+      return ProfileData.fromJson(response);
+    } catch (e) {
+      rethrow;
+    }
+  }
 }
