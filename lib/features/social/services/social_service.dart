@@ -248,7 +248,13 @@ class MockSocialService implements SocialService {
 					?.whereType<Map<String, dynamic>>()
 					.map((user) => {
 						...user,
+						// Followers list means these users follow the current viewer.
 						'isFollowedBy': true,
+						// Preserve server relationship flags when available.
+						if (user.containsKey('isFollowing'))
+							'isFollowing': user['isFollowing'],
+						if (!user.containsKey('isFollowing') && user.containsKey('is_following'))
+							'is_following': user['is_following'],
 					})
 					.toList(),
 		};

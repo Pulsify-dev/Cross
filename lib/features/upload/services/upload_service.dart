@@ -1,6 +1,7 @@
 import 'package:cross/core/constants/api_endpoints.dart';
 import 'package:cross/core/services/api_service.dart';
 import 'package:cross/features/upload/models/upload_model.dart';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 
@@ -92,22 +93,49 @@ class UploadService {
 		if (track.description.trim().isNotEmpty) {
 			body['description'] = track.description.trim();
 		}
-		final response = await _apiService.postMultipart(
-			ApiEndpoints.tracks,
+
+		_logCreateTrackRequest(
+			track: track,
 			fields: body,
 			repeatedFields: repeatedTags,
 			files: files,
-			authRequired: true,
 		);
+		_logUploadTrace(
+			'step1.beforeCreate',
+			'POST ${ApiEndpoints.tracks} started',
+		);
+
+		dynamic response;
+		try {
+			response = await _apiService.postMultipart(
+				ApiEndpoints.tracks,
+				fields: body,
+				repeatedFields: repeatedTags,
+				files: files,
+				authRequired: true,
+			);
+		} on ApiException catch (error) {
+			_logUploadTrace(
+				'step2.afterCreate',
+				'POST ${ApiEndpoints.tracks} failed status=${error.statusCode ?? 'unknown'} body=${error.message}',
+			);
+			rethrow;
+		}
 
 		if (response is! Map<String, dynamic>) {
 			throw const ApiException('Invalid create track response.');
 		}
 
-		final created = UploadModel.fromJson(response).copyWith(
+		final payload = _extractTrackPayload(response);
+		final created = UploadModel.fromJson(payload).copyWith(
 			collaborators: track.collaborators,
 			releaseDate: track.releaseDate,
 			artworkBytes: track.artworkBytes,
+		);
+
+		_logUploadTrace(
+			'step2.afterCreate',
+			'POST ${ApiEndpoints.tracks} success status=${_responseStatusCodeSummary(response, fallback: '2xx')} body=${_summarizeBody(response)} parsedTrackId=${created.id}',
 		);
 
 		if (created.id.trim().isEmpty) {
@@ -119,25 +147,46 @@ class UploadService {
 	}
 
 	Future<UploadTrackStatusResult> getTrackStatus(String trackId) async {
-		final response = await _apiService.get(
-			ApiEndpoints.trackStatus(trackId),
-			authRequired: true,
-		);
+		final endpoint = ApiEndpoints.trackStatus(trackId);
+		_logUploadTrace('step3.beforeStatusPoll', 'GET $endpoint started');
+
+		dynamic response;
+		try {
+			response = await _apiService.get(
+				endpoint,
+				authRequired: true,
+			);
+		} on ApiException catch (error) {
+			_logUploadTrace(
+				'step4.afterStatusPoll',
+				'GET $endpoint failed status=${error.statusCode ?? 'unknown'} body=${error.message}',
+			);
+			rethrow;
+		}
 
 		if (response is! Map<String, dynamic>) {
 			throw const ApiException('Invalid track status response.');
 		}
 
-		final status = UploadModel.statusFromApi(response['status']?.toString());
-		final progressRaw = response['progress_percent'] ?? response['progressPercent'];
+		final statusPayload = _extractStatusPayload(response);
+		final status = UploadModel.statusFromApi(
+			statusPayload['status']?.toString(),
+		);
+		final progressRaw =
+				statusPayload['progress_percent'] ?? statusPayload['progressPercent'];
 		final progressPercent = progressRaw is num
 				? progressRaw.toDouble()
 				: double.tryParse(progressRaw?.toString() ?? '');
 
+		_logUploadTrace(
+			'step4.afterStatusPoll',
+			'GET $endpoint success status=${_responseStatusCodeSummary(response, fallback: '2xx')} body=${_summarizeBody(response)} parsedStatus=${status.name}',
+		);
+
 		return UploadTrackStatusResult(
 			status: status,
 			progressPercent: progressPercent,
-			errorMessage: response['error_message']?.toString(),
+			errorMessage: statusPayload['error_message']?.toString(),
 		);
 	}
 
@@ -146,9 +195,26 @@ class UploadService {
 			throw const ApiException('Track id is required to fetch waveform.');
 		}
 
-		final response = await _apiService.get(
-			ApiEndpoints.trackWaveform(trackId),
-			authRequired: false,
+		final endpoint = ApiEndpoints.trackWaveform(trackId);
+		_logUploadTrace('step5.beforeWaveform', 'GET $endpoint started');
+
+		dynamic response;
+		try {
+			response = await _apiService.get(
+				endpoint,
+				authRequired: true,
+			);
+		} on ApiException catch (error) {
+			_logUploadTrace(
+				'step6.afterWaveform',
+				'GET $endpoint failed status=${error.statusCode ?? 'unknown'} body=${error.message}',
+			);
+			rethrow;
+		}
+
+		_logUploadTrace(
+			'step6.afterWaveform',
+			'GET $endpoint success status=${_responseStatusCodeSummary(response, fallback: '2xx')} body=${_summarizeBody(response)}',
 		);
 
 		final peaks = _extractWaveformPeaks(response);
@@ -178,7 +244,8 @@ class UploadService {
 			throw const ApiException('Invalid track response.');
 		}
 
-		final track = UploadModel.fromJson(response);
+		final payload = _extractTrackPayload(response);
+		final track = UploadModel.fromJson(payload);
 		if (track.id.trim().isEmpty) {
 			throw const ApiException('Track response is missing track id.');
 		}
@@ -224,9 +291,10 @@ class UploadService {
 			throw const ApiException('Invalid update track metadata response.');
 		}
 
-		final mapped = UploadModel.fromJson(response);
+		final payload = _extractTrackPayload(response);
+		final mapped = UploadModel.fromJson(payload);
 		final hasArtworkInResponse =
-				response.containsKey('artwork_url') || response.containsKey('artworkUrl');
+				payload.containsKey('artwork_url') || payload.containsKey('artworkUrl');
 		final mappedArtworkPath = mapped.artworkPathOrUrl.trim();
 		final existing = _mockTracksById[trackId];
 
@@ -477,5 +545,172 @@ class UploadService {
 		if (value is num) return value.toInt();
 		if (value == null) return null;
 		return int.tryParse(value.toString());
+	}
+
+	Map<String, dynamic> _extractTrackPayload(Map<String, dynamic> response) {
+		final directData = response['data'];
+
+		if (directData is Map<String, dynamic>) {
+			final nestedTrack = directData['track'];
+			if (nestedTrack is Map<String, dynamic> &&
+					_hasUsableTrackId(nestedTrack)) {
+				return nestedTrack;
+			}
+
+			if (_looksLikeTrackPayload(directData) && _hasUsableTrackId(directData)) {
+				return directData;
+			}
+		}
+
+		final discovered = _findLikelyTrackPayload(response);
+		if (discovered != null) {
+			return discovered;
+		}
+
+		return response;
+	}
+
+	Map<String, dynamic> _extractStatusPayload(Map<String, dynamic> response) {
+		if (response.containsKey('status') ||
+				response.containsKey('progress_percent') ||
+				response.containsKey('progressPercent')) {
+			return response;
+		}
+
+		final data = response['data'];
+		if (data is Map<String, dynamic>) {
+			return data;
+		}
+
+		return response;
+	}
+
+	bool _looksLikeTrackPayload(Map<String, dynamic> payload) {
+		return payload.containsKey('_id') ||
+				payload.containsKey('track_id') ||
+				payload.containsKey('audio_url') ||
+				payload.containsKey('title');
+	}
+
+	Map<String, dynamic>? _findLikelyTrackPayload(dynamic node) {
+		if (node is! Map<String, dynamic>) return null;
+
+		if (_looksLikeTrackPayload(node) && _hasUsableTrackId(node)) {
+			return node;
+		}
+
+		for (final value in node.values) {
+			if (value is Map<String, dynamic>) {
+				final found = _findLikelyTrackPayload(value);
+				if (found != null) return found;
+			}
+		}
+
+		return null;
+	}
+
+	bool _hasUsableTrackId(Map<String, dynamic> payload) {
+		final candidates = [
+			payload['_id'],
+			payload['track_id'],
+			payload['trackId'],
+			payload['id'],
+		];
+
+		for (final candidate in candidates) {
+			if (_isUsableTrackIdValue(candidate)) return true;
+		}
+
+		return false;
+	}
+
+	bool _isUsableTrackIdValue(dynamic value) {
+		if (value == null) return false;
+		if (value is int) return true;
+
+		if (value is num) {
+			return value == value.toInt();
+		}
+
+		final asString = value.toString().trim();
+		if (asString.isEmpty) return false;
+
+		final parsedNumeric = num.tryParse(asString);
+		if (parsedNumeric == null) return true;
+		return parsedNumeric == parsedNumeric.toInt();
+	}
+
+	String _responseStatusCodeSummary(
+		Map<String, dynamic> response, {
+		required String fallback,
+	}) {
+		final candidates = [
+			response['statusCode'],
+			response['status_code'],
+			response['code'],
+		];
+
+		for (final candidate in candidates) {
+			if (candidate is int) return candidate.toString();
+			final parsed = int.tryParse(candidate?.toString() ?? '');
+			if (parsed != null) return parsed.toString();
+		}
+
+		return fallback;
+	}
+
+	String _summarizeBody(dynamic body) {
+		if (body is Map<String, dynamic>) {
+			final keys = body.keys.take(8).join(',');
+			final message =
+					body['message']?.toString() ?? body['error']?.toString() ?? '';
+			var status = body['status']?.toString() ?? '';
+			if (status.isEmpty) {
+				final nested = body['data'];
+				if (nested is Map<String, dynamic>) {
+					status = nested['status']?.toString() ?? '';
+				}
+			}
+			return 'keys=[$keys] message=${message.isEmpty ? '-' : message} status=${status.isEmpty ? '-' : status}';
+		}
+
+		if (body is List) {
+			return 'list(size=${body.length})';
+		}
+
+		return body.toString();
+	}
+
+	void _logUploadTrace(String step, String message) {
+		if (!kDebugMode) return;
+		final timestamp = DateTime.now().toIso8601String();
+		debugPrint('[UploadTrace][$timestamp][$step] $message');
+	}
+
+	void _logCreateTrackRequest({
+		required UploadModel track,
+		required Map<String, String> fields,
+		required List<MapEntry<String, String>> repeatedFields,
+		required List<http.MultipartFile> files,
+	}) {
+		if (!kDebugMode) return;
+
+		final numericMetadataCandidates = <String, dynamic>{
+			'waveformSamples': track.waveformSamples,
+			'progressPercent': track.progressPercent,
+		};
+
+		final sentFieldKeys = [
+			...fields.keys,
+			...repeatedFields.map((entry) => entry.key),
+		];
+
+		debugPrint(
+			'[UploadService.createTrack] Sending multipart request with '
+			'fields=$fields, repeatedFieldKeys=${repeatedFields.map((e) => e.key).toList()}, '
+			'files=${files.map((file) => '${file.field}:${file.filename ?? 'unknown'}').toList()}, '
+			'numericCandidates=$numericMetadataCandidates, '
+			'numericFieldKeysSent=${sentFieldKeys.where((key) => key.contains('duration') || key.contains('bitrate') || key.contains('size') || key.contains('sample') || key.contains('progress')).toList()}',
+		);
 	}
 }

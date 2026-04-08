@@ -60,6 +60,16 @@ class SocialProvider extends ChangeNotifier {
 		SocialListType.blocked: 0,
 	};
 
+	final Map<SocialListType, String> _listOwnerByType = {
+		SocialListType.followers: 'me',
+		SocialListType.following: 'me',
+		SocialListType.mutualFollowers: 'me',
+		SocialListType.suggested: 'me',
+		SocialListType.blocked: 'me',
+	};
+
+	final Map<String, bool> _followStateByUserId = {};
+
 	String get currentUserId => _currentUserId;
 	PublicProfileModel? get publicProfile => _publicProfile;
 	RelationshipStatusModel? get relationshipStatus => _relationshipStatus;
@@ -112,6 +122,8 @@ class SocialProvider extends ChangeNotifier {
 	}) async {
 		try {
 			_relationshipStatus = await _service.getRelationshipStatus(userId);
+			_followStateByUserId[userId] = _relationshipStatus!.isFollowing;
+			_applyFollowStateToAllLoadedLists();
 		} catch (e) {
 			_profileError = e.toString();
 		} finally {
@@ -139,6 +151,8 @@ class SocialProvider extends ChangeNotifier {
 			final response = await _fetchList(type, userId: userId, page: page, limit: limit);
 			_lists[type] = response.users;
 			_listTotals[type] = response.total;
+			_listOwnerByType[type] = userId;
+			_syncFollowStateAfterListLoad(type);
 		} catch (e) {
 			_listErrors[type] = e.toString();
 		} finally {
@@ -312,6 +326,8 @@ class SocialProvider extends ChangeNotifier {
 	}
 
 	void _updateUserInAllLists(String userId, RelationshipStatusModel relation) {
+		_followStateByUserId[userId] = relation.isFollowing;
+
 		for (final type in _lists.keys) {
 			_lists[type] = _lists[type]!.map((user) {
 				if (user.id != userId) return user;
@@ -349,6 +365,39 @@ class SocialProvider extends ChangeNotifier {
 					),
 				];
 			}
+		}
+	}
+
+	void _syncFollowStateAfterListLoad(SocialListType loadedType) {
+		if (loadedType == SocialListType.following &&
+				_listOwnerByType[SocialListType.following] == _currentUserId) {
+			final currentFollowingIds = _lists[SocialListType.following]!
+					.map((entry) => entry.id)
+					.where((id) => id.trim().isNotEmpty)
+					.toSet();
+
+			for (final users in _lists.values) {
+				for (final user in users) {
+					final userId = user.id.trim();
+					if (userId.isEmpty) continue;
+					_followStateByUserId[userId] = currentFollowingIds.contains(userId);
+				}
+			}
+		}
+
+		_applyFollowStateToAllLoadedLists();
+	}
+
+	void _applyFollowStateToAllLoadedLists() {
+		for (final type in _lists.keys) {
+			_lists[type] = _lists[type]!.map((user) {
+				final override = _followStateByUserId[user.id];
+				if (override == null || override == user.isFollowing) {
+					return user;
+				}
+
+				return user.copyWith(isFollowing: override);
+			}).toList();
 		}
 	}
 

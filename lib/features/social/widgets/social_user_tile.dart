@@ -15,6 +15,7 @@ class SocialUserTile extends StatelessWidget {
     this.onTap,
     this.isActionLoading = false,
     this.trailing,
+    this.showAction = true,
   });
 
   final String name;
@@ -26,6 +27,7 @@ class SocialUserTile extends StatelessWidget {
   final VoidCallback? onTap;
   final bool isActionLoading;
   final Widget? trailing;
+  final bool showAction;
 
   @override
   Widget build(BuildContext context) {
@@ -84,12 +86,13 @@ class SocialUserTile extends StatelessWidget {
               trailing!,
               const SizedBox(width: 8),
             ],
-            FollowActionButton(
-              label: actionLabel,
-              active: actionActive,
-              isLoading: isActionLoading,
-              onPressed: onAction,
-            ),
+            if (showAction)
+              FollowActionButton(
+                label: actionLabel,
+                active: actionActive,
+                isLoading: isActionLoading,
+                onPressed: onAction,
+              ),
           ],
         ),
       ),

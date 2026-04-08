@@ -183,22 +183,65 @@ class UploadModel {
 	}
 
 	static String _resolveTrackId(Map<String, dynamic> json) {
-		final mongoId = json['_id']?.toString().trim();
-		if (mongoId != null && mongoId.isNotEmpty) return mongoId;
+		final candidates = [
+			json['_id'],
+			json['track_id'],
+			json['trackId'],
+			json['id'],
+		];
 
-		final genericId = json['id']?.toString().trim();
-		if (genericId != null && genericId.isNotEmpty) return genericId;
+		for (final candidate in candidates) {
+			final normalized = _normalizeId(candidate);
+			if (normalized.isNotEmpty) return normalized;
+		}
 
 		return '';
 	}
 
+	static String _normalizeId(dynamic value) {
+		if (value == null) return '';
+
+		if (value is int) return value.toString();
+
+		if (value is num) {
+			final normalizedInt = value.toInt();
+			if (value == normalizedInt) return normalizedInt.toString();
+			return '';
+		}
+
+		final asString = value.toString().trim();
+		if (asString.isEmpty) return '';
+
+		final numeric = num.tryParse(asString);
+		if (numeric != null) {
+			final normalizedInt = numeric.toInt();
+			if (numeric == normalizedInt) {
+				return normalizedInt.toString();
+			}
+			return '';
+		}
+
+		return asString;
+	}
+
 	static UploadTrackStatus _statusFromJson(String? value) {
-		switch (value) {
+		final normalized = value?.trim().toLowerCase() ?? '';
+
+		switch (normalized) {
 			case 'processing':
+			case 'queued':
+			case 'pending':
+			case 'in_progress':
+			case 'in-progress':
 				return UploadTrackStatus.processing;
 			case 'finished':
+			case 'complete':
+			case 'completed':
+			case 'ready':
+			case 'success':
 				return UploadTrackStatus.finished;
 			case 'failed':
+			case 'error':
 				return UploadTrackStatus.failed;
 			case 'draft':
 			default:
