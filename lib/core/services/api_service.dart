@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:cross/core/constants/api_constants.dart';
 import 'package:cross/core/constants/api_endpoints.dart';
 import 'package:cross/core/services/session_service.dart';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 class ApiException implements Exception {
@@ -120,6 +121,12 @@ class ApiService {
 			request.files.addAll(files);
 		}
 
+		_logMultipartDispatch(
+			method: 'POST',
+			endpoint: endpoint,
+			request: request,
+		);
+
 		try {
 			final streamedResponse = await _client
 					.send(request)
@@ -172,6 +179,12 @@ class ApiService {
 		if (files != null && files.isNotEmpty) {
 			request.files.addAll(files);
 		}
+
+		_logMultipartDispatch(
+			method: 'PUT',
+			endpoint: endpoint,
+			request: request,
+		);
 
 		try {
 			final streamedResponse = await _client
@@ -397,5 +410,21 @@ class ApiService {
 		}
 
 		return 'Something went wrong. Please try again.';
+	}
+
+	void _logMultipartDispatch({
+		required String method,
+		required String endpoint,
+		required http.MultipartRequest request,
+	}) {
+		if (!kDebugMode) return;
+		if (endpoint != ApiEndpoints.tracks) return;
+
+		final timestamp = DateTime.now().toIso8601String();
+		debugPrint(
+			'[UploadTrace][$timestamp][multipart.dispatch] '
+			'$method $endpoint fields=${request.fields} '
+			'files=${request.files.map((f) => '${f.field}:${f.filename ?? 'unknown'}(length=${f.length})').toList()}',
+		);
 	}
 }

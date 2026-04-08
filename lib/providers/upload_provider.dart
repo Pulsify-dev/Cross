@@ -18,6 +18,7 @@ class UploadProvider extends ChangeNotifier {
 	String? _currentOperation;
 	UploadTrackStatus? _selectedStatus;
 	final Map<String, Timer> _statusPollTimersByTrackId = {};
+	final Map<String, DateTime> _statusPollingStartedAtByTrackId = {};
 	final Set<String> _statusPollRequestsInFlight = {};
 	final Set<String> _waveformRequestsInFlight = {};
 	final Map<String, String> _waveformErrorsByTrackId = {};
@@ -30,6 +31,7 @@ class UploadProvider extends ChangeNotifier {
 	int _artistTracksTotal = 0;
 	bool _hasMoreArtistTracks = false;
 	final Duration _statusPollInterval = const Duration(seconds: 3);
+	final Duration _statusPollTimeout = const Duration(minutes: 3);
 	String? _currentUploadSessionTrackId;
 	String? _currentUserId;
 	String? _currentUsername;
@@ -372,6 +374,11 @@ class UploadProvider extends ChangeNotifier {
 				throw const ApiException('You must be logged in to upload a track.');
 			}
 
+			_logUploadProviderTrace(
+				'provider.upload.start',
+				'Upload provider started create flow title=${track.title}',
+			);
+
 			final created = await _uploadService.createTrack(track);
 			final previousSessionTrackId = _currentUploadSessionTrackId;
 			if (previousSessionTrackId != null &&
@@ -385,10 +392,18 @@ class UploadProvider extends ChangeNotifier {
 			];
 			_startTrackStatusPolling(created.id);
 			_successMessage = 'Track uploaded successfully.';
+			_logUploadProviderTrace(
+				'provider.upload.created',
+				'Track created and polling started trackId=${created.id}',
+			);
 			return created;
 		} catch (error) {
 			_errorMessage = error.toString();
 			_successMessage = null;
+			_logUploadProviderTrace(
+				'provider.upload.failed',
+				'Upload create flow failed error=$_errorMessage',
+			);
 			return null;
 		} finally {
 			_isUploading = false;
@@ -605,6 +620,12 @@ class UploadProvider extends ChangeNotifier {
 			return;
 		}
 
+		_statusPollingStartedAtByTrackId[trackId] = DateTime.now();
+		_logUploadProviderTrace(
+			'provider.poll.start',
+			'Status polling started trackId=$trackId interval=${_statusPollInterval.inSeconds}s timeout=${_statusPollTimeout.inSeconds}s',
+		);
+
 		_pollTrackStatus(trackId);
 		_statusPollTimersByTrackId[trackId] = Timer.periodic(
 			_statusPollInterval,
@@ -614,11 +635,39 @@ class UploadProvider extends ChangeNotifier {
 
 	void _stopTrackStatusPolling(String trackId) {
 		_statusPollTimersByTrackId.remove(trackId)?.cancel();
+		_statusPollingStartedAtByTrackId.remove(trackId);
 		_statusPollRequestsInFlight.remove(trackId);
 	}
 
 	Future<void> _pollTrackStatus(String trackId) async {
 		if (_statusPollRequestsInFlight.contains(trackId)) return;
+
+		final startedAt = _statusPollingStartedAtByTrackId[trackId];
+		if (startedAt != null) {
+			final elapsed = DateTime.now().difference(startedAt);
+			if (elapsed >= _statusPollTimeout) {
+				_errorMessage =
+						'Upload processing timed out after ${_statusPollTimeout.inSeconds} seconds.';
+				_uploadedTracks = _uploadedTracks
+						.map(
+							(track) => track.id == trackId
+									? track.copyWith(
+											status: UploadTrackStatus.failed,
+											processingErrorMessage: _errorMessage,
+									)
+									: track,
+						)
+						.toList();
+				_stopTrackStatusPolling(trackId);
+				_logUploadProviderTrace(
+					'provider.upload.timed_out',
+					'Upload timed out trackId=$trackId elapsedSeconds=${elapsed.inSeconds}',
+				);
+				notifyListeners();
+				return;
+			}
+		}
+
 		_statusPollRequestsInFlight.add(trackId);
 
 		try {
@@ -647,15 +696,38 @@ class UploadProvider extends ChangeNotifier {
 			if (statusResult.status == UploadTrackStatus.finished ||
 						statusResult.status == UploadTrackStatus.failed) {
 				_stopTrackStatusPolling(trackId);
+
+				if (statusResult.status == UploadTrackStatus.finished) {
+					_logUploadProviderTrace(
+						'provider.upload.complete',
+						'Provider marked upload complete trackId=$trackId; requesting waveform',
+					);
+					await fetchWaveformForTrack(trackId, forceRefresh: true);
+				} else {
+					_logUploadProviderTrace(
+						'provider.upload.failed',
+						'Provider marked upload failed trackId=$trackId error=${statusResult.errorMessage ?? '-'}',
+					);
+				}
 			}
 			notifyListeners();
 		} catch (error) {
 			_errorMessage = error.toString();
 			_stopTrackStatusPolling(trackId);
+			_logUploadProviderTrace(
+				'provider.upload.failed',
+				'Status polling failed trackId=$trackId error=$_errorMessage',
+			);
 			notifyListeners();
 		} finally {
 			_statusPollRequestsInFlight.remove(trackId);
 		}
+	}
+
+	void _logUploadProviderTrace(String step, String message) {
+		if (!kDebugMode) return;
+		final timestamp = DateTime.now().toIso8601String();
+		debugPrint('[UploadTrace][$timestamp][$step] $message');
 	}
 
 	@override
@@ -664,6 +736,7 @@ class UploadProvider extends ChangeNotifier {
 			timer.cancel();
 		}
 		_statusPollTimersByTrackId.clear();
+		_statusPollingStartedAtByTrackId.clear();
 		_statusPollRequestsInFlight.clear();
 		_waveformRequestsInFlight.clear();
 		_waveformErrorsByTrackId.clear();

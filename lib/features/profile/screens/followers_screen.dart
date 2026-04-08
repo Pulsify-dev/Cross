@@ -7,7 +7,12 @@ import 'package:cross/routes/route_names.dart';
 import 'package:provider/provider.dart';
 
 class FollowersScreen extends StatefulWidget {
-  const FollowersScreen({super.key});
+  const FollowersScreen({
+    super.key,
+    this.targetUserId,
+  });
+
+  final String? targetUserId;
 
   @override
   State<FollowersScreen> createState() => _FollowersScreenState();
@@ -25,8 +30,10 @@ class _FollowersScreenState extends State<FollowersScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final provider = context.read<SocialProvider>();
-      final args = ModalRoute.of(context)?.settings.arguments;
-      _targetUserId = args is String && args.isNotEmpty ? args : provider.currentUserId;
+      _targetUserId =
+          widget.targetUserId != null && widget.targetUserId!.trim().isNotEmpty
+              ? widget.targetUserId!.trim()
+              : provider.currentUserId;
       provider.loadList(
         SocialListType.followers,
         userId: _targetUserId ?? provider.currentUserId,
@@ -100,18 +107,22 @@ class _FollowersScreenState extends State<FollowersScreen> {
                     separatorBuilder: (_, _) => const SizedBox(height: 10),
                     itemBuilder: (context, index) {
                       final user = users[index];
+                      final isSelf = user.id == provider.currentUserId;
                       return SocialUserTile(
                         name: user.displayName,
                         subtitle: user.subtitle,
                         avatarUrl: user.avatarUrl,
                         actionLabel: user.isFollowing ? 'Following' : 'Follow',
                         actionActive: !user.isFollowing,
+                        showAction: !isSelf,
                         onTap: () => Navigator.pushNamed(
                           context,
                           RouteNames.publicProfile,
                           arguments: user.id,
                         ),
-                        onAction: () {
+                        onAction: isSelf
+                            ? null
+                            : () {
                           if (user.isFollowing) {
                             provider.unfollowUser(user.id);
                           } else {

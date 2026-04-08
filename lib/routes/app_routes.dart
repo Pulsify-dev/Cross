@@ -82,10 +82,20 @@ class AppRoutes {
       case RouteNames.editProfile:
         return MaterialPageRoute(builder: (_) => const EditProfileScreen());
       case RouteNames.followers:
-        return MaterialPageRoute(builder: (_) => const FollowersScreen());
+        final targetUserId = settings.arguments is String
+            ? settings.arguments as String
+            : null;
+        return MaterialPageRoute(
+          builder: (_) => FollowersScreen(targetUserId: targetUserId),
+        );
 
       case RouteNames.following:
-        return MaterialPageRoute(builder: (_) => const FollowingScreen());
+        final targetUserId = settings.arguments is String
+            ? settings.arguments as String
+            : null;
+        return MaterialPageRoute(
+          builder: (_) => FollowingScreen(targetUserId: targetUserId),
+        );
 
       case RouteNames.uploadTrack:
         return MaterialPageRoute(builder: (_) => const UploadTrackScreen());
