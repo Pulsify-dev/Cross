@@ -114,6 +114,23 @@ class ProfileProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      await _profileService.changePassword(
+        currentPassword: currentPassword,
+        newPassword: newPassword,
+      );
+    } catch (e) {
+      _errorMessage = e.toString();
+    }
+  }
+
   void clearError() {
     _errorMessage = null;
     notifyListeners();

@@ -151,4 +151,24 @@ class ProfileService {
       rethrow;
     }
   }
+
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    try {
+      final body = {
+        'old_password': currentPassword,
+        'new_password': newPassword,
+      };
+
+      await _apiService.put(
+        ApiEndpoints.changePassword,
+        body: body,
+        authRequired: true,
+      );
+    } catch (e) {
+      rethrow;
+    }
+  }
 }

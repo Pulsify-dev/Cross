@@ -9,6 +9,7 @@ class ApiEndpoints {
 
   static const String myProfile = '/users/me';
   static const String uploadAvatar = '/users/me/avatar';
+  static const String changePassword = '/users/me/password';
   static String profile(String userId) => '/users/$userId';
   static String editProfile(String userId) => '/users/$userId/edit';
   static String followers(

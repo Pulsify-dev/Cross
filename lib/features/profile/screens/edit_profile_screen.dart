@@ -23,6 +23,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   late TextEditingController _xController;
   late TextEditingController _facebookController;
   late TextEditingController _websiteController;
+  late TextEditingController _currentPasswordController;
+  late TextEditingController _newPasswordController;
+  late TextEditingController _confirmPasswordController;
   late String _avatarPath;
   Uint8List? _avatarBytes;
   bool _isAvatarUploading = false;
@@ -63,6 +66,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         text: profile.socialLinks?['website'] ?? '',
       );
       _isPrivate = profile.isPrivate ?? false;
+      _currentPasswordController = TextEditingController();
+      _newPasswordController = TextEditingController();
+      _confirmPasswordController = TextEditingController();
     } else {
       _avatarPath = '';
       _avatarBytes = null;
@@ -75,6 +81,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       _xController = TextEditingController();
       _facebookController = TextEditingController();
       _websiteController = TextEditingController();
+      _currentPasswordController = TextEditingController();
+      _newPasswordController = TextEditingController();
+      _confirmPasswordController = TextEditingController();
       _isPrivate = false;
     }
   }
@@ -147,6 +156,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _xController.dispose();
     _facebookController.dispose();
     _websiteController.dispose();
+    _currentPasswordController.dispose();
+    _newPasswordController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
   }
 
@@ -678,6 +690,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
     return GestureDetector(
       onTap: () {
+        _currentPasswordController.clear();
+        _newPasswordController.clear();
+        _confirmPasswordController.clear();
+
         showDialog(
           context: context,
           builder: (context) => AlertDialog(
@@ -686,6 +702,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 TextField(
+                  controller: _currentPasswordController,
                   obscureText: true,
                   decoration: InputDecoration(
                     hintText: 'Current Password',
@@ -696,6 +713,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 ),
                 const SizedBox(height: 12),
                 TextField(
+                  controller: _newPasswordController,
                   obscureText: true,
                   decoration: InputDecoration(
                     hintText: 'New Password',
@@ -706,6 +724,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 ),
                 const SizedBox(height: 12),
                 TextField(
+                  controller: _confirmPasswordController,
                   obscureText: true,
                   decoration: InputDecoration(
                     hintText: 'Confirm Password',
@@ -722,7 +741,74 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 child: const Text('Cancel'),
               ),
               TextButton(
-                onPressed: () => Navigator.pop(context),
+                onPressed: () async {
+                  final currentPassword = _currentPasswordController.text.trim();
+                  final newPassword = _newPasswordController.text.trim();
+                  final confirmPassword = _confirmPasswordController.text.trim();
+                  final messenger = ScaffoldMessenger.of(context);
+                  final navigator = Navigator.of(context);
+
+                  if (currentPassword.isEmpty ||
+                      newPassword.isEmpty ||
+                      confirmPassword.isEmpty) {
+                    messenger.showSnackBar(
+                      const SnackBar(
+                        content: Text('All fields are required'),
+                      ),
+                    );
+                    return;
+                  }
+
+                  if (newPassword != confirmPassword) {
+                    messenger.showSnackBar(
+                      const SnackBar(
+                        content: Text('New passwords do not match'),
+                      ),
+                    );
+                    return;
+                  }
+
+                  if (newPassword.length < 6) {
+                    messenger.showSnackBar(
+                      const SnackBar(
+                        content: Text('Password must be at least 6 characters'),
+                      ),
+                    );
+                    return;
+                  }
+
+                  final profileProvider =
+                      Provider.of<ProfileProvider>(context, listen: false);
+
+                  try {
+                    await profileProvider.changePassword(
+                      currentPassword: currentPassword,
+                      newPassword: newPassword,
+                    );
+
+                    if (!mounted) return;
+
+                    navigator.pop();
+
+                    messenger.showSnackBar(
+                      const SnackBar(
+                        content: Text('Password changed successfully'),
+                      ),
+                    );
+
+                    _currentPasswordController.clear();
+                    _newPasswordController.clear();
+                    _confirmPasswordController.clear();
+                  } catch (e) {
+                    if (!mounted) return;
+
+                    messenger.showSnackBar(
+                      SnackBar(
+                        content: Text('Failed to change password: $e'),
+                      ),
+                    );
+                  }
+                },
                 child: const Text('Update'),
               ),
             ],
