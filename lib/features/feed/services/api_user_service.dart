@@ -59,8 +59,10 @@ class ApiUserService implements UserService {
   Future<List<User>> getSuggestedUsers({int page = 1, int limit = 20}) async {
     try {
       final response = await _apiService.get(
-        '/users/suggested?page=$page&limit=$limit',
+        '/users/me/suggested?page=$page&limit=$limit',
+        authRequired: true,
       );
+
       if (response == null) return [];
 
       if (response is List) {
