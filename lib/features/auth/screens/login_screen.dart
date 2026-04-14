@@ -22,6 +22,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final SocialSdkService _socialSdkService = SocialSdkService();
 
   bool isPasswordHidden = true;
+  bool _hasAutoRedirected = false;
 
   @override
   void dispose() {
@@ -124,13 +125,6 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  void _handleAppleLogin() {
-    _handleSocialLogin(
-      provider: 'apple',
-      resolveToken: _socialSdkService.getAppleProviderToken,
-    );
-  }
-
   void _handleFacebookLogin() {
     _handleSocialLogin(
       provider: 'facebook',
@@ -141,10 +135,29 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
-    final isLoading = context.select<AuthProvider, bool>((p) => p.isLoading);
-    final isSocialLoading = context.select<AuthProvider, bool>(
-      (p) => p.isSocialLoading,
-    );
+    final authProvider = context.watch<AuthProvider>();
+    final isLoading = authProvider.isLoading;
+    final isSocialLoading = authProvider.isSocialLoading;
+
+    // Auto-redirect if session was restored successfully.
+    if (!_hasAutoRedirected && !isLoading && authProvider.isLoggedIn) {
+      _hasAutoRedirected = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          Navigator.pushReplacementNamed(context, RouteNames.mainScreen);
+        }
+      });
+    }
+
+    // While checking login status on startup, show a loading indicator.
+    if (isLoading && !_hasAutoRedirected) {
+      return const Scaffold(
+        backgroundColor: AppColors.backgroundAlt,
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
 
     return Scaffold(
       backgroundColor: AppColors.backgroundAlt,
@@ -401,17 +414,6 @@ class _LoginScreenState extends State<LoginScreen> {
                               size: 18,
                             ),
                             onPressed: isSocialLoading ? null : _handleFacebookLogin,
-                            isLoading: isSocialLoading,
-                          ),
-                          const SizedBox(width: 12),
-                          SocialAuthButton(
-                            text: 'Apple',
-                            icon: const Icon(
-                              Icons.apple,
-                              color: Colors.white,
-                              size: 18,
-                            ),
-                            onPressed: isSocialLoading ? null : _handleAppleLogin,
                             isLoading: isSocialLoading,
                           ),
                         ],

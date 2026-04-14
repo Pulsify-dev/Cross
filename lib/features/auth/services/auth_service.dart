@@ -131,6 +131,35 @@ class AuthService {
         'Password has been successfully reset. You can now log in.';
   }
 
+  Future<Map<String, dynamic>> getMyProfile() async {
+    final response = await _apiService.get(
+      ApiEndpoints.myProfile,
+      authRequired: true,
+    );
+
+    if (response is! Map<String, dynamic>) {
+      throw const ApiException('Invalid profile response.');
+    }
+
+    return response;
+  }
+
+  Future<String> resendVerification({
+    required String email,
+  }) async {
+    final response = await _apiService.post(
+      ApiEndpoints.resendVerification,
+      body: {'email': email},
+    );
+
+    if (response is! Map<String, dynamic>) {
+      throw const ApiException('Invalid resend verification response.');
+    }
+
+    return response['message']?.toString() ??
+        'If that email is registered, a new verification link has been sent.';
+  }
+
   Future<void> logout({
     required String refreshToken,
   }) async {
