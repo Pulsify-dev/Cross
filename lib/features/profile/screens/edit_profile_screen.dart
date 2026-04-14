@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cross/core/theme/app_colors.dart';
 import 'package:cross/features/profile/models/profile_data.dart';
-import 'package:cross/providers/auth_provider.dart';
 import 'package:cross/providers/profile_provider.dart';
 import 'package:provider/provider.dart';
 
@@ -15,11 +14,22 @@ class EditProfileScreen extends StatefulWidget {
 }
 
 class _EditProfileScreenState extends State<EditProfileScreen> {
-  late TextEditingController _usernameController;
+  late TextEditingController _displayNameController;
   late TextEditingController _bioController;
+  late TextEditingController _locationController;
   late TextEditingController _emailController;
+  late TextEditingController _favoriteGenresController;
+  late TextEditingController _instagramController;
+  late TextEditingController _xController;
+  late TextEditingController _facebookController;
+  late TextEditingController _websiteController;
+  late TextEditingController _currentPasswordController;
+  late TextEditingController _newPasswordController;
+  late TextEditingController _confirmPasswordController;
   late String _avatarPath;
   Uint8List? _avatarBytes;
+  bool _isAvatarUploading = false;
+  bool _isPrivate = false;
 
   @override
   void initState() {
@@ -32,15 +42,49 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     if (profile != null) {
       _avatarPath = profile.avatarPath ?? '';
       _avatarBytes = profile.avatarBytes;
-      _usernameController = TextEditingController(text: profile.username);
+      _displayNameController = TextEditingController(
+        text: profile.displayName?.isNotEmpty == true
+            ? profile.displayName
+            : profile.username,
+      );
       _bioController = TextEditingController(text: profile.bio);
+      _locationController = TextEditingController(text: profile.location ?? '');
       _emailController = TextEditingController(text: profile.email);
+      _favoriteGenresController = TextEditingController(
+        text: profile.favoriteGenres?.join(', ') ?? '',
+      );
+      _instagramController = TextEditingController(
+        text: profile.socialLinks?['instagram'] ?? '',
+      );
+      _xController = TextEditingController(
+        text: profile.socialLinks?['x'] ?? '',
+      );
+      _facebookController = TextEditingController(
+        text: profile.socialLinks?['facebook'] ?? '',
+      );
+      _websiteController = TextEditingController(
+        text: profile.socialLinks?['website'] ?? '',
+      );
+      _isPrivate = profile.isPrivate ?? false;
+      _currentPasswordController = TextEditingController();
+      _newPasswordController = TextEditingController();
+      _confirmPasswordController = TextEditingController();
     } else {
       _avatarPath = '';
       _avatarBytes = null;
-      _usernameController = TextEditingController();
+      _displayNameController = TextEditingController();
       _bioController = TextEditingController();
+      _locationController = TextEditingController();
       _emailController = TextEditingController();
+      _favoriteGenresController = TextEditingController();
+      _instagramController = TextEditingController();
+      _xController = TextEditingController();
+      _facebookController = TextEditingController();
+      _websiteController = TextEditingController();
+      _currentPasswordController = TextEditingController();
+      _newPasswordController = TextEditingController();
+      _confirmPasswordController = TextEditingController();
+      _isPrivate = false;
     }
   }
 
@@ -58,36 +102,63 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
     if (!mounted) return;
 
+    final messenger = ScaffoldMessenger.of(context);
+
     setState(() {
-      _avatarBytes = bytes;
-      _avatarPath = '';
+      _isAvatarUploading = true;
     });
 
-    final authProvider = Provider.of<AuthProvider>(
-      context,
-      listen: false,
-    );
-    final userId = authProvider.currentUser?.id;
+    try {
+      await profileProvider.uploadAvatar(bytes);
 
-    if (userId != null && profileProvider.profile != null) {
-      profileProvider.updateProfile(
-        userId: userId,
-        newProfile: profileProvider.profile!.copyWith(
-          avatarBytes: bytes,
-          avatarPath: null,
-          username: _usernameController.text,
-          bio: _bioController.text,
-          email: _emailController.text,
-        ),
+      if (!mounted) return;
+
+      // Reload profile to get the updated avatar URL from server
+      await profileProvider.loadMyProfile();
+
+      if (!mounted) return;
+
+      // Update local state with the new avatar from the reloaded profile
+      if (profileProvider.profile != null) {
+        setState(() {
+          _avatarPath = profileProvider.profile!.avatarPath ?? '';
+          _avatarBytes = profileProvider.profile!.avatarBytes;
+          _isAvatarUploading = false;
+        });
+      } else {
+        setState(() {
+          _isAvatarUploading = false;
+        });
+      }
+
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Avatar uploaded successfully')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isAvatarUploading = false;
+      });
+      messenger.showSnackBar(
+        SnackBar(content: Text('Failed to upload avatar: $e')),
       );
     }
   }
 
   @override
   void dispose() {
-    _usernameController.dispose();
+    _displayNameController.dispose();
     _bioController.dispose();
+    _locationController.dispose();
     _emailController.dispose();
+    _favoriteGenresController.dispose();
+    _instagramController.dispose();
+    _xController.dispose();
+    _facebookController.dispose();
+    _websiteController.dispose();
+    _currentPasswordController.dispose();
+    _newPasswordController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
   }
 
@@ -163,7 +234,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           ),
                         ),
                         GestureDetector(
-                          onTap: _pickImage,
+                          onTap: _isAvatarUploading ? null : _pickImage,
                           child: Container(
                             width: 44,
                             height: 44,
@@ -195,7 +266,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     ),
                     const SizedBox(height: 16),
                     GestureDetector(
-                      onTap: _pickImage,
+                      onTap: _isAvatarUploading ? null : _pickImage,
                       child: Text(
                         'Change Profile Picture',
                         style: theme.textTheme.bodyMedium?.copyWith(
@@ -213,8 +284,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
               _buildFormField(
                 context,
-                label: 'Username',
-                controller: _usernameController,
+                label: 'Display Name',
+                controller: _displayNameController,
                 icon: Icons.person,
               ),
               const SizedBox(height: 20),
@@ -224,10 +295,69 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
               _buildFormField(
                 context,
+                label: 'Location',
+                controller: _locationController,
+                icon: Icons.location_on,
+              ),
+              const SizedBox(height: 20),
+
+              _buildFormField(
+                context,
+                label: 'Favorite Genres',
+                controller: _favoriteGenresController,
+                icon: Icons.music_note,
+                keyboardType: TextInputType.text,
+              ),
+              const SizedBox(height: 20),
+
+              Text(
+                'Social Links',
+                style: theme.textTheme.labelMedium?.copyWith(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: 12),
+              _buildFormField(
+                context,
+                label: 'Instagram',
+                controller: _instagramController,
+                icon: Icons.camera_alt,
+              ),
+              const SizedBox(height: 12),
+              _buildFormField(
+                context,
+                label: 'X / Twitter',
+                controller: _xController,
+                icon: Icons.alternate_email,
+              ),
+              const SizedBox(height: 12),
+              _buildFormField(
+                context,
+                label: 'Facebook',
+                controller: _facebookController,
+                icon: Icons.facebook,
+              ),
+              const SizedBox(height: 12),
+              _buildFormField(
+                context,
+                label: 'Website',
+                controller: _websiteController,
+                icon: Icons.link,
+                keyboardType: TextInputType.url,
+              ),
+              const SizedBox(height: 20),
+              _buildPrivacyToggle(context),
+              const SizedBox(height: 20),
+
+              _buildFormField(
+                context,
                 label: 'Email',
                 controller: _emailController,
                 icon: Icons.mail,
                 keyboardType: TextInputType.emailAddress,
+                enabled: false,
               ),
               const SizedBox(height: 24),
 
@@ -235,37 +365,63 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               const SizedBox(height: 32),
 
               ElevatedButton(
-                onPressed: () {
+                onPressed: () async {
                   final profileProvider = Provider.of<ProfileProvider>(
                     context,
                     listen: false,
                   );
-                  final authProvider = Provider.of<AuthProvider>(
-                    context,
-                    listen: false,
-                  );
-                  final userId = authProvider.currentUser?.id;
 
-                  if (userId == null || profileProvider.profile == null) {
-                    ScaffoldMessenger.of(context).showSnackBar(
+                  final messenger = ScaffoldMessenger.of(context);
+
+                  if (profileProvider.profile == null) {
+                    messenger.showSnackBar(
                       const SnackBar(content: Text('Unable to save profile.')),
                     );
                     return;
                   }
 
-                  profileProvider.updateProfile(
-                    userId: userId,
-                    newProfile: profileProvider.profile!.copyWith(
-                      avatarPath: _avatarPath.isNotEmpty ? _avatarPath : null,
-                      avatarBytes: _avatarBytes,
-                      username: _usernameController.text,
+                  final favoriteGenres = _favoriteGenresController.text
+                      .split(',')
+                      .map((genre) => genre.trim())
+                      .where((genre) => genre.isNotEmpty)
+                      .toList();
+
+                  final socialLinks = {
+                    if (_instagramController.text.trim().isNotEmpty)
+                      'instagram': _instagramController.text.trim(),
+                    if (_xController.text.trim().isNotEmpty)
+                      'x': _xController.text.trim(),
+                    if (_facebookController.text.trim().isNotEmpty)
+                      'facebook': _facebookController.text.trim(),
+                    if (_websiteController.text.trim().isNotEmpty)
+                      'website': _websiteController.text.trim(),
+                  };
+
+                  try {
+                    await profileProvider.updateMyProfile(
+                      displayName: _displayNameController.text,
                       bio: _bioController.text,
-                      email: _emailController.text,
-                    ),
-                  );
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Changes saved!')),
-                  );
+                      location: _locationController.text.isNotEmpty
+                          ? _locationController.text
+                          : null,
+                      favoriteGenres: favoriteGenres.isNotEmpty
+                          ? favoriteGenres
+                          : null,
+                      socialLinks:
+                          socialLinks.isNotEmpty ? socialLinks : null,
+                      isPrivate: _isPrivate,
+                    );
+
+                    if (!mounted) return;
+                    messenger.showSnackBar(
+                      const SnackBar(content: Text('Changes saved!')),
+                    );
+                  } catch (e) {
+                    if (!mounted) return;
+                    messenger.showSnackBar(
+                      SnackBar(content: Text('Failed to save: $e')),
+                    );
+                  }
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
@@ -376,6 +532,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     required TextEditingController controller,
     required IconData icon,
     TextInputType keyboardType = TextInputType.text,
+    bool enabled = true,
   }) {
     final theme = Theme.of(context);
 
@@ -394,6 +551,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         TextField(
           controller: controller,
           keyboardType: keyboardType,
+          enabled: enabled,
           decoration:
               InputDecoration(
                 prefixIcon: const Icon(
@@ -433,6 +591,47 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             color: AppColors.textPrimary,
             fontSize: 16,
           ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPrivacyToggle(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Private Profile',
+                style: theme.textTheme.labelMedium?.copyWith(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Only followers can see your profile details.',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ],
+          ),
+        ),
+        Switch(
+          value: _isPrivate,
+          onChanged: (value) {
+            setState(() {
+              _isPrivate = value;
+            });
+          },
+          activeThumbColor: AppColors.primary,
         ),
       ],
     );
@@ -491,6 +690,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
     return GestureDetector(
       onTap: () {
+        _currentPasswordController.clear();
+        _newPasswordController.clear();
+        _confirmPasswordController.clear();
+
         showDialog(
           context: context,
           builder: (context) => AlertDialog(
@@ -499,6 +702,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 TextField(
+                  controller: _currentPasswordController,
                   obscureText: true,
                   decoration: InputDecoration(
                     hintText: 'Current Password',
@@ -509,6 +713,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 ),
                 const SizedBox(height: 12),
                 TextField(
+                  controller: _newPasswordController,
                   obscureText: true,
                   decoration: InputDecoration(
                     hintText: 'New Password',
@@ -519,6 +724,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 ),
                 const SizedBox(height: 12),
                 TextField(
+                  controller: _confirmPasswordController,
                   obscureText: true,
                   decoration: InputDecoration(
                     hintText: 'Confirm Password',
@@ -535,7 +741,74 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 child: const Text('Cancel'),
               ),
               TextButton(
-                onPressed: () => Navigator.pop(context),
+                onPressed: () async {
+                  final currentPassword = _currentPasswordController.text.trim();
+                  final newPassword = _newPasswordController.text.trim();
+                  final confirmPassword = _confirmPasswordController.text.trim();
+                  final messenger = ScaffoldMessenger.of(context);
+                  final navigator = Navigator.of(context);
+
+                  if (currentPassword.isEmpty ||
+                      newPassword.isEmpty ||
+                      confirmPassword.isEmpty) {
+                    messenger.showSnackBar(
+                      const SnackBar(
+                        content: Text('All fields are required'),
+                      ),
+                    );
+                    return;
+                  }
+
+                  if (newPassword != confirmPassword) {
+                    messenger.showSnackBar(
+                      const SnackBar(
+                        content: Text('New passwords do not match'),
+                      ),
+                    );
+                    return;
+                  }
+
+                  if (newPassword.length < 6) {
+                    messenger.showSnackBar(
+                      const SnackBar(
+                        content: Text('Password must be at least 6 characters'),
+                      ),
+                    );
+                    return;
+                  }
+
+                  final profileProvider =
+                      Provider.of<ProfileProvider>(context, listen: false);
+
+                  try {
+                    await profileProvider.changePassword(
+                      currentPassword: currentPassword,
+                      newPassword: newPassword,
+                    );
+
+                    if (!mounted) return;
+
+                    navigator.pop();
+
+                    messenger.showSnackBar(
+                      const SnackBar(
+                        content: Text('Password changed successfully'),
+                      ),
+                    );
+
+                    _currentPasswordController.clear();
+                    _newPasswordController.clear();
+                    _confirmPasswordController.clear();
+                  } catch (e) {
+                    if (!mounted) return;
+
+                    messenger.showSnackBar(
+                      SnackBar(
+                        content: Text('Failed to change password: $e'),
+                      ),
+                    );
+                  }
+                },
                 child: const Text('Update'),
               ),
             ],

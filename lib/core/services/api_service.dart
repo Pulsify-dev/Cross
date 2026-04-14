@@ -72,6 +72,21 @@ class ApiService {
 		);
 	}
 
+	Future<dynamic> put(
+		String endpoint, {
+		Map<String, dynamic>? body,
+		bool authRequired = false,
+		Map<String, String>? headers,
+	}) {
+		return _sendRequest(
+			method: 'PUT',
+			endpoint: endpoint,
+			body: body,
+			authRequired: authRequired,
+			headers: headers,
+		);
+	}
+
 	Future<dynamic> delete(
 		String endpoint, {
 		bool authRequired = false,
@@ -252,6 +267,15 @@ class ApiService {
 				case 'PATCH':
 					response = await _client
 							.patch(
+								uri,
+								headers: requestHeaders,
+								body: jsonEncode(body ?? <String, dynamic>{}),
+							)
+							.timeout(const Duration(seconds: 25));
+					break;
+				case 'PUT':
+					response = await _client
+							.put(
 								uri,
 								headers: requestHeaders,
 								body: jsonEncode(body ?? <String, dynamic>{}),

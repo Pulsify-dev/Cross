@@ -32,14 +32,8 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   }
 
   Future<void> _loadProfile() async {
-    final authProvider = context.read<AuthProvider>();
-    final userId = authProvider.currentUser?.id;
-    if (userId == null) {
-      return;
-    }
-
     final profileProvider = context.read<ProfileProvider>();
-    await profileProvider.loadProfile(userId: userId);
+    await profileProvider.loadMyProfile();
   }
 
   Future<void> _loadUploadedTracksForCurrentArtist() async {
@@ -63,84 +57,9 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     await socialProvider.loadFollowing(userId);
   }
 
-  static const _playlistItems = [
-    {
-      'title': 'Late Night Vibes',
-      'subtitle': 'Playlist • 12 songs',
-      'plays': '156K plays',
-      'image':
-          'https://lh3.googleusercontent.com/aida-public/AB6AXuCKlgPSzOBWDjf6m-ENOfVNJ7d84EuEkszfYCt69BgIheo1VIvde6YIYsfQTfANtBpnsu_4Zb1J8r4nw481yUii9RuFVRpYMwC1f3SrPpw1eBo2nOFBRLO8ojpzhc6PFr2miNPvYHjqoXc3cjGfTdHfkN4C9aPClk3Ph0JIBotryBxBIdEwKNvJfRwabbz_UOTNr6r9naWNsXu2iTCtzGY8FwZWo6298hCrS-zMIlfbwiYYo5NvIn4gyLwXpDcu5Mbqh_4POQo7l4Y',
-    },
-    {
-      'title': 'Study Sessions',
-      'subtitle': 'Playlist • 24 songs',
-      'plays': '2.3M plays',
-      'image':
-          'https://lh3.googleusercontent.com/aida-public/AB6AXuCV0zNT-Fr8pb_LW_sA2QdcVBZF2ndTEWzK-zaDfJ55TtQbXdhvnBL-fUEaONTf19lxXLdxWNSqOZTnXGtV0YUrzQhYrzEeae3bz8DC1hjcOYmg2u6MpDGbjxtQy0Dwqtxe--EBLyFFVzvbOyTUKCcbipRZVXLbFYXsLTKLQ0v1dWmJicfQlUn-r7txUEqyYazEbJnomXs6gSIPM5ov0I9QJyJBQozZEEbp1u8nos9hMQkcJ6ZP9c9p_7Xt20BYdx2emy1Kaq8e5Dg',
-    },
-    {
-      'title': 'Chill Beats',
-      'subtitle': 'Playlist • 18 songs',
-      'plays': '567K plays',
-      'image':
-          'https://lh3.googleusercontent.com/aida-public/AB6AXuBwwb6cioW2l3ZGQ7Daxm2tLZNacCZ7QLjy8X0izIozKkcHVHHv65frBFBIl7JQ2d6htyh2vc2pC2yov4aohqVrJWRCdT0RR8OhbDAMxosiIxmd2rnFZVTUtdk-U93vzSDApK3QJp9yIN3_-2XRfZZ2kofYzNdnaKkf__si-9H5B3FKttgr1TdoLUElOHIw07hjNP12YFDHEPbqRegvfm1hygD-QVBH8xbSF8I75OQoTR_tDIQPViJ7Ybj7oUSrUmG8W39piQ5vAWQ',
-    },
-  ];
-
-  static const _recentItems = [
-    {
-      'title': 'Spring Blossom',
-      'subtitle': 'Indie Pop • 3:15',
-      'plays': '540K plays',
-      'image':
-          'https://lh3.googleusercontent.com/aida-public/AB6AXuAWROw6qxsbQJKACyZZ65DEI88V-J9kbSie21JamMJzojoRrttVgcXrOXi-5BIwAR9r8xwDKDlzmP9WLUV82-2IrYKiqt9p7Ri2e0GXS5IUTseWESRPBLxNHqQKV8vs26l8X27SRpllBK8oAnNRVZRY0wybQwOVgGGD3p8o_3CPG6lIjAQpFMlNuzNpd_1-cpgCm-HtQy7UXqbaPB41iaPpWCQnCK-u5x9L3mGiGohzs7gPCX-XUUytvkERvMWhzO1c1J-T-xmoEgg',
-    },
-    {
-      'title': 'Urban Dreams',
-      'subtitle': 'Hip-Hop • 4:02',
-      'plays': '1.8M plays',
-      'image':
-          'https://lh3.googleusercontent.com/aida-public/AB6AXuCKlgPSzOBWDjf6m-ENOfVNJ7d84EuEkszfYCt69BgIheo1VIvde6YIYsfQTfANtBpnsu_4Zb1J8r4nw481yUii9RuFVRpYMwC1f3SrPpw1eBo2nOFBRLO8ojpzhc6PFr2miNPvYHjqoXc3cjGfTdHfkN4C9aPClk3Ph0JIBotryBxBIdEwKNvJfRwabbz_UOTNr6r9naWNsXu2iTCtzGY8FwZWo6298hCrS-zMIlfbwiYYo5NvIn4gyLwXpDcu5Mbqh_4POQo7l4Y',
-    },
-    {
-      'title': 'Ocean Waves',
-      'subtitle': 'Chillwave • 4:45',
-      'plays': '392K plays',
-      'image':
-          'https://lh3.googleusercontent.com/aida-public/AB6AXuCV0zNT-Fr8pb_LW_sA2QdcVBZF2ndTEWzK-zaDfJ55TtQbXdhvnBL-fUEaONTf19lxXLdxWNSqOZTnXGtV0YUrzQhYrzEeae3bz8DC1hjcOYmg2u6MpDGbjxtQy0Dwqtxe--EBLyFFVzvbOyTUKCcbipRZVXLbFYXsLTKLQ0v1dWmJicfQlUn-r7txUEqyYazEbJnomXs6gSIPM5ov0I9QJyJBQozZEEbp1u8nos9hMQkcJ6ZP9c9p_7Xt20BYdx2emy1Kaq8e5Dg',
-    },
-    {
-      'title': 'Neon Sunset Vibes',
-      'subtitle': 'Electronic • 3:45',
-      'plays': '2.1M plays',
-      'image':
-          'https://lh3.googleusercontent.com/aida-public/AB6AXuBwwb6cioW2l3ZGQ7Daxm2tLZNacCZ7QLjy8X0izIozKkcHVHHv65frBFBIl7JQ2d6htyh2vc2pC2yov4aohqVrJWRCdT0RR8OhbDAMxosiIxmd2rnFZVTUtdk-U93vzSDApK3QJp9yIN3_-2XRfZZ2kofYzNdnaKkf__si-9H5B3FKttgr1TdoLUElOHIw07hjNP12YFDHEPbqRegvfm1hygD-QVBH8xbSF8I75OQoTR_tDIQPViJ7Ybj7oUSrUmG8W39piQ5vAWQ',
-    },
-  ];
-
-  static const _favoriteGenres = [
-    {
-      'title': 'Pop',
-      'subtitle': 'Popular • 150K tracks',
-      'plays': '10M plays',
-      'image':
-          'https://lh3.googleusercontent.com/aida-public/AB6AXuAWROw6qxsbQJKACyZZ65DEI88V-J9kbSie21JamMJzojoRrttVgcXrOXi-5BIwAR9r8xwDKDlzmP9WLUV82-2IrYKiqt9p7Ri2e0GXS5IUTseWESRPBLxNHqQKV8vs26l8X27SRpllBK8oAnNRVZRY0wybQwOVgGGD3p8o_3CPG6lIjAQpFMlNuzNpd_1-cpgCm-HtQy7UXqbaPB41iaPpWCQnCK-u5x9L3mGiGohzs7gPCX-XUUytvkERvMWhzO1c1J-T-xmoEgg',
-    },
-    {
-      'title': 'Hip-Hop',
-      'subtitle': 'Trending • 200K tracks',
-      'plays': '25M plays',
-      'image':
-          'https://lh3.googleusercontent.com/aida-public/AB6AXuCKlgPSzOBWDjf6m-ENOfVNJ7d84EuEkszfYCt69BgIheo1VIvde6YIYsfQTfANtBpnsu_4Zb1J8r4nw481yUii9RuFVRpYMwC1f3SrPpw1eBo2nOFBRLO8ojpzhc6PFr2miNPvYHjqoXc3cjGfTdHfkN4C9aPClk3Ph0JIBotryBxBIdEwKNvJfRwabbz_UOTNr6r9naWNsXu2iTCtzGY8FwZWo6298hCrS-zMIlfbwiYYo5NvIn4gyLwXpDcu5Mbqh_4POQo7l4Y',
-    },
-    {
-      'title': 'Electronic',
-      'subtitle': 'Electronic • 80K tracks',
-      'plays': '8M plays',
-      'image':
-          'https://lh3.googleusercontent.com/aida-public/AB6AXuBwwb6cioW2l3ZGQ7Daxm2tLZNacCZ7QLjy8X0izIozKkcHVHHv65frBFBIl7JQ2d6htyh2vc2pC2yov4aohqVrJWRCdT0RR8OhbDAMxosiIxmd2rnFZVTUtdk-U93vzSDApK3QJp9yIN3_-2XRfZZ2kofYzNdnaKkf__si-9H5B3FKttgr1TdoLUElOHIw07hjNP12YFDHEPbqRegvfm1hygD-QVBH8xbSF8I75OQoTR_tDIQPViJ7Ybj7oUSrUmG8W39piQ5vAWQ',
-    },
-  ];
+  static const _playlistItems = <Map<String, String>>[];
+  static const _recentItems = <Map<String, String>>[];
+  static const _favoriteGenres = <Map<String, String>>[];
 
   Future<void> _handleProfileMenuSelection(String value) async {
     if (value == 'suggested_users') {
@@ -301,9 +220,9 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               body: TabBarView(
                 children: [
                   _buildUploadedTrackList(context),
-                  _buildTrackList(context, _playlistItems),
-                  _buildTrackList(context, _recentItems),
-                  _buildTrackList(context, _favoriteGenres),
+                  _buildTrackList(context, _playlistItems, 'No playlists yet.'),
+                  _buildTrackList(context, _recentItems, 'No recent tracks.'),
+                  _buildTrackList(context, _favoriteGenres, 'No favorite genres yet.'),
                 ],
               ),
             ),
@@ -375,27 +294,51 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           ),
           const SizedBox(height: 16),
           Text(
-            profile.username,
+            profile.displayName?.isNotEmpty == true
+                ? profile.displayName!
+                : profile.username,
             style: theme.textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.w700,
               color: AppColors.textPrimary,
             ),
           ),
           const SizedBox(height: 8),
-          Text(
-            profile.bio,
-            textAlign: TextAlign.center,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: AppColors.textSecondary,
+          if (profile.bio.isNotEmpty) ...[
+            Text(
+              profile.bio,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: AppColors.textSecondary,
+              ),
             ),
-          ),
+            const SizedBox(height: 12),
+          ],
+          if (profile.location != null && profile.location!.isNotEmpty)
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.location_on,
+                  size: 16,
+                  color: AppColors.textSecondary,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  profile.location!,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
           const SizedBox(height: 16),
           Row(
             children: [
               Expanded(
                 child: ElevatedButton.icon(
                   onPressed: () {
-                    Navigator.pushNamed(context, RouteNames.editProfile);
+                    Navigator.pushNamed(context, RouteNames.editProfile)
+                        .then((_) => _loadProfile());
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
@@ -541,7 +484,14 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   Widget _buildTrackList(
     BuildContext context,
     List<Map<String, String>> trackItems,
+    String emptyMessage,
   ) {
+    if (trackItems.isEmpty) {
+      return Center(
+        child: Text(emptyMessage),
+      );
+    }
+
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
       itemCount: trackItems.length,
