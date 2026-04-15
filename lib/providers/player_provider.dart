@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
+
 import 'package:just_audio/just_audio.dart';
 import '../features/feed/models/track.dart';
 import '../features/feed/services/track_service.dart';
@@ -83,10 +85,30 @@ class PlayerProvider with ChangeNotifier {
     });
 
     try {
-      await _player.setUrl(track.streamUrl);
+      // Fetch the real stream URL from the API, fall back to track's audio_url
+      String playUrl = track.streamUrl;
+      
+      if (_trackService != null) {
+        final streamUrl = await _trackService.getStreamUrl(track.id);
+        if (streamUrl != null && streamUrl.isNotEmpty) {
+          playUrl = streamUrl;
+        }
+      }
+      
+      debugPrint('Playing track: ${track.title} (URL: $playUrl)');
+      
+      await _player.stop();
+      
+      await _player.setUrl(playUrl).timeout(
+        const Duration(seconds: 15),
+        onTimeout: () => throw TimeoutException('Track load timed out'),
+      );
+      
       await _player.play();
     } catch (e) {
       debugPrint('Error playing track: $e');
+      _isPlaying = false;
+      notifyListeners();
     }
   }
 

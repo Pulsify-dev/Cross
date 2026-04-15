@@ -11,7 +11,8 @@ abstract class TrackService {
   Future<List<Track>> getLikedTracks();
 
   Future<List<Track>> getActivityFeed();
-  Future<List<Track>> getListeningHistory();
+  Future<List<Track>> getListeningHistory({int page = 1, int limit = 20});
+
   Future<List<Comment>> getComments(String trackId);
   Future<void> addComment(
     String trackId,
@@ -31,6 +32,7 @@ abstract class TrackService {
     int limit = 20,
   });
   Future<List<double>?> getTrackWaveform(String trackId);
+  Future<String?> getStreamUrl(String trackId);
   Future<Map<String, dynamic>> getTrackStatus(String trackId);
   void setCurrentUser(User? user);
 }

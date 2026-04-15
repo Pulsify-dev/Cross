@@ -4,13 +4,13 @@ import '../models/track.dart';
 import '../models/comment.dart';
 import '../models/user.dart';
 import 'track_service.dart';
+import 'package:flutter/foundation.dart';
 
 class ApiTrackService implements TrackService {
   final ApiService _apiService;
 
   // Local mock state for session persistence
   final List<Track> _localLikedTracks = [];
-  final List<Track> _localHistory = [];
   final Map<String, List<Comment>> _localComments = {};
 
   // Cache for mock objects generated in recent calls
@@ -34,8 +34,14 @@ class ApiTrackService implements TrackService {
   @override
   Future<List<double>?> getTrackWaveform(String trackId) async {
     try {
-      final response = await _apiService.get(ApiEndpoints.trackWaveform(trackId));
-      if (response != null && response is List) {
+      final response = await _apiService
+          .get(ApiEndpoints.trackWaveform(trackId), authRequired: true)
+          .timeout(const Duration(seconds: 5));
+      if (response != null && response is Map && response['peaks'] is List) {
+        return (response['peaks'] as List)
+            .map((e) => (e as num).toDouble())
+            .toList();
+      } else if (response != null && response is List) {
         return response.map((e) => (e as num).toDouble()).toList();
       } else if (response != null && response['data'] is List) {
         return (response['data'] as List)
@@ -43,7 +49,8 @@ class ApiTrackService implements TrackService {
             .toList();
       }
     } catch (e) {
-      rethrow;
+      // Return empty waveform on error or timeout
+      return List.filled(50, 0.1);
     }
     return null;
   }
@@ -72,14 +79,31 @@ class ApiTrackService implements TrackService {
   }
 
   @override
+  Future<String?> getStreamUrl(String trackId) async {
+    try {
+      final response = await _apiService
+          .get(ApiEndpoints.trackStreamUrl(trackId), authRequired: true)
+          .timeout(const Duration(seconds: 10));
+      if (response != null && response is Map && response['url'] != null) {
+        return response['url'].toString();
+      }
+    } catch (e) {
+      // Fall back to track's audio_url
+    }
+    return null;
+  }
+
+  @override
   Future<Map<String, dynamic>> getTrackStatus(String trackId) async {
     try {
-      final response = await _apiService.get(ApiEndpoints.trackStatus(trackId));
+      final response = await _apiService
+          .get(ApiEndpoints.trackStatus(trackId), authRequired: true)
+          .timeout(const Duration(seconds: 5));
       if (response != null) {
         return Map<String, dynamic>.from(response);
       }
     } catch (e) {
-      rethrow;
+      // Return default status on error
     }
     return {'track_id': trackId, 'status': 'Unknown', 'progress_percent': 0};
   }
@@ -327,48 +351,84 @@ class ApiTrackService implements TrackService {
 
   @override
   Future<void> recordPlay(String trackId) async {
-    // Check if it's a mock track
-    if (trackId.startsWith('search_') || trackId.startsWith('trend_')) {
-      final track = _mockTrackCache[trackId];
-      if (track != null) {
-        _localHistory.removeWhere((t) => t.id == trackId);
-        _localHistory.insert(0, track);
-      }
-      return;
-    }
+    debugPrint('Recording play for track: $trackId');
 
     try {
-      await _apiService.post(
+      final response = await _apiService.post(
         ApiEndpoints.trackStatus(trackId),
         body: {'status': 'played'},
+        authRequired: true,
       );
+      debugPrint('Record Play response: $response');
     } catch (e) {
+      debugPrint('Error recording play: $e');
       rethrow;
     }
   }
 
   @override
-  Future<List<Track>> getListeningHistory() async {
+  Future<List<Track>> getListeningHistory({
+    int page = 1,
+    int limit = 20,
+  }) async {
+    debugPrint(
+      'Fetching listening history from API... (page: $page, limit: $limit)',
+    );
     List<Track> realHistory = [];
     try {
-      final response = await _apiService.get(ApiEndpoints.listeningHistory);
+      final response = await _apiService.get(
+        '${ApiEndpoints.listeningHistory}?page=$page&limit=$limit',
+        authRequired: true,
+      );
+
       if (response != null) {
+        debugPrint('History API Response: $response');
+        List<dynamic> items = [];
         if (response is List) {
-          realHistory = response.map((data) => Track.fromJson(data)).toList();
-        } else if (response['data'] is List) {
-          realHistory = (response['data'] as List)
-              .map((data) => Track.fromJson(data))
-              .toList();
+          items = response;
+        } else if (response is Map) {
+          if (response['history'] is List) {
+            items = response['history'] as List;
+          } else if (response['data'] is List) {
+            items = response['data'] as List;
+          } else if (response['items'] is List) {
+            items = response['items'] as List;
+          } else {
+            debugPrint(
+              'History response Map detected but no "history", "data" or "items" list found.',
+            );
+          }
         }
+
+        debugPrint('Found ${items.length} items in history response.');
+
+        for (final item in items) {
+          try {
+            if (item is Map<String, dynamic>) {
+              if (item.containsKey('track') &&
+                  item['track'] is Map<String, dynamic>) {
+                realHistory.add(Track.fromJson(item['track']));
+              } else {
+                realHistory.add(Track.fromJson(item));
+              }
+            }
+          } catch (e) {
+            debugPrint('Error parsing history item: $e');
+          }
+        }
+      } else {
+        debugPrint('History API Response was null');
       }
     } catch (e) {
-      rethrow;
+      debugPrint('Error fetching listening history: $e');
     }
 
-    // Merge real and local mock history
-    final merged = [..._localHistory, ...realHistory];
+    debugPrint(
+      'Returning ${realHistory.length} real history tracks from backend.',
+    );
+
     final seen = <String>{};
-    return merged.where((t) => seen.add(t.id)).toList();
+    return realHistory.where((t) => seen.add(t.id)).toList();
   }
 
   @override

@@ -187,11 +187,7 @@ class FeedProvider with ChangeNotifier {
     }
   }
 
-  void addToHistory(Track track) {
-    _listeningHistory.removeWhere((t) => t.id == track.id);
-    _listeningHistory.insert(0, track);
-    notifyListeners();
-  }
+
 
   void cleanupUnlikedTracks() {
     _likedTracks.removeWhere((t) => !t.isLiked);

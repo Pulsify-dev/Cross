@@ -4,7 +4,9 @@ import '../../../providers/feed_provider.dart';
 import '../../../providers/player_provider.dart';
 import '../../../routes/route_names.dart';
 import '../../../features/feed/widgets/track_tile.dart';
+
 import '../../../features/player/widgets/mini_player.dart';
+
 
 class ListeningHistoryScreen extends StatefulWidget {
   const ListeningHistoryScreen({super.key});
@@ -42,6 +44,8 @@ class _ListeningHistoryScreenState extends State<ListeningHistoryScreen> {
                 }
 
                 return ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
                   itemCount: provider.listeningHistory.length,
                   itemBuilder: (context, index) {
                     final track = provider.listeningHistory[index];
@@ -66,7 +70,9 @@ class _ListeningHistoryScreenState extends State<ListeningHistoryScreen> {
               },
             ),
           ),
+
           const MiniPlayer(),
+
         ],
       ),
     );

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/feed_provider.dart';
+import '../../../routes/route_names.dart';
 import '../models/user.dart';
+
 
 class SuggestedUsersWidget extends StatefulWidget {
   const SuggestedUsersWidget({super.key});
@@ -94,8 +96,13 @@ class _SuggestedUsersWidgetState extends State<SuggestedUsersWidget> {
       ),
       child: InkWell(
         onTap: () {
-          // Navigate to profile
+          Navigator.pushNamed(
+            context,
+            RouteNames.publicProfile,
+            arguments: user.id,
+          );
         },
+
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(12.0),

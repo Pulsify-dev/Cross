@@ -57,8 +57,7 @@ class PulsifyApp extends StatelessWidget {
           create: (context) =>
               PlayerProvider(trackService: context.read<TrackService>()),
           update: (context, feedProvider, playerProvider) {
-            playerProvider!.onTrackStarted = feedProvider.addToHistory;
-            return playerProvider;
+            return playerProvider!;
           },
         ),
         ChangeNotifierProvider(

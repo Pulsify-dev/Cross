@@ -50,6 +50,7 @@ class ApiEndpoints {
   static String trackDelete(String trackId) => trackById(trackId);
   static String trackArtwork(String trackId) => '/tracks/$trackId/artwork';
   static String trackWaveform(String trackId) => '/tracks/$trackId/waveform';
+  static String trackStreamUrl(String trackId) => '/tracks/$trackId/stream-url';
   static String artistTracks(String artistId, {int page = 1, int limit = 20}) =>
       '/artists/$artistId/tracks?page=$page&limit=$limit';
 

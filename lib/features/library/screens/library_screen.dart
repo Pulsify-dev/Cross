@@ -34,6 +34,7 @@ class LibraryScreen extends StatelessWidget {
     );
   }
 
+
   Widget _buildLibraryItem(
     BuildContext context, {
     required IconData icon,
