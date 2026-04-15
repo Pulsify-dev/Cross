@@ -54,6 +54,13 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         actions: [
+          IconButton(
+            onPressed: () {
+              Navigator.of(context).pushNamed(RouteNames.uploadTrack);
+            },
+            icon: const Icon(Icons.upload),
+            tooltip: 'Upload',
+          ),
           Padding(
             padding: const EdgeInsets.only(right: 16.0),
             child: GestureDetector(
