@@ -1,0 +1,33 @@
+name: Pulsify Auto Generate APK
+
+
+on:
+  push:
+    branches: [main]
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Setup flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+      - name: Install the flutter dependancies
+        run: flutter pub get
+      - name: Build the APK
+        run: flutter build apk --release
+
+      - name: Upload to Firebase App Distribution
+        uses: wzieba/Firebase-Distribution-Github-Action@v1
+        with:
+          appId: ${{ secrets.FIREBASE_ID }}
+          serviceCredentialsFileContent: ${{ secrets.FIREBASE_CREDENTIALS }}
+          groups: team
+          file: build/app/outputs/flutter-apk/app-release.apk
+          releaseNotes: "Pulsify v${{ github.run_number }}"
+          
+        
