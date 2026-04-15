@@ -30,7 +30,7 @@ class AuthService {
     required String username,
     required String email,
     required String password,
-    String captchaToken = 'mock-token',
+    required String captchaToken,
   }) async {
     final response = await _apiService.post(
       ApiEndpoints.register,
@@ -38,13 +38,28 @@ class AuthService {
         'username': username,
         'email': email,
         'password': password,
-        // TODO: Replace this with real CAPTCHA token generation when backend CAPTCHA is finalized in app.
         'captcha_token': captchaToken,
       },
     );
 
     if (response is! Map<String, dynamic>) {
       throw const ApiException('Invalid registration response.');
+    }
+
+    return AuthResponseModel.fromJson(response);
+  }
+
+  Future<AuthResponseModel> socialLogin({
+    required String provider,
+    required String token,
+  }) async {
+    final response = await _apiService.post(
+      ApiEndpoints.socialLogin(provider),
+      body: {'token': token},
+    );
+
+    if (response is! Map<String, dynamic>) {
+      throw const ApiException('Invalid social login response.');
     }
 
     return AuthResponseModel.fromJson(response);
@@ -114,6 +129,35 @@ class AuthService {
 
     return response['message']?.toString() ??
         'Password has been successfully reset. You can now log in.';
+  }
+
+  Future<Map<String, dynamic>> getMyProfile() async {
+    final response = await _apiService.get(
+      ApiEndpoints.myProfile,
+      authRequired: true,
+    );
+
+    if (response is! Map<String, dynamic>) {
+      throw const ApiException('Invalid profile response.');
+    }
+
+    return response;
+  }
+
+  Future<String> resendVerification({
+    required String email,
+  }) async {
+    final response = await _apiService.post(
+      ApiEndpoints.resendVerification,
+      body: {'email': email},
+    );
+
+    if (response is! Map<String, dynamic>) {
+      throw const ApiException('Invalid resend verification response.');
+    }
+
+    return response['message']?.toString() ??
+        'If that email is registered, a new verification link has been sent.';
   }
 
   Future<void> logout({

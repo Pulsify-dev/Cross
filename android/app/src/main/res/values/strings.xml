@@ -1,0 +1,6 @@
+<resources>
+    <string name="app_name">Pulsify</string>
+    <string name="facebook_app_id">2011761106041808</string>
+    <string name="fb_login_protocol_scheme">fb2011761106041808</string>
+    <string name="facebook_client_token">9d29d54bfceb51cf6e52cd0aa088f3ee</string>
+</resources>
