@@ -22,7 +22,7 @@ class _MainScreenState extends State<MainScreen> {
     const SearchScreen(),
     const LibraryScreen(),
     const ActivityFeedScreen(),
-    //const _UpgradeScreen(),
+    const _UpgradeScreen(),
   ];
 
   @override
@@ -121,6 +121,40 @@ class _MainScreenState extends State<MainScreen> {
     return Scaffold(
       body: IndexedStack(index: _selectedIndex, children: _screens),
       bottomNavigationBar: _buildBottomNavigationBar(),
+    );
+  }
+}
+
+
+class _UpgradeScreen extends StatelessWidget {
+  const _UpgradeScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.workspace_premium,
+              size: 64,
+              color: AppColors.primary,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Go Premium',
+              style: Theme.of(context).textTheme.headlineMedium,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Coming soon',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
