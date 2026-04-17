@@ -139,7 +139,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
         return Scaffold(
           appBar: AppBar(
-            automaticallyImplyLeading: false,
+            automaticallyImplyLeading: true,
             centerTitle: true,
             title: const Text('Profile'),
             actions: [

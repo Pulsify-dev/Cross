@@ -3,9 +3,6 @@ import 'package:cross/core/theme/app_colors.dart';
 import 'package:cross/features/feed/screens/home_screen.dart';
 import 'package:cross/features/search/screens/search_screen.dart';
 import 'package:cross/features/library/screens/library_screen.dart';
-import 'package:cross/features/messages/screens/messages_screen.dart';
-import 'package:cross/features/profile/screens/user_profile_screen.dart';
-
 class MainScreen extends StatefulWidget {
   final int initialIndex;
 
@@ -22,15 +19,11 @@ class _MainScreenState extends State<MainScreen> {
   late int _selectedIndex;
 
   late final List<Widget> _screens = [
-    HomeScreen(onProfileTap: () {
-      setState(() {
-        _selectedIndex = 4; // Switch to Profile tab
-      });
-    }),
+    const HomeScreen(),
     const SearchScreen(),
     const LibraryScreen(),
-    const MessagesScreen(),
-    const UserProfileScreen(),
+    const _FeedPlaceholder(),
+    const _UpgradeScreen(),
   ];
 
   @override
@@ -130,18 +123,17 @@ class _MainScreenState extends State<MainScreen> {
             ),
             _navItem(
               icon: Icons.library_music,
-              label: 'Playlists',
+              label: 'Library',
               index: 2,
             ),
             _navItem(
-              icon: Icons.chat_bubble,
-              label: 'Messages',
+              icon: Icons.dynamic_feed,
+              label: 'Feed',
               index: 3,
-              showBadge: true,
             ),
             _navItem(
-              icon: Icons.person,
-              label: 'Profile',
+              icon: Icons.workspace_premium,
+              label: 'Upgrade',
               index: 4,
             ),
           ],
@@ -158,6 +150,55 @@ class _MainScreenState extends State<MainScreen> {
         children: _screens,
       ),
       bottomNavigationBar: _buildBottomNavigationBar(),
+    );
+  }
+}
+
+class _FeedPlaceholder extends StatelessWidget {
+  const _FeedPlaceholder();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        title: const Text('Feed'),
+      ),
+      body: const Center(child: Text('Coming soon')),
+    );
+  }
+}
+
+class _UpgradeScreen extends StatelessWidget {
+  const _UpgradeScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.workspace_premium,
+              size: 64,
+              color: AppColors.primary,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Go Premium',
+              style: Theme.of(context).textTheme.headlineMedium,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Coming soon',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

@@ -1,8 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../../routes/route_names.dart';
+import '../../../providers/profile_provider.dart';
+import '../../profile/models/profile_data.dart';
 
-class LibraryScreen extends StatelessWidget {
+class LibraryScreen extends StatefulWidget {
   const LibraryScreen({super.key});
+
+  @override
+  State<LibraryScreen> createState() => _LibraryScreenState();
+}
+
+class _LibraryScreenState extends State<LibraryScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<ProfileProvider>().loadMyProfile();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -10,6 +26,47 @@ class LibraryScreen extends StatelessWidget {
       appBar: AppBar(
         automaticallyImplyLeading: false,
         title: const Text('Library'),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 16.0),
+            child: GestureDetector(
+              onTap: () => Navigator.of(context).pushNamed(RouteNames.profile),
+              child: Hero(
+                tag: 'profile_avatar',
+                child: Container(
+                  padding: const EdgeInsets.all(2),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: Theme.of(context).colorScheme.secondary,
+                      width: 2,
+                    ),
+                  ),
+                  child: Consumer<ProfileProvider>(
+                    builder: (context, profileProvider, _) {
+                      final profile = profileProvider.profile;
+                      return CircleAvatar(
+                        radius: 16,
+                        backgroundImage: avatarImage(
+                          path: profile?.avatarPath,
+                          bytes: profile?.avatarBytes,
+                        ),
+                        backgroundColor: Theme.of(context).colorScheme.surface,
+                        child: profile?.avatarPath == null && profile?.avatarBytes == null
+                            ? Icon(
+                                Icons.person,
+                                size: 20,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              )
+                            : null,
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
