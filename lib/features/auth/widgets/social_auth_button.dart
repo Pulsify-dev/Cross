@@ -4,13 +4,15 @@ import 'package:cross/core/theme/app_colors.dart';
 class SocialAuthButton extends StatelessWidget {
   final String text;
   final Widget icon;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
+  final bool isLoading;
 
   const SocialAuthButton({
     super.key,
     required this.text,
     required this.icon,
     required this.onPressed,
+    this.isLoading = false,
   });
 
   @override
@@ -35,7 +37,17 @@ class SocialAuthButton extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            icon,
+            if (isLoading)
+              const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              )
+            else
+              icon,
             const SizedBox(width: 8),
             Text(
               text,

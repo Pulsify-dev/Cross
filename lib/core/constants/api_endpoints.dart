@@ -1,12 +1,13 @@
 class ApiEndpoints {
   static const String register = '/auth/register';
   static const String login = '/auth/login';
+  static String socialLogin(String provider) => '/auth/social/$provider';
   static const String verifyEmail = '/auth/verify-email';
   static const String refreshToken = '/auth/refresh';
   static const String logout = '/auth/logout';
   static const String forgotPassword = '/auth/forgot-password';
   static const String resetPassword = '/auth/reset-password';
-
+  static const String resendVerification = '/auth/resend-verification';
   static const String myProfile = '/users/me';
   static const String uploadAvatar = '/users/me/avatar';
   static const String changePassword = '/users/me/password';
