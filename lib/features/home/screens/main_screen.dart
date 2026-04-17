@@ -23,15 +23,14 @@ class _MainScreenState extends State<MainScreen> {
     HomeScreen(
       onProfileTap: () {
         setState(() {
-          _selectedIndex = 5; // Switch to Profile tab
+          _selectedIndex = 4; // Switch to Profile tab
         });
       },
     ),
-    const ActivityFeedScreen(),
     const SearchScreen(),
     const LibraryScreen(),
-    const MessagesScreen(),
-    const UserProfileScreen(),
+    const _FeedPlaceholder(),
+    const _UpgradeScreen(),
   ];
 
   @override
@@ -115,16 +114,15 @@ class _MainScreenState extends State<MainScreen> {
         child: Row(
           children: [
             _navItem(icon: Icons.home, label: 'Home', index: 0),
-            _navItem(icon: Icons.feed, label: 'Activity', index: 1),
-            _navItem(icon: Icons.search, label: 'Search', index: 2),
-            _navItem(icon: Icons.library_music, label: 'Playlists', index: 3),
+            _navItem(icon: Icons.search, label: 'Search', index: 1),
+            _navItem(icon: Icons.library_music, label: 'Library', index: 2),
             _navItem(
               icon: Icons.chat_bubble,
               label: 'Messages',
-              index: 4,
+              index: 3,
               showBadge: true,
             ),
-            _navItem(icon: Icons.person, label: 'Profile', index: 5),
+            _navItem(icon: Icons.person, label: 'Profile', index: 4),
           ],
         ),
       ),

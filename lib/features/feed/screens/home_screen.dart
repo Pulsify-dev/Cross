@@ -6,7 +6,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '/providers/feed_provider.dart';
 import '/providers/player_provider.dart';
 import '/providers/profile_provider.dart';
-import '/features/profile/models/profile_data.dart';
 import '/routes/route_names.dart';
 import '../models/track.dart';
 import '../widgets/trending_track_widget.dart';
@@ -14,8 +13,7 @@ import '../widgets/suggested_users_widget.dart';
 import '../widgets/listening_history_widget.dart';
 
 class HomeScreen extends StatefulWidget {
-  final VoidCallback? onProfileTap;
-  const HomeScreen({super.key, this.onProfileTap});
+  const HomeScreen({super.key});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -61,49 +59,12 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: const Icon(Icons.upload),
             tooltip: 'Upload',
           ),
-          Padding(
-            padding: const EdgeInsets.only(right: 16.0),
-            child: GestureDetector(
-              onTap: () {
-                widget.onProfileTap?.call();
-                //Navigator.of(context).pushNamed(RouteNames.profile);
-              },
-              child: Hero(
-                tag: 'profile_avatar',
-                child: Container(
-                  padding: const EdgeInsets.all(2),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: Theme.of(context).colorScheme.secondary,
-                      width: 2,
-                    ),
-                  ),
-                  child: Consumer<ProfileProvider>(
-                    builder: (context, profileProvider, _) {
-                      final profile = profileProvider.profile;
-                      return CircleAvatar(
-                        radius: 16,
-                        backgroundImage: avatarImage(
-                          path: profile?.avatarPath,
-                          bytes: profile?.avatarBytes,
-                        ),
-                        backgroundColor: Theme.of(context).colorScheme.surface,
-                        child:
-                            profile?.avatarPath == null &&
-                                profile?.avatarBytes == null
-                            ? Icon(
-                                Icons.person,
-                                size: 20,
-                                color: Theme.of(context).colorScheme.onSurface,
-                              )
-                            : null,
-                      );
-                    },
-                  ),
-                ),
-              ),
-            ),
+          IconButton(
+            onPressed: () {
+              Navigator.of(context).pushNamed(RouteNames.messages);
+            },
+            icon: const Icon(Icons.chat_bubble_outline),
+            tooltip: 'Messages',
           ),
         ],
       ),

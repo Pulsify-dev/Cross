@@ -3,36 +3,36 @@ import 'package:flutter/material.dart';
 class AppColors {
   AppColors._();
 
-  // Core brand
-  static const Color primary = Color(0xFFA855F7);
-  static const Color primaryLight = Color(0xFFC084FC);
-  static const Color primaryDark = Color(0xFF7E22CE);
+  // Core brand — SoundCloud orange
+  static const Color primary = Color(0xFFFF5500);
+  static const Color primaryLight = Color(0xFFFF7733);
+  static const Color primaryDark = Color(0xFFCC4400);
 
   // Main backgrounds
-  static const Color background = Color(0xFF191022);
-  static const Color backgroundAlt = Color(0xFF140B1C);
+  static const Color background = Color(0xFF111111);
+  static const Color backgroundAlt = Color(0xFF0A0A0A);
 
   // Surfaces / cards
-  static const Color surface = Color(0xFF211B27);
-  static const Color surfaceSoft = Color(0xFF1F1629);
-  static const Color surfaceElevated = Color(0xFF2A1D38);
+  static const Color surface = Color(0xFF1A1A1A);
+  static const Color surfaceSoft = Color(0xFF161616);
+  static const Color surfaceElevated = Color(0xFF222222);
 
   // Inputs / controls
-  static const Color inputBackground = Color(0xFF1A1025);
-  static const Color chipBackground = Color(0xFF2B183D);
-  static const Color divider = Color(0xFF332043);
-  static const Color border = Color(0xFF3A2455);
+  static const Color inputBackground = Color(0xFF111111);
+  static const Color chipBackground = Color(0xFF222222);
+  static const Color divider = Color(0xFF2A2A2A);
+  static const Color border = Color(0xFF333333);
 
   // Text
-  static const Color textPrimary = Color(0xFFF7F5F8);
-  static const Color textSecondary = Color(0xFFB9A9C9);
-  static const Color textMuted = Color(0xFF8F7CA3);
-  static const Color textHint = Color(0xFF766782);
+  static const Color textPrimary = Color(0xFFFFFFFF);
+  static const Color textSecondary = Color(0xFF999999);
+  static const Color textMuted = Color(0xFF666666);
+  static const Color textHint = Color(0xFF555555);
 
   // Icon colors
-  static const Color iconPrimary = Color(0xFFF7F5F8);
-  static const Color iconSecondary = Color(0xFFAA97BD);
-  static const Color iconMuted = Color(0xFF7C6A90);
+  static const Color iconPrimary = Color(0xFFFFFFFF);
+  static const Color iconSecondary = Color(0xFF888888);
+  static const Color iconMuted = Color(0xFF555555);
 
   // States
   static const Color success = Color(0xFF22C55E);
@@ -41,14 +41,14 @@ class AppColors {
   static const Color info = Color(0xFF38BDF8);
 
   // Navigation / overlays
-  static const Color navBarBackground = Color(0xFF1A1124);
+  static const Color navBarBackground = Color(0xFF0F0F0F);
   static const Color overlay = Color(0x99000000);
   static const Color shadow = Color(0x33000000);
 
   // Special accents for glow / gradients
-  static const Color glow = Color(0x66A855F7);
-  static const Color gradientStart = Color(0xFF9333EA);
-  static const Color gradientEnd = Color(0xFFB968FF);
+  static const Color glow = Color(0x66FF5500);
+  static const Color gradientStart = Color(0xFFFF5500);
+  static const Color gradientEnd = Color(0xFFFF7733);
 
   // Common semantic aliases
   static const Color cardBackground = surface;

@@ -27,7 +27,14 @@ class EditUploadedTrackScreen extends StatefulWidget {
 
 class _EditUploadedTrackScreenState extends State<EditUploadedTrackScreen> {
   late final TextEditingController _titleController;
-  late final TextEditingController _genreController;
+  String? _selectedGenre;
+
+  static const List<String> _genres = [
+    'Electronic', 'Hip-Hop', 'Rock', 'Pop', 'Jazz', 'Classical', 'R&B',
+    'Soul', 'Reggae', 'Country', 'Metal', 'Folk', 'Latin', 'Blues',
+    'Ambient', 'Acoustic', 'Soundtrack', 'Spoken Word', 'K-Pop',
+    'Afrobeats', 'House', 'Techno', 'Lo-Fi', 'Other',
+  ];
   late final TextEditingController _descriptionController;
   late final TextEditingController _tagsController;
   bool _didInitForm = false;
@@ -42,7 +49,6 @@ class _EditUploadedTrackScreenState extends State<EditUploadedTrackScreen> {
     super.initState();
 
     _titleController = TextEditingController();
-    _genreController = TextEditingController();
     _descriptionController = TextEditingController();
     _tagsController = TextEditingController();
 
@@ -56,7 +62,7 @@ class _EditUploadedTrackScreenState extends State<EditUploadedTrackScreen> {
     if (_didInitForm) return;
 
     _titleController.text = track.title;
-    _genreController.text = track.genre;
+    _selectedGenre = _genres.contains(track.genre) ? track.genre : 'Other';
     _descriptionController.text = track.description;
     _tagsController.text = track.tags.map((tag) => '#$tag').join(' ');
     _privacy = track.privacy;
@@ -66,7 +72,6 @@ class _EditUploadedTrackScreenState extends State<EditUploadedTrackScreen> {
   @override
   void dispose() {
     _titleController.dispose();
-    _genreController.dispose();
     _descriptionController.dispose();
     _tagsController.dispose();
     super.dispose();
@@ -100,9 +105,7 @@ class _EditUploadedTrackScreenState extends State<EditUploadedTrackScreen> {
         title: _titleController.text.trim().isEmpty
             ? track.title
             : _titleController.text.trim(),
-        genre: _genreController.text.trim().isEmpty
-            ? track.genre
-            : _genreController.text.trim(),
+        genre: _selectedGenre ?? track.genre,
         description: _descriptionController.text.trim(),
         tags: parsedTags,
         privacy: _privacy,
@@ -286,10 +289,30 @@ class _EditUploadedTrackScreenState extends State<EditUploadedTrackScreen> {
               const SizedBox(height: 18),
 
               const TrackFormSectionLabel(text: 'Genre'),
-              TrackTextField(
-                controller: _genreController,
-                hintText: 'Choose genre',
-                suffixIcon: const Icon(Icons.keyboard_arrow_down),
+              DropdownButtonFormField<String>(
+                initialValue: _selectedGenre,
+                hint: const Text('Choose genre'),
+                isExpanded: true,
+                decoration: InputDecoration(
+                  filled: true,
+                  fillColor: Theme.of(context).inputDecorationTheme.fillColor,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(22),
+                    borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(22),
+                    borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(22),
+                    borderSide: BorderSide(color: Theme.of(context).colorScheme.primary, width: 1.4),
+                  ),
+                ),
+                dropdownColor: Theme.of(context).colorScheme.surface,
+                items: _genres.map((g) => DropdownMenuItem(value: g, child: Text(g))).toList(),
+                onChanged: (value) => setState(() => _selectedGenre = value),
               ),
               const SizedBox(height: 18),
 

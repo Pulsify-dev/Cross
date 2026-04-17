@@ -34,7 +34,14 @@ class _UploadTrackScreenState extends State<UploadTrackScreen> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _collaboratorsController =
       TextEditingController();
-  final TextEditingController _genreController = TextEditingController();
+  String? _selectedGenre;
+
+  static const List<String> _genres = [
+    'Electronic', 'Hip-Hop', 'Rock', 'Pop', 'Jazz', 'Classical', 'R&B',
+    'Soul', 'Reggae', 'Country', 'Metal', 'Folk', 'Latin', 'Blues',
+    'Ambient', 'Acoustic', 'Soundtrack', 'Spoken Word', 'K-Pop',
+    'Afrobeats', 'House', 'Techno', 'Lo-Fi', 'Other',
+  ];
   final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _tagsController = TextEditingController();
 
@@ -115,7 +122,6 @@ class _UploadTrackScreenState extends State<UploadTrackScreen> {
     for (final controller in [
       _titleController,
       _collaboratorsController,
-      _genreController,
       _descriptionController,
       _tagsController,
     ]) {
@@ -127,7 +133,6 @@ class _UploadTrackScreenState extends State<UploadTrackScreen> {
     for (final controller in [
       _titleController,
       _collaboratorsController,
-      _genreController,
       _descriptionController,
       _tagsController,
     ]) {
@@ -229,7 +234,6 @@ class _UploadTrackScreenState extends State<UploadTrackScreen> {
     _releaseDateController.dispose();
     _titleController.dispose();
     _collaboratorsController.dispose();
-    _genreController.dispose();
     _descriptionController.dispose();
     _tagsController.dispose();
     super.dispose();
@@ -284,9 +288,7 @@ class _UploadTrackScreenState extends State<UploadTrackScreen> {
     final title = _titleController.text.trim().isEmpty
         ? 'Untitled Track'
         : _titleController.text.trim();
-    final genre = _genreController.text.trim().isEmpty
-        ? 'Unknown Genre'
-        : _genreController.text.trim();
+    final genre = _selectedGenre ?? 'Other';
 
     final tags = _tagsController.text
       .split(RegExp(r'[\s,]+'))
@@ -444,10 +446,33 @@ class _UploadTrackScreenState extends State<UploadTrackScreen> {
         const SizedBox(height: 18),
 
         const TrackFormSectionLabel(text: 'Genre'),
-        TrackTextField(
-          controller: _genreController,
-          hintText: 'Choose genre',
-          suffixIcon: const Icon(Icons.keyboard_arrow_down),
+        DropdownButtonFormField<String>(
+          value: _selectedGenre,
+          hint: const Text('Choose genre'),
+          isExpanded: true,
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: Theme.of(context).inputDecorationTheme.fillColor,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(22),
+              borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(22),
+              borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(22),
+              borderSide: BorderSide(color: Theme.of(context).colorScheme.primary, width: 1.4),
+            ),
+          ),
+          dropdownColor: Theme.of(context).colorScheme.surface,
+          items: _genres.map((g) => DropdownMenuItem(value: g, child: Text(g))).toList(),
+          onChanged: (value) {
+            setState(() => _selectedGenre = value);
+            _markDraftChanged();
+          },
         ),
         const SizedBox(height: 18),
 
