@@ -3,8 +3,6 @@ import 'package:cross/core/theme/app_colors.dart';
 import 'package:cross/features/feed/screens/home_screen.dart';
 import 'package:cross/features/search/screens/search_screen.dart';
 import 'package:cross/features/library/screens/library_screen.dart';
-import 'package:cross/features/messages/screens/messages_screen.dart';
-import 'package:cross/features/profile/screens/user_profile_screen.dart';
 import 'package:cross/features/feed/screens/activity_feed_screen.dart';
 
 class MainScreen extends StatefulWidget {
@@ -20,17 +18,11 @@ class _MainScreenState extends State<MainScreen> {
   late int _selectedIndex;
 
   late final List<Widget> _screens = [
-    HomeScreen(
-      onProfileTap: () {
-        setState(() {
-          _selectedIndex = 4; // Switch to Profile tab
-        });
-      },
-    ),
+    const HomeScreen(),
     const SearchScreen(),
     const LibraryScreen(),
-    const _FeedPlaceholder(),
-    const _UpgradeScreen(),
+    const ActivityFeedScreen(),
+    //const _UpgradeScreen(),
   ];
 
   @override
@@ -116,13 +108,8 @@ class _MainScreenState extends State<MainScreen> {
             _navItem(icon: Icons.home, label: 'Home', index: 0),
             _navItem(icon: Icons.search, label: 'Search', index: 1),
             _navItem(icon: Icons.library_music, label: 'Library', index: 2),
-            _navItem(
-              icon: Icons.chat_bubble,
-              label: 'Messages',
-              index: 3,
-              showBadge: true,
-            ),
-            _navItem(icon: Icons.person, label: 'Profile', index: 4),
+            _navItem(icon: Icons.dynamic_feed, label: 'Feed', index: 3),
+            _navItem(icon: Icons.workspace_premium, label: 'Upgrade', index: 4),
           ],
         ),
       ),
