@@ -204,6 +204,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   child: Column(
                     children: [
                       AuthTextField(
+                        key: const Key('register_username_field'),
                         label: 'Username',
                         hintText: 'Pick a unique name',
                         prefixIcon: Icons.person_outline_rounded,
@@ -212,6 +213,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       const SizedBox(height: 18),
                       AuthTextField(
+                        key: const Key('register_email_field'),
                         label: 'Email Address',
                         hintText: 'name@example.com',
                         prefixIcon: Icons.email_outlined,
@@ -224,6 +226,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       const SizedBox(height: 18),
                       AuthTextField(
+                        key: const Key('register_password_field'),
                         label: 'Password',
                         hintText: 'At least 8 characters',
                         prefixIcon: Icons.lock_outline,
@@ -237,6 +240,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       const SizedBox(height: 18),
                       AuthTextField(
+                        key: const Key('register_confirm_password_field'),
                         label: 'Confirm Password',
                         hintText: 'Repeat your password',
                         prefixIcon: Icons.replay_rounded,
@@ -310,6 +314,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           boxShadow: const [BoxShadow(color: AppColors.glow, blurRadius: 18, spreadRadius: 1)],
                         ),
                         child: ElevatedButton(
+                          key: const Key('register_create_account_button'),
                           onPressed: isLoading ? null : _handleRegister,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.transparent,

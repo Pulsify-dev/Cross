@@ -230,6 +230,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       const SizedBox(height: 24),
 
                       AuthTextField(
+                        key: const Key('login_email_field'),
                         label: 'Email Address',
                         hintText: 'name@example.com',
                         prefixIcon: Icons.email_outlined,
@@ -267,6 +268,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ),
                           TextButton(
+                            key: const Key('login_forgot_password_button'),
                             onPressed: _goToForgotPassword,
                             child: Text(
                               'Forgot Password?',
@@ -283,6 +285,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       const SizedBox(height: 10),
 
                       AuthTextField(
+                        key: const Key('login_password_field'),
                         hintText: '••••••••',
                         prefixIcon: Icons.lock_outline,
                         controller: passwordController,
@@ -333,6 +336,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           ],
                         ),
                         child: ElevatedButton(
+                          key: const Key('login_submit_button'),
                           onPressed: isLoading ? null : _handleLogin,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.transparent,
@@ -396,6 +400,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       Row(
                         children: [
                           SocialAuthButton(
+                            key: const Key('login_google_button'),
                             text: 'Google',
                             icon: const Icon(
                               Icons.g_mobiledata_rounded,
@@ -407,6 +412,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                           const SizedBox(width: 12),
                           SocialAuthButton(
+                            key: const Key('login_facebook_button'),
                             text: 'Facebook',
                             icon: const Icon(
                               Icons.facebook_rounded,

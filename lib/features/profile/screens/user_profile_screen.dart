@@ -336,6 +336,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
             children: [
               Expanded(
                 child: ElevatedButton.icon(
+                  key: const Key('profile_edit_button'),
                   onPressed: () {
                     Navigator.pushNamed(context, RouteNames.editProfile)
                         .then((_) => _loadProfile());
@@ -357,6 +358,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               const SizedBox(width: 12),
               Expanded(
                 child: ElevatedButton.icon(
+                  key: const Key('profile_logout_button'),
                   onPressed: _logout,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
@@ -382,12 +384,13 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   Widget _buildStatsRow(BuildContext context) {
     final theme = Theme.of(context);
 
-    Widget statItem(String value, String label, {VoidCallback? onTap}) {
+    Widget statItem(String value, String label, {VoidCallback? onTap, Key? itemKey}) {
       return Flexible(
         fit: FlexFit.tight,
         child: Material(
           color: Colors.transparent,
           child: InkWell(
+            key: itemKey,
             onTap: onTap,
             borderRadius: BorderRadius.circular(24),
             child: Container(
@@ -444,12 +447,14 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                       '$followersCount',
                       'Followers',
                       onTap: () => Navigator.pushNamed(context, RouteNames.followers),
+                      itemKey: const Key('profile_followers_stat'),
                     ),
                     const SizedBox(height: 12),
                     statItem(
                       '$followingCount',
                       'Following',
                       onTap: () => Navigator.pushNamed(context, RouteNames.following),
+                      itemKey: const Key('profile_following_stat'),
                     ),
                     const SizedBox(height: 12),
                     statItem('$tracksCount', 'Tracks'),
@@ -463,12 +468,14 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                     '$followersCount',
                     'Followers',
                     onTap: () => Navigator.pushNamed(context, RouteNames.followers),
+                    itemKey: const Key('profile_followers_stat'),
                   ),
                   const SizedBox(width: 12),
                   statItem(
                     '$followingCount',
                     'Following',
                     onTap: () => Navigator.pushNamed(context, RouteNames.following),
+                    itemKey: const Key('profile_following_stat'),
                   ),
                   const SizedBox(width: 12),
                   statItem('$tracksCount', 'Tracks'),
