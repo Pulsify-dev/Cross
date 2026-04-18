@@ -451,7 +451,7 @@ class _UploadTrackScreenState extends State<UploadTrackScreen> {
         const TrackFormSectionLabel(text: 'Genre'),
         DropdownButtonFormField<String>(
           key: const Key('upload_genre_dropdown'),
-          value: _selectedGenre,
+          initialValue: _selectedGenre,
           hint: const Text('Choose genre'),
           isExpanded: true,
           decoration: InputDecoration(

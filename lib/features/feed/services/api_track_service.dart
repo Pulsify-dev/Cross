@@ -482,7 +482,7 @@ class ApiTrackService implements TrackService {
         body: {
           'text': text,
           'timestampSeconds': timestampInTrack.inSeconds,
-          if (parentCommentId != null) 'parentCommentId': parentCommentId,
+          'parentCommentId': ?parentCommentId,
         },
       );
     } catch (e) {
