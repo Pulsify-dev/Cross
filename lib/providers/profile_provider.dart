@@ -74,6 +74,7 @@ class ProfileProvider extends ChangeNotifier {
       );
     } catch (e) {
       _errorMessage = e.toString();
+      rethrow;
     } finally {
       _isLoading = false;
       notifyListeners();
