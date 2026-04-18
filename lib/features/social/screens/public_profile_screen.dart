@@ -121,12 +121,22 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                                     ),
                                   ),
                                   const SizedBox(height: 8),
-                                  _buildStatsRow(
-                                    context: context,
-                                    targetUserId: profile.id,
-                                    followers: profile.followersCount,
-                                    following: profile.followingCount,
-                                    tracks: profile.trackCount,
+                                  Consumer<UploadProvider>(
+                                    builder: (context, uploadProvider, _) {
+                                      final loadedCount = uploadProvider
+                                          .publicArtistTracksForUser(widget.userId)
+                                          .length;
+                                      final trackCount = loadedCount > 0
+                                          ? loadedCount
+                                          : profile.trackCount;
+                                      return _buildStatsRow(
+                                        context: context,
+                                        targetUserId: profile.id,
+                                        followers: profile.followersCount,
+                                        following: profile.followingCount,
+                                        tracks: trackCount,
+                                      );
+                                    },
                                   ),
                                   const SizedBox(height: 16),
                                 ],
