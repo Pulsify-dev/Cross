@@ -15,6 +15,10 @@ import 'providers/profile_provider.dart';
 import 'providers/search_provider.dart';
 import 'providers/social_provider.dart';
 import 'providers/upload_provider.dart';
+import 'providers/messaging_provider.dart';
+import 'features/messages/services/message_service.dart';
+import 'features/messages/services/socket_service.dart';
+import 'core/services/session_service.dart';
 import 'routes/app_routes.dart';
 import 'routes/route_names.dart';
 
@@ -64,6 +68,27 @@ class PulsifyApp extends StatelessWidget {
           create: (context) => EngagementProvider(context.read<TrackService>()),
         ),
         ChangeNotifierProvider(create: (_) => ProfileProvider()),
+        Provider<MessageService>(
+          create: (context) => MessageService(context.read<ApiService>()),
+        ),
+        Provider<SocketService>(
+          create: (_) => SocketService(SessionService()),
+        ),
+        ChangeNotifierProxyProvider<AuthProvider, MessagingProvider>(
+          create: (context) => MessagingProvider(
+            context.read<MessageService>(),
+            context.read<SocketService>(),
+          ),
+          update: (context, authProvider, messagingProvider) {
+            final provider = messagingProvider ??
+                MessagingProvider(
+                  context.read<MessageService>(),
+                  context.read<SocketService>(),
+                );
+            provider.setCurrentUserId(authProvider.currentUser?.id ?? '');
+            return provider;
+          },
+        ),
         ChangeNotifierProxyProvider<AuthProvider, UploadProvider>(
           create: (_) => UploadProvider(),
           update: (_, authProvider, uploadProvider) {
@@ -75,7 +100,6 @@ class PulsifyApp extends StatelessWidget {
             return provider;
           },
         ),
-
         ChangeNotifierProxyProvider<AuthProvider, SocialProvider>(
           create: (_) => SocialProvider(),
           update: (_, authProvider, socialProvider) {

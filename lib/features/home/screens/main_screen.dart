@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:cross/core/theme/app_colors.dart';
 import 'package:cross/features/feed/screens/home_screen.dart';
 import 'package:cross/features/search/screens/search_screen.dart';
 import 'package:cross/features/library/screens/library_screen.dart';
 import 'package:cross/features/feed/screens/activity_feed_screen.dart';
+import 'package:cross/providers/feed_provider.dart';
 
 class MainScreen extends StatefulWidget {
   final int initialIndex;
@@ -21,7 +23,7 @@ class _MainScreenState extends State<MainScreen> {
     const HomeScreen(),
     const SearchScreen(),
     const LibraryScreen(),
-    const ActivityFeedScreen(),
+    const ActivityFeedScreen(showBottomNavigationBar: false),
     const _UpgradeScreen(),
   ];
 
@@ -32,7 +34,13 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   void _onItemTapped(int index) {
-    if (_selectedIndex == index) return;
+    if (_selectedIndex == index) {
+      if (index == 3) {
+        context.read<FeedProvider>().fetchActivityFeed();
+        context.read<FeedProvider>().fetchTrendingTracks();
+      }
+      return;
+    }
 
     setState(() {
       _selectedIndex = index;

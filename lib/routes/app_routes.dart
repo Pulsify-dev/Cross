@@ -1,5 +1,7 @@
 import 'package:cross/features/library/screens/library_screen.dart';
 import 'package:cross/features/messages/screens/messages_screen.dart';
+import 'package:cross/features/messages/screens/message_thread_screen.dart';
+import 'package:cross/features/messages/models/conversation.dart';
 import 'package:cross/features/search/screens/search_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:cross/features/auth/screens/login_screen.dart';
@@ -39,9 +41,14 @@ class AppRoutes {
       case RouteNames.home:
         return MaterialPageRoute(builder: (_) => const HomeScreen());
       case RouteNames.mainScreen:
-        return MaterialPageRoute(builder: (context) => const MainScreen());
+        final initialIndex = settings.arguments is int ? settings.arguments as int : 0;
+        return MaterialPageRoute(
+          builder: (context) => MainScreen(initialIndex: initialIndex),
+        );
       case RouteNames.activityFeed:
-        return MaterialPageRoute(builder: (_) => const ActivityFeedScreen());
+        return MaterialPageRoute(
+          builder: (_) => const ActivityFeedScreen(showBottomNavigationBar: true),
+        );
       case RouteNames.trackDetails:
         final track = settings.arguments as Track;
         return MaterialPageRoute(
@@ -74,6 +81,11 @@ class AppRoutes {
         );
       case RouteNames.messages:
         return MaterialPageRoute(builder: (_) => const MessagesScreen());
+      case RouteNames.messageThread:
+        final conversation = settings.arguments as Conversation;
+        return MaterialPageRoute(
+          builder: (_) => MessageThreadScreen(conversation: conversation),
+        );
       case RouteNames.profile:
         return MaterialPageRoute(builder: (_) => const UserProfileScreen());
       case RouteNames.editProfile:

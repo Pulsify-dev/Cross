@@ -69,6 +69,7 @@ class SocialProvider extends ChangeNotifier {
 	};
 
 	final Map<String, bool> _followStateByUserId = {};
+	final Set<String> _blockedUserIds = <String>{};
 
 	String get currentUserId => _currentUserId;
 	PublicProfileModel? get publicProfile => _publicProfile;
@@ -87,10 +88,12 @@ class SocialProvider extends ChangeNotifier {
 			List.unmodifiable(_lists[SocialListType.suggested]!);
 	List<MutualFollowerModel> get blockedUsers =>
 			List.unmodifiable(_lists[SocialListType.blocked]!);
+	Set<String> get blockedUserIds => Set.unmodifiable(_blockedUserIds);
 
 	bool isListLoading(SocialListType type) => _isLoadingList[type] ?? false;
 	String? listError(SocialListType type) => _listErrors[type];
 	int listTotal(SocialListType type) => _listTotals[type] ?? 0;
+	bool isUserBlocked(String userId) => _blockedUserIds.contains(userId.trim());
 
 	void setCurrentUser(String userId) {
 		final normalized = userId.trim().isEmpty ? 'me' : userId.trim();
@@ -152,6 +155,15 @@ class SocialProvider extends ChangeNotifier {
 			_lists[type] = response.users;
 			_listTotals[type] = response.total;
 			_listOwnerByType[type] = userId;
+			if (type == SocialListType.blocked) {
+				_blockedUserIds
+					..clear()
+					..addAll(
+						response.users
+							.map((user) => user.id.trim())
+							.where((id) => id.isNotEmpty),
+					);
+			}
 			_syncFollowStateAfterListLoad(type);
 		} catch (e) {
 			_listErrors[type] = e.toString();
@@ -339,6 +351,7 @@ class SocialProvider extends ChangeNotifier {
 		}
 
 		if (relation.isBlockedByMe) {
+			_blockedUserIds.add(userId);
 			final blockedList = _lists[SocialListType.blocked]!;
 			final existing = blockedList.any((u) => u.id == userId);
 			if (!existing) {
@@ -365,6 +378,8 @@ class SocialProvider extends ChangeNotifier {
 					),
 				];
 			}
+		} else {
+			_blockedUserIds.remove(userId);
 		}
 	}
 
