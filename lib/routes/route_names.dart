@@ -6,7 +6,7 @@ class RouteNames {
   static const String forgotPassword = '/forgot-password';
   static const String editProfile = '/edit-profile';
   static const String trackDetails = '/track-details';
-  static const String activityFeed = '/activity-feed';
+  static const String feed = '/feed';
   static const String search = '/search';
   static const String comments = '/comments';
   static const String likes = '/likes';

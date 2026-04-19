@@ -40,7 +40,7 @@ class AppRoutes {
         return MaterialPageRoute(builder: (_) => const HomeScreen());
       case RouteNames.mainScreen:
         return MaterialPageRoute(builder: (context) => const MainScreen());
-      case RouteNames.activityFeed:
+      case RouteNames.feed:
         return MaterialPageRoute(builder: (_) => const FeedScreen());
       case RouteNames.trackDetails:
         final track = settings.arguments as Track;
