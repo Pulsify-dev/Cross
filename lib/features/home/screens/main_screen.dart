@@ -3,7 +3,7 @@ import 'package:cross/core/theme/app_colors.dart';
 import 'package:cross/features/feed/screens/home_screen.dart';
 import 'package:cross/features/search/screens/search_screen.dart';
 import 'package:cross/features/library/screens/library_screen.dart';
-import 'package:cross/features/feed/screens/activity_feed_screen.dart';
+import 'package:cross/features/feed/screens/feed_screen.dart';
 
 class MainScreen extends StatefulWidget {
   final int initialIndex;
@@ -21,7 +21,7 @@ class _MainScreenState extends State<MainScreen> {
     const HomeScreen(),
     const SearchScreen(),
     const LibraryScreen(),
-    const ActivityFeedScreen(),
+    const FeedScreen(),
     //const _UpgradeScreen(),
   ];
 

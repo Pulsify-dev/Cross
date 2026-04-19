@@ -10,7 +10,7 @@ import 'package:cross/features/auth/screens/forgot_password_screen.dart';
 import 'package:cross/routes/route_names.dart';
 import 'package:cross/features/profile/screens/edit_profile_screen.dart';
 import 'package:cross/features/home/screens/main_screen.dart';
-import 'package:cross/features/feed/screens/activity_feed_screen.dart';
+import 'package:cross/features/feed/screens/feed_screen.dart';
 import 'package:cross/features/player/screens/track_details_screen.dart';
 import '../features/feed/models/track.dart';
 import 'package:cross/features/library/screens/liked_tracks_screen.dart';
@@ -41,7 +41,7 @@ class AppRoutes {
       case RouteNames.mainScreen:
         return MaterialPageRoute(builder: (context) => const MainScreen());
       case RouteNames.activityFeed:
-        return MaterialPageRoute(builder: (_) => const ActivityFeedScreen());
+        return MaterialPageRoute(builder: (_) => const FeedScreen());
       case RouteNames.trackDetails:
         final track = settings.arguments as Track;
         return MaterialPageRoute(

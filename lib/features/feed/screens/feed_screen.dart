@@ -7,14 +7,14 @@ import '../widgets/track_card.dart';
 import '../../player/widgets/mini_player.dart';
 import '../models/track.dart';
 
-class ActivityFeedScreen extends StatefulWidget {
-  const ActivityFeedScreen({super.key});
+class FeedScreen extends StatefulWidget {
+  const FeedScreen({super.key});
 
   @override
-  State<ActivityFeedScreen> createState() => _ActivityFeedScreenState();
+  State<FeedScreen> createState() => _FeedScreenState();
 }
 
-class _ActivityFeedScreenState extends State<ActivityFeedScreen> {
+class _FeedScreenState extends State<FeedScreen> {
   @override
   void initState() {
     super.initState();
