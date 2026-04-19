@@ -94,6 +94,7 @@ class _SearchScreenState extends State<SearchScreen>
                 ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
               ),
               TextButton.icon(
+                key: const Key('search_delete_all_button'),
                 onPressed: onClearAll,
                 icon: Icon(
                   Icons.delete_sweep_outlined,
@@ -151,6 +152,7 @@ class _SearchScreenState extends State<SearchScreen>
       appBar: AppBar(
         automaticallyImplyLeading: false,
         title: TextField(
+          key: const Key('search_input_field'),
           controller: _searchController,
           autofocus: true,
           style: Theme.of(context).textTheme.bodyLarge?.copyWith(
@@ -166,6 +168,7 @@ class _SearchScreenState extends State<SearchScreen>
             border: InputBorder.none,
             suffixIcon: _isTyping
                 ? IconButton(
+                    key: const Key('search_clear_button'),
                     icon: const Icon(Icons.clear),
                     onPressed: () {
                       _searchController.clear();

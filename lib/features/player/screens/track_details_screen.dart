@@ -171,10 +171,12 @@ class _TrackDetailsScreenState extends State<TrackDetailsScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
                         IconButton(
+                          key: const Key('player_skip_prev_button'),
                           icon: const Icon(Icons.skip_previous, size: 36),
                           onPressed: () => player.previousTrack(),
                         ),
                         IconButton(
+                          key: const Key('player_play_pause_button'),
                           icon: Icon(
                             isPlaying
                                 ? Icons.pause_circle_filled
@@ -195,6 +197,7 @@ class _TrackDetailsScreenState extends State<TrackDetailsScreen> {
                           color: Theme.of(context).colorScheme.primary,
                         ),
                         IconButton(
+                          key: const Key('player_skip_next_button'),
                           icon: const Icon(Icons.skip_next, size: 36),
                           onPressed: () => player.nextTrack(),
                         ),
@@ -209,6 +212,7 @@ class _TrackDetailsScreenState extends State<TrackDetailsScreen> {
                             Column(
                               children: [
                                 IconButton(
+                                  key: const Key('player_comment_button'),
                                   icon: const Icon(Icons.comment_outlined),
                                   onPressed: () => Navigator.pushNamed(
                                     context,
@@ -229,6 +233,7 @@ class _TrackDetailsScreenState extends State<TrackDetailsScreen> {
                             Column(
                               children: [
                                 IconButton(
+                                  key: const Key('player_like_button'),
                                   icon: Icon(
                                     displayTrack.isLiked
                                         ? Icons.favorite

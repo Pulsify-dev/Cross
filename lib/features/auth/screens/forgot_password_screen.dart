@@ -129,6 +129,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   child: Column(
                     children: [
                       AuthTextField(
+                        key: const Key('forgot_password_email_field'),
                         label: 'Email Address',
                         hintText: 'Email address',
                         prefixIcon: Icons.email_outlined,
@@ -175,6 +176,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                           ],
                         ),
                         child: ElevatedButton(
+                          key: const Key('forgot_password_submit_button'),
                           onPressed: isLoading ? null : _handleSendResetLink,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.transparent,

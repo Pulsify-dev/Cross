@@ -22,7 +22,7 @@ class _MainScreenState extends State<MainScreen> {
     const SearchScreen(),
     const LibraryScreen(),
     const FeedScreen(),
-    //const _UpgradeScreen(),
+    const _UpgradeScreen(),
   ];
 
   @override
@@ -44,12 +44,14 @@ class _MainScreenState extends State<MainScreen> {
     required String label,
     required int index,
     bool showBadge = false,
+    Key? tabKey,
   }) {
     final selected = _selectedIndex == index;
     final color = selected ? AppColors.primary : AppColors.textMuted;
 
     return Expanded(
       child: InkWell(
+        key: tabKey,
         onTap: () => _onItemTapped(index),
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 8),
@@ -105,11 +107,36 @@ class _MainScreenState extends State<MainScreen> {
         top: false,
         child: Row(
           children: [
-            _navItem(icon: Icons.home, label: 'Home', index: 0),
-            _navItem(icon: Icons.search, label: 'Search', index: 1),
-            _navItem(icon: Icons.library_music, label: 'Library', index: 2),
-            _navItem(icon: Icons.dynamic_feed, label: 'Feed', index: 3),
-            _navItem(icon: Icons.workspace_premium, label: 'Upgrade', index: 4),
+            _navItem(
+              icon: Icons.home,
+              label: 'Home',
+              index: 0,
+              tabKey: const Key('nav_home_tab'),
+            ),
+            _navItem(
+              icon: Icons.search,
+              label: 'Search',
+              index: 1,
+              tabKey: const Key('nav_search_tab'),
+            ),
+            _navItem(
+              icon: Icons.library_music,
+              label: 'Library',
+              index: 2,
+              tabKey: const Key('nav_library_tab'),
+            ),
+            _navItem(
+              icon: Icons.dynamic_feed,
+              label: 'Feed',
+              index: 3,
+              tabKey: const Key('nav_feed_tab'),
+            ),
+            _navItem(
+              icon: Icons.workspace_premium,
+              label: 'Upgrade',
+              index: 4,
+              tabKey: const Key('nav_upgrade_tab'),
+            ),
           ],
         ),
       ),
@@ -121,6 +148,32 @@ class _MainScreenState extends State<MainScreen> {
     return Scaffold(
       body: IndexedStack(index: _selectedIndex, children: _screens),
       bottomNavigationBar: _buildBottomNavigationBar(),
+    );
+  }
+}
+
+class _UpgradeScreen extends StatelessWidget {
+  const _UpgradeScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.workspace_premium, size: 64, color: AppColors.primary),
+            const SizedBox(height: 16),
+            Text(
+              'Go Premium',
+              style: Theme.of(context).textTheme.headlineMedium,
+            ),
+            const SizedBox(height: 8),
+            Text('Coming soon', style: Theme.of(context).textTheme.bodyMedium),
+          ],
+        ),
+      ),
     );
   }
 }

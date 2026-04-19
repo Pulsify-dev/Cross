@@ -30,6 +30,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
           Padding(
             padding: const EdgeInsets.only(right: 16.0),
             child: GestureDetector(
+              key: const Key('library_profile_avatar'),
               onTap: () => Navigator.of(context).pushNamed(RouteNames.profile),
               child: Hero(
                 tag: 'profile_avatar',
@@ -77,6 +78,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
             title: 'Liked Tracks',
             subtitle: 'Your favorite sounds in one place',
             route: RouteNames.likedTracks,
+            itemKey: const Key('library_liked_tracks_card'),
           ),
           const SizedBox(height: 16),
           _buildLibraryItem(
@@ -85,6 +87,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
             title: 'Listening History',
             subtitle: 'Relive your recent discoveries',
             route: RouteNames.history,
+            itemKey: const Key('library_history_card'),
           ),
         ],
       ),
@@ -98,8 +101,10 @@ class _LibraryScreenState extends State<LibraryScreen> {
     required String title,
     required String subtitle,
     required String route,
+    Key? itemKey,
   }) {
     return InkWell(
+      key: itemKey,
       onTap: () => Navigator.pushNamed(context, route),
       borderRadius: BorderRadius.circular(12),
       child: Container(

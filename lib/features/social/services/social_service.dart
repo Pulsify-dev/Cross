@@ -595,26 +595,6 @@ class MockSocialService implements SocialService {
 		return result;
 	}
 
-	PublicProfileModel _buildProfile(String userId) {
-		final user = _users[userId]!;
-		return PublicProfileModel(
-			id: user.id,
-			username: user.username,
-			displayName: user.displayName,
-			bio: user.bio,
-			avatarUrl: user.avatarUrl,
-			coverUrl: user.coverUrl,
-			isVerified: user.isVerified,
-			followersCount: _followersOf(userId).length,
-			followingCount: _followingByUser[userId]?.length ?? 0,
-			trackCount: user.uploadedTracks.length,
-			playlistCount: user.playlists.length,
-			favoriteGenres: user.favoriteGenres,
-			uploadedTracks: user.uploadedTracks,
-			playlists: user.playlists,
-		);
-	}
-
 	RelationshipStatusModel _buildRelationship(String targetUserId) {
 		final myFollowing = _followingByUser[_currentUserId] ?? <String>{};
 		final targetFollowing = _followingByUser[targetUserId] ?? <String>{};

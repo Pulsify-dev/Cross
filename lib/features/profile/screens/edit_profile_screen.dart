@@ -287,6 +287,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 label: 'Display Name',
                 controller: _displayNameController,
                 icon: Icons.person,
+                fieldKey: const Key('edit_profile_display_name_field'),
               ),
               const SizedBox(height: 20),
 
@@ -298,6 +299,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 label: 'Location',
                 controller: _locationController,
                 icon: Icons.location_on,
+                fieldKey: const Key('edit_profile_location_field'),
               ),
               const SizedBox(height: 20),
 
@@ -358,6 +360,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 icon: Icons.mail,
                 keyboardType: TextInputType.emailAddress,
                 enabled: false,
+                fieldKey: const Key('edit_profile_email_field'),
               ),
               const SizedBox(height: 24),
 
@@ -365,6 +368,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               const SizedBox(height: 32),
 
               ElevatedButton(
+                key: const Key('edit_profile_save_button'),
                 onPressed: () async {
                   final profileProvider = Provider.of<ProfileProvider>(
                     context,
@@ -441,6 +445,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               ),
               const SizedBox(height: 12),
               OutlinedButton(
+                key: const Key('edit_profile_discard_button'),
                 onPressed: () => Navigator.pop(context),
                 style: OutlinedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 14),
@@ -482,6 +487,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     ),
                     const SizedBox(height: 12),
                     GestureDetector(
+                      key: const Key('edit_profile_delete_account'),
                       onTap: () {
                         showDialog(
                           context: context,
@@ -533,6 +539,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     required IconData icon,
     TextInputType keyboardType = TextInputType.text,
     bool enabled = true,
+    Key? fieldKey,
   }) {
     final theme = Theme.of(context);
 
@@ -549,6 +556,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         ),
         const SizedBox(height: 8),
         TextField(
+          key: fieldKey,
           controller: controller,
           keyboardType: keyboardType,
           enabled: enabled,
@@ -625,6 +633,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           ),
         ),
         Switch(
+          key: const Key('edit_profile_private_toggle'),
           value: _isPrivate,
           onChanged: (value) {
             setState(() {
@@ -653,6 +662,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         ),
         const SizedBox(height: 8),
         TextField(
+          key: const Key('edit_profile_bio_field'),
           controller: _bioController,
           maxLines: 5,
           decoration: InputDecoration(
@@ -689,6 +699,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     final theme = Theme.of(context);
 
     return GestureDetector(
+      key: const Key('edit_profile_change_password'),
       onTap: () {
         _currentPasswordController.clear();
         _newPasswordController.clear();

@@ -411,11 +411,13 @@ class _UploadTrackScreenState extends State<UploadTrackScreen> {
         ),
         const SizedBox(height: 18),
         AudioPickerCard(
+          key: const Key('upload_audio_picker'),
           fileName: _selectedAudioFile,
           onPick: _pickAudioFile,
         ),
         const SizedBox(height: 18),
         ArtworkPickerCard(
+          key: const Key('upload_artwork_picker'),
           title: _selectedArtworkFile ?? 'Cover Art',
           imageBytes: _selectedArtworkBytes,
           onPick: _pickArtworkFile,
@@ -424,6 +426,7 @@ class _UploadTrackScreenState extends State<UploadTrackScreen> {
 
         const TrackFormSectionLabel(text: 'Track Title'),
         TrackTextField(
+          key: const Key('upload_title_field'),
           controller: _titleController,
           hintText: 'Enter track title',
         ),
@@ -447,7 +450,8 @@ class _UploadTrackScreenState extends State<UploadTrackScreen> {
 
         const TrackFormSectionLabel(text: 'Genre'),
         DropdownButtonFormField<String>(
-          value: _selectedGenre,
+          key: const Key('upload_genre_dropdown'),
+          initialValue: _selectedGenre,
           hint: const Text('Choose genre'),
           isExpanded: true,
           decoration: InputDecoration(
@@ -478,6 +482,7 @@ class _UploadTrackScreenState extends State<UploadTrackScreen> {
 
         const TrackFormSectionLabel(text: 'Description'),
         TrackTextField(
+          key: const Key('upload_description_field'),
           controller: _descriptionController,
           hintText: 'Describe your track',
           maxLines: 4,
@@ -590,6 +595,7 @@ class _UploadTrackScreenState extends State<UploadTrackScreen> {
         child: Padding(
           padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
           child: TrackPrimaryButton(
+            key: const Key('upload_submit_button'),
             text: uploadProvider.isUploading
                 ? 'Uploading...'
                 : (_uploadSucceededForCurrentDraft ? 'Uploaded' : 'Upload Track'),

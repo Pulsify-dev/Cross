@@ -11,8 +11,8 @@ class SearchProvider with ChangeNotifier {
 
   List<Track> _searchResults = [];
   List<User> _userSearchResults = [];
-  List<String> _trackHistory = [];
-  List<String> _userHistory = [];
+  final List<String> _trackHistory = [];
+  final List<String> _userHistory = [];
   bool _isLoading = false;
   Timer? _debounce;
 

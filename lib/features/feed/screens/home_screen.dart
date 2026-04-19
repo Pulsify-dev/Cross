@@ -2,12 +2,9 @@
 //import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import '/providers/feed_provider.dart';
-import '/providers/player_provider.dart';
 import '/providers/profile_provider.dart';
 import '/routes/route_names.dart';
-import '../models/track.dart';
 import '../widgets/trending_track_widget.dart';
 import '../widgets/suggested_users_widget.dart';
 import '../widgets/listening_history_widget.dart';
