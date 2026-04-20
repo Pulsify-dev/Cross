@@ -3,7 +3,7 @@ import 'package:cross/core/theme/app_colors.dart';
 import 'package:cross/features/feed/screens/home_screen.dart';
 import 'package:cross/features/search/screens/search_screen.dart';
 import 'package:cross/features/library/screens/library_screen.dart';
-import 'package:cross/features/feed/screens/activity_feed_screen.dart';
+import 'package:cross/features/feed/screens/feed_screen.dart';
 
 class MainScreen extends StatefulWidget {
   final int initialIndex;
@@ -21,7 +21,7 @@ class _MainScreenState extends State<MainScreen> {
     const HomeScreen(),
     const SearchScreen(),
     const LibraryScreen(),
-    const ActivityFeedScreen(),
+    const FeedScreen(),
     const _UpgradeScreen(),
   ];
 
@@ -107,11 +107,36 @@ class _MainScreenState extends State<MainScreen> {
         top: false,
         child: Row(
           children: [
-            _navItem(icon: Icons.home, label: 'Home', index: 0, tabKey: const Key('nav_home_tab')),
-            _navItem(icon: Icons.search, label: 'Search', index: 1, tabKey: const Key('nav_search_tab')),
-            _navItem(icon: Icons.library_music, label: 'Library', index: 2, tabKey: const Key('nav_library_tab')),
-            _navItem(icon: Icons.dynamic_feed, label: 'Feed', index: 3, tabKey: const Key('nav_feed_tab')),
-            _navItem(icon: Icons.workspace_premium, label: 'Upgrade', index: 4, tabKey: const Key('nav_upgrade_tab')),
+            _navItem(
+              icon: Icons.home,
+              label: 'Home',
+              index: 0,
+              tabKey: const Key('nav_home_tab'),
+            ),
+            _navItem(
+              icon: Icons.search,
+              label: 'Search',
+              index: 1,
+              tabKey: const Key('nav_search_tab'),
+            ),
+            _navItem(
+              icon: Icons.library_music,
+              label: 'Library',
+              index: 2,
+              tabKey: const Key('nav_library_tab'),
+            ),
+            _navItem(
+              icon: Icons.dynamic_feed,
+              label: 'Feed',
+              index: 3,
+              tabKey: const Key('nav_feed_tab'),
+            ),
+            _navItem(
+              icon: Icons.workspace_premium,
+              label: 'Upgrade',
+              index: 4,
+              tabKey: const Key('nav_upgrade_tab'),
+            ),
           ],
         ),
       ),
@@ -127,7 +152,6 @@ class _MainScreenState extends State<MainScreen> {
   }
 }
 
-
 class _UpgradeScreen extends StatelessWidget {
   const _UpgradeScreen();
 
@@ -139,21 +163,14 @@ class _UpgradeScreen extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.workspace_premium,
-              size: 64,
-              color: AppColors.primary,
-            ),
+            Icon(Icons.workspace_premium, size: 64, color: AppColors.primary),
             const SizedBox(height: 16),
             Text(
               'Go Premium',
               style: Theme.of(context).textTheme.headlineMedium,
             ),
             const SizedBox(height: 8),
-            Text(
-              'Coming soon',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
+            Text('Coming soon', style: Theme.of(context).textTheme.bodyMedium),
           ],
         ),
       ),
