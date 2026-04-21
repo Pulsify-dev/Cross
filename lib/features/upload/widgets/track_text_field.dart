@@ -7,6 +7,7 @@ class TrackTextField extends StatelessWidget {
   final bool readOnly;
   final Widget? suffixIcon;
   final VoidCallback? onTap;
+  final TextInputType? keyboardType;
 
   const TrackTextField({
     super.key,
@@ -16,6 +17,7 @@ class TrackTextField extends StatelessWidget {
     this.readOnly = false,
     this.suffixIcon,
     this.onTap,
+    this.keyboardType,
   });
 
   @override
@@ -25,6 +27,7 @@ class TrackTextField extends StatelessWidget {
       maxLines: maxLines,
       readOnly: readOnly,
       onTap: onTap,
+      keyboardType: keyboardType,
       style: Theme.of(context).textTheme.bodyLarge,
       decoration: InputDecoration(
         hintText: hintText,

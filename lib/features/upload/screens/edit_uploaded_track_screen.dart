@@ -27,6 +27,7 @@ class EditUploadedTrackScreen extends StatefulWidget {
 
 class _EditUploadedTrackScreenState extends State<EditUploadedTrackScreen> {
   late final TextEditingController _titleController;
+  late final TextEditingController _previewStartController;
   String? _selectedGenre;
 
   static const List<String> _genres = [
@@ -51,6 +52,7 @@ class _EditUploadedTrackScreenState extends State<EditUploadedTrackScreen> {
     _titleController = TextEditingController();
     _descriptionController = TextEditingController();
     _tagsController = TextEditingController();
+    _previewStartController = TextEditingController();
 
 		WidgetsBinding.instance.addPostFrameCallback((_) {
 			if (!mounted) return;
@@ -66,6 +68,7 @@ class _EditUploadedTrackScreenState extends State<EditUploadedTrackScreen> {
     _descriptionController.text = track.description;
     _tagsController.text = track.tags.map((tag) => '#$tag').join(' ');
     _privacy = track.privacy;
+    _previewStartController.text = track.previewStartSeconds?.toString() ?? '';
     _didInitForm = true;
   }
 
@@ -74,6 +77,7 @@ class _EditUploadedTrackScreenState extends State<EditUploadedTrackScreen> {
     _titleController.dispose();
     _descriptionController.dispose();
     _tagsController.dispose();
+    _previewStartController.dispose();
     super.dispose();
   }
 
@@ -100,6 +104,8 @@ class _EditUploadedTrackScreenState extends State<EditUploadedTrackScreen> {
         .where((part) => part.isNotEmpty)
         .toList();
 
+    final previewStart = int.tryParse(_previewStartController.text.trim());
+
     final saved = await provider.updateTrack(
       track.copyWith(
         title: _titleController.text.trim().isEmpty
@@ -109,6 +115,7 @@ class _EditUploadedTrackScreenState extends State<EditUploadedTrackScreen> {
         description: _descriptionController.text.trim(),
         tags: parsedTags,
         privacy: _privacy,
+        previewStartSeconds: previewStart,
       ),
     );
     if (!mounted) return;
@@ -328,6 +335,14 @@ class _EditUploadedTrackScreenState extends State<EditUploadedTrackScreen> {
               TrackTextField(
                 controller: _tagsController,
                 hintText: '#track #music #demo',
+              ),
+              const SizedBox(height: 18),
+
+              const TrackFormSectionLabel(text: 'Preview Start (seconds)'),
+              TrackTextField(
+                controller: _previewStartController,
+                hintText: 'e.g. 45',
+                keyboardType: TextInputType.number,
               ),
               const SizedBox(height: 18),
 
