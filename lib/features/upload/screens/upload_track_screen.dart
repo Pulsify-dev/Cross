@@ -472,7 +472,11 @@ class _UploadTrackScreenState extends State<UploadTrackScreen> {
             ),
           ),
           dropdownColor: Theme.of(context).colorScheme.surface,
-          items: _genres.map((g) => DropdownMenuItem(value: g, child: Text(g))).toList(),
+          items: _genres.map((g) => DropdownMenuItem(
+            key: Key('upload_genre_item_${g.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '_')}'),
+            value: g,
+            child: Text(g),
+          )).toList(),
           onChanged: (value) {
             setState(() => _selectedGenre = value);
             _markDraftChanged();

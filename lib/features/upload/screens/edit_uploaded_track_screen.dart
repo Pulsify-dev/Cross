@@ -297,6 +297,7 @@ class _EditUploadedTrackScreenState extends State<EditUploadedTrackScreen> {
 
               const TrackFormSectionLabel(text: 'Genre'),
               DropdownButtonFormField<String>(
+                key: const Key('edit_genre_dropdown'),
                 initialValue: _selectedGenre,
                 hint: const Text('Choose genre'),
                 isExpanded: true,
@@ -318,7 +319,11 @@ class _EditUploadedTrackScreenState extends State<EditUploadedTrackScreen> {
                   ),
                 ),
                 dropdownColor: Theme.of(context).colorScheme.surface,
-                items: _genres.map((g) => DropdownMenuItem(value: g, child: Text(g))).toList(),
+                items: _genres.map((g) => DropdownMenuItem(
+                  key: Key('edit_genre_item_${g.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '_')}'),
+                  value: g,
+                  child: Text(g),
+                )).toList(),
                 onChanged: (value) => setState(() => _selectedGenre = value),
               ),
               const SizedBox(height: 18),
