@@ -9,6 +9,7 @@ class PublicProfileModel {
 		required this.isVerified,
 		required this.followersCount,
 		required this.followingCount,
+		required this.mutualFollowersCount,
 		required this.trackCount,
 		required this.playlistCount,
 		required this.favoriteGenres,
@@ -25,6 +26,7 @@ class PublicProfileModel {
 	final bool isVerified;
 	final int followersCount;
 	final int followingCount;
+	final int mutualFollowersCount;
 	final int trackCount;
 	final int playlistCount;
 	final List<String> favoriteGenres;
@@ -42,6 +44,7 @@ class PublicProfileModel {
 			isVerified: json['isVerified'] == true || json['is_verified'] == true,
 			followersCount: _toInt(json['followersCount'] ?? json['followers_count']) ?? 0,
 			followingCount: _toInt(json['followingCount'] ?? json['following_count']) ?? 0,
+			mutualFollowersCount: _toInt(json['mutualFollowersCount'] ?? json['mutual_followers_count']) ?? 0,
 			trackCount: _toInt(json['trackCount'] ?? json['track_count']) ?? 0,
 			playlistCount: _toInt(json['playlistCount'] ?? json['playlist_count']) ?? 0,
 			favoriteGenres: _toStringList(json['favoriteGenres'] ?? json['favorite_genres']),
@@ -61,6 +64,7 @@ class PublicProfileModel {
 			'isVerified': isVerified,
 			'followersCount': followersCount,
 			'followingCount': followingCount,
+			'mutualFollowersCount': mutualFollowersCount,
 			'trackCount': trackCount,
 			'playlistCount': playlistCount,
 			'favoriteGenres': favoriteGenres,
@@ -79,6 +83,7 @@ class PublicProfileModel {
 		bool? isVerified,
 		int? followersCount,
 		int? followingCount,
+		int? mutualFollowersCount,
 		int? trackCount,
 		int? playlistCount,
 		List<String>? favoriteGenres,
@@ -95,6 +100,7 @@ class PublicProfileModel {
 			isVerified: isVerified ?? this.isVerified,
 			followersCount: followersCount ?? this.followersCount,
 			followingCount: followingCount ?? this.followingCount,
+			mutualFollowersCount: mutualFollowersCount ?? this.mutualFollowersCount,
 			trackCount: trackCount ?? this.trackCount,
 			playlistCount: playlistCount ?? this.playlistCount,
 			favoriteGenres: favoriteGenres ?? this.favoriteGenres,

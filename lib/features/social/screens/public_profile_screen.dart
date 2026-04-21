@@ -135,6 +135,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                                         followers: profile.followersCount,
                                         following: profile.followingCount,
                                         tracks: trackCount,
+                                        mutualFollowers: profile.mutualFollowersCount,
                                       );
                                     },
                                   ),
@@ -251,12 +252,14 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
     required int followers,
     required int following,
     required int tracks,
+    required int mutualFollowers,
   }) {
     final theme = Theme.of(context);
 
-    Widget stat(String label, int value, VoidCallback onTap) {
+    Widget stat(String label, int value, VoidCallback onTap, {Key? key}) {
       return Expanded(
         child: InkWell(
+          key: key,
           borderRadius: BorderRadius.circular(24),
           onTap: onTap,
           child: Container(
@@ -292,29 +295,55 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
       );
     }
 
-    return Row(
+    return Column(
       children: [
-        stat(
-          'Followers',
-          followers,
-          () => Navigator.pushNamed(
-            context,
-            RouteNames.followers,
-            arguments: targetUserId,
-          ),
+        Row(
+          children: [
+            stat(
+              'Followers',
+              followers,
+              () => Navigator.pushNamed(
+                context,
+                RouteNames.followers,
+                arguments: targetUserId,
+              ),
+              key: const Key('public_profile_stat_followers'),
+            ),
+            const SizedBox(width: 12),
+            stat(
+              'Following',
+              following,
+              () => Navigator.pushNamed(
+                context,
+                RouteNames.following,
+                arguments: targetUserId,
+              ),
+              key: const Key('public_profile_stat_following'),
+            ),
+          ],
         ),
-        const SizedBox(width: 12),
-        stat(
-          'Following',
-          following,
-          () => Navigator.pushNamed(
-            context,
-            RouteNames.following,
-            arguments: targetUserId,
-          ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            stat(
+              'Tracks',
+              tracks,
+              () {},
+              key: const Key('public_profile_stat_tracks'),
+            ),
+            const SizedBox(width: 12),
+            stat(
+              'Mutual',
+              mutualFollowers,
+              () => Navigator.pushNamed(
+                context,
+                RouteNames.mutualFollowers,
+                arguments: targetUserId,
+              ),
+              key: const Key('public_profile_stat_mutual'),
+            ),
+          ],
         ),
-        const SizedBox(width: 12),
-        stat('Tracks', tracks, () {}),
       ],
     );
   }
@@ -331,7 +360,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
       itemCount: items.length,
-      separatorBuilder: (_, _) => const SizedBox(height: 10),
+      separatorBuilder: (_, __) => const SizedBox(height: 10),
       itemBuilder: (context, index) {
         final item = items[index];
         return Container(
@@ -400,7 +429,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
         return ListView.separated(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
           itemCount: itemCount,
-          separatorBuilder: (_, _) => const SizedBox(height: 10),
+          separatorBuilder: (_, __) => const SizedBox(height: 10),
           itemBuilder: (context, index) {
             if (index >= tracks.length) {
               if (showLoadingMore) {
