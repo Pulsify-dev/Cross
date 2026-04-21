@@ -145,6 +145,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
+          key: const Key('register_back_button'),
           icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
           onPressed: _goToLogin,
         ),
@@ -233,6 +234,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         controller: passwordController,
                         obscureText: isPasswordHidden,
                         suffixIcon: IconButton(
+                          key: const Key('register_password_visibility_toggle'),
                           icon: Icon(isPasswordHidden ? Icons.visibility_outlined : Icons.visibility_off_outlined, color: AppColors.iconSecondary, size: 20),
                           onPressed: () => setState(() => isPasswordHidden = !isPasswordHidden),
                         ),
@@ -247,6 +249,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         controller: confirmPasswordController,
                         obscureText: isConfirmPasswordHidden,
                         suffixIcon: IconButton(
+                          key: const Key('register_confirm_password_visibility_toggle'),
                           icon: Icon(
                             isConfirmPasswordHidden
                                 ? Icons.visibility_outlined
@@ -273,6 +276,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         child: Row(
                           children: [
                             Checkbox(
+                              key: const Key('register_captcha_checkbox'),
                               value: isCaptchaChecked,
                               onChanged: isLoading ? null : _onCaptchaChanged,
                               activeColor: AppColors.primary,
@@ -352,6 +356,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 children: [
                   Text("Already have an account? ", style: textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary)),
                   GestureDetector(
+                    key: const Key('register_login_link'),
                     onTap: _goToLogin,
                     child: Text('Log In', style: textTheme.bodyMedium?.copyWith(color: AppColors.primaryLight, fontWeight: FontWeight.bold)),
                   ),
