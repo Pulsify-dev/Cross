@@ -82,7 +82,6 @@ class _LikedTracksScreenState extends State<LikedTracksScreen> {
                 },
               ),
             ),
-            const MiniPlayer(),
           ],
         ),
       ),

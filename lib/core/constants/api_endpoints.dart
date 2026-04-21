@@ -70,5 +70,7 @@ class ApiEndpoints {
   static const String trendingTracks = '/tracks/trending';
   static const String activityFeed = '/tracks/feed';
   static const String listeningHistory = '/users/me/history';
+  static const String clearListeningHistory = '/users/me/history';
   static const String likedTracks = '/users/me/likes';
+  static String trackRecordPlay(String trackId) => '/tracks/$trackId/play';
 }

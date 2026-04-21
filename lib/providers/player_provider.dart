@@ -69,7 +69,9 @@ class PlayerProvider with ChangeNotifier {
     notifyListeners();
 
     onTrackStarted?.call(track);
-    _trackService?.recordPlay(track.id);
+    // Record eagerly so it shows up in history immediately
+    _trackService?.recordPlay(track.id, durationPlayedMs: 0);
+    
     _trackService?.getTrackWaveform(track.id).then((wf) {
       if (_currentTrack?.id == track.id) {
         _currentWaveform = wf;

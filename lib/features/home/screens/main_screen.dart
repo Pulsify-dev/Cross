@@ -4,6 +4,7 @@ import 'package:cross/features/feed/screens/home_screen.dart';
 import 'package:cross/features/search/screens/search_screen.dart';
 import 'package:cross/features/library/screens/library_screen.dart';
 import 'package:cross/features/feed/screens/feed_screen.dart';
+import 'package:cross/features/player/widgets/mini_player.dart';
 
 class MainScreen extends StatefulWidget {
   final int initialIndex;
@@ -98,48 +99,54 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   Widget _buildBottomNavigationBar() {
-    return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.navBarBackground,
-        border: Border(top: BorderSide(color: AppColors.border, width: 1)),
-      ),
-      child: SafeArea(
-        top: false,
-        child: Row(
-          children: [
-            _navItem(
-              icon: Icons.home,
-              label: 'Home',
-              index: 0,
-              tabKey: const Key('nav_home_tab'),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const MiniPlayer(),
+        Container(
+          decoration: const BoxDecoration(
+            color: AppColors.navBarBackground,
+            border: Border(top: BorderSide(color: AppColors.border, width: 1)),
+          ),
+          child: SafeArea(
+            top: false,
+            child: Row(
+              children: [
+                _navItem(
+                  icon: Icons.home,
+                  label: 'Home',
+                  index: 0,
+                  tabKey: const Key('nav_home_tab'),
+                ),
+                _navItem(
+                  icon: Icons.search,
+                  label: 'Search',
+                  index: 1,
+                  tabKey: const Key('nav_search_tab'),
+                ),
+                _navItem(
+                  icon: Icons.library_music,
+                  label: 'Library',
+                  index: 2,
+                  tabKey: const Key('nav_library_tab'),
+                ),
+                _navItem(
+                  icon: Icons.dynamic_feed,
+                  label: 'Feed',
+                  index: 3,
+                  tabKey: const Key('nav_feed_tab'),
+                ),
+                _navItem(
+                  icon: Icons.workspace_premium,
+                  label: 'Upgrade',
+                  index: 4,
+                  tabKey: const Key('nav_upgrade_tab'),
+                ),
+              ],
             ),
-            _navItem(
-              icon: Icons.search,
-              label: 'Search',
-              index: 1,
-              tabKey: const Key('nav_search_tab'),
-            ),
-            _navItem(
-              icon: Icons.library_music,
-              label: 'Library',
-              index: 2,
-              tabKey: const Key('nav_library_tab'),
-            ),
-            _navItem(
-              icon: Icons.dynamic_feed,
-              label: 'Feed',
-              index: 3,
-              tabKey: const Key('nav_feed_tab'),
-            ),
-            _navItem(
-              icon: Icons.workspace_premium,
-              label: 'Upgrade',
-              index: 4,
-              tabKey: const Key('nav_upgrade_tab'),
-            ),
-          ],
+          ),
         ),
-      ),
+      ],
     );
   }
 

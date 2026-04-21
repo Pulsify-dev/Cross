@@ -29,7 +29,7 @@ class _ListeningHistoryWidgetState extends State<ListeningHistoryWidget> {
   Widget build(BuildContext context) {
     return Consumer<FeedProvider>(
       builder: (context, feedProvider, child) {
-        if (feedProvider.isLoading && feedProvider.listeningHistory.isEmpty) {
+        if (feedProvider.isHistoryLoading && feedProvider.listeningHistory.isEmpty) {
           return const Center(child: CircularProgressIndicator());
         }
 
@@ -72,14 +72,15 @@ class _ListeningHistoryWidgetState extends State<ListeningHistoryWidget> {
               physics: const NeverScrollableScrollPhysics(),
               itemCount: recentTracks.length,
               itemBuilder: (context, index) {
-                final track = recentTracks[index];
+                final historyEntry = recentTracks[index];
+                final track = historyEntry.track;
                 return TrackTile(
                   track: track,
                   showLike: true,
                   onPlay: () {
                     context.read<PlayerProvider>().playTrack(
                           track,
-                          playlist: feedProvider.listeningHistory,
+                          playlist: feedProvider.listeningHistory.map((e) => e.track).toList(),
                         );
                   },
                   onDetails: () {

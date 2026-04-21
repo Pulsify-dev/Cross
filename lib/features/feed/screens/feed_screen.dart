@@ -173,7 +173,6 @@ class _FeedScreenState extends State<FeedScreen> {
                 },
               ),
             ),
-            const MiniPlayer(),
           ],
         ),
       ),

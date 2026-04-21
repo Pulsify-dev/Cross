@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../features/feed/models/track.dart';
+import '../features/feed/models/history_entry.dart';
 import '../features/feed/models/user.dart';
 import '../features/feed/services/track_service.dart';
 import '../features/feed/services/user_service.dart';
@@ -10,7 +11,7 @@ class FeedProvider with ChangeNotifier {
   final UserService _userService;
   List<Track> _trendingTracks = [];
   List<Track> _activityFeed = [];
-  List<Track> _listeningHistory = [];
+  List<HistoryEntry> _listeningHistory = [];
   List<Track> _likedTracks = [];
   List<Track> _userTracks = [];
   bool _isLoading = false;
@@ -20,15 +21,23 @@ class FeedProvider with ChangeNotifier {
   List<User> _suggestedArtists = [];
   List<User> _suggestedUsers = [];
 
+  // History pagination
+  int _historyPage = 1;
+  static const int _historyLimit = 20;
+  bool _hasMoreHistory = true;
+  bool _isHistoryLoading = false;
+
   FeedProvider(this._trackService, this._userService);
 
   List<Track> get trendingTracks => _trendingTracks;
   List<Track> get activityFeed => _activityFeed;
-  List<Track> get listeningHistory => _listeningHistory;
+  List<HistoryEntry> get listeningHistory => _listeningHistory;
   List<Track> get likedTracks => _likedTracks;
   List<Track> get userTracks => _userTracks;
   bool get isLoading => _isLoading;
   bool get isTrendingLoading => _isTrendingLoading;
+  bool get isHistoryLoading => _isHistoryLoading;
+  bool get hasMoreHistory => _hasMoreHistory;
   String? get error => _error;
   String? get selectedGenre => _selectedGenre;
   List<User> get suggestedArtists => _suggestedArtists;
@@ -117,15 +126,68 @@ class FeedProvider with ChangeNotifier {
     }
   }
 
+  /// Resets and fetches the first page of listening history.
   Future<void> fetchListeningHistory() async {
-    _setLoading(true);
+    _historyPage = 1;
+    _hasMoreHistory = true;
+    _listeningHistory = [];
+    _isHistoryLoading = true;
     _error = null;
+    notifyListeners();
+
     try {
-      _listeningHistory = await _trackService.getListeningHistory();
+      final entries = await _trackService.getListeningHistory(
+        page: _historyPage,
+        limit: _historyLimit,
+      );
+      _listeningHistory = entries;
+      _hasMoreHistory = entries.length >= _historyLimit;
     } catch (e) {
       _error = e.toString();
     } finally {
-      _setLoading(false);
+      _isHistoryLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// Appends the next page of history entries.
+  Future<void> fetchMoreHistory() async {
+    if (_isHistoryLoading || !_hasMoreHistory) return;
+
+    _historyPage++;
+    _isHistoryLoading = true;
+    notifyListeners();
+
+    try {
+      final entries = await _trackService.getListeningHistory(
+        page: _historyPage,
+        limit: _historyLimit,
+      );
+      _listeningHistory = [..._listeningHistory, ...entries];
+      _hasMoreHistory = entries.length >= _historyLimit;
+    } catch (e) {
+      _historyPage--; // rollback on error
+      _error = e.toString();
+    } finally {
+      _isHistoryLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// Clears the entire listening history via the API and locally.
+  Future<void> clearListeningHistory() async {
+    _isHistoryLoading = true;
+    notifyListeners();
+    try {
+      await _trackService.clearListeningHistory();
+      _listeningHistory = [];
+      _historyPage = 1;
+      _hasMoreHistory = false;
+    } catch (e) {
+      _error = e.toString();
+    } finally {
+      _isHistoryLoading = false;
+      notifyListeners();
     }
   }
 
@@ -186,8 +248,6 @@ class FeedProvider with ChangeNotifier {
       notifyListeners();
     }
   }
-
-
 
   void cleanupUnlikedTracks() {
     _likedTracks.removeWhere((t) => !t.isLiked);

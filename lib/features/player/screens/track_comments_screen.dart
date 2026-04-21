@@ -5,7 +5,6 @@ import '../../feed/models/track.dart';
 import '../../feed/models/comment.dart';
 import '../../../providers/engagement_provider.dart';
 import '../../../providers/player_provider.dart';
-import '../widgets/mini_player.dart';
 
 class TrackCommentsScreen extends StatefulWidget {
   final Track track;
@@ -102,7 +101,6 @@ class _TrackCommentsScreenState extends State<TrackCommentsScreen> {
               },
             ),
           ),
-          const MiniPlayer(),
           _buildCommentInput(),
         ],
       ),

@@ -1,6 +1,7 @@
 import '../../../core/services/api_service.dart';
 import '../../../core/constants/api_endpoints.dart';
 import '../models/track.dart';
+import '../models/history_entry.dart';
 import '../models/comment.dart';
 import '../models/user.dart';
 import 'track_service.dart';
@@ -110,142 +111,48 @@ class ApiTrackService implements TrackService {
 
   @override
   Future<List<Track>> getTrendingTracks({String? genre}) async {
-    // Trending tracks are mocked as requested
-    await Future.delayed(const Duration(milliseconds: 400));
-    final tracks = [
-      Track(
-        id: 'trend_1',
-        title: 'High Spirits',
-        artistName: 'Midnight City',
-        streamUrl:
-            'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
-        duration: const Duration(minutes: 3, seconds: 45),
-        artworkUrl: 'https://picsum.photos/400/400?random=1',
-        createdAt: DateTime.now(),
-        playCount: 12500,
-      ),
-      Track(
-        id: 'trend_2',
-        title: 'Neon Nights',
-        artistName: 'Synthwave Prophet',
-        streamUrl:
-            'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
-        duration: const Duration(minutes: 4, seconds: 12),
-        artworkUrl: 'https://picsum.photos/400/400?random=2',
-        createdAt: DateTime.now(),
-        playCount: 8900,
-      ),
-      Track(
-        id: 'trend_3',
-        title: 'Ocean Breeze',
-        artistName: 'Summer Vibes',
-        streamUrl:
-            'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3',
-        duration: const Duration(minutes: 2, seconds: 58),
-        artworkUrl: 'https://picsum.photos/400/400?random=3',
-        createdAt: DateTime.now(),
-        playCount: 15400,
-      ),
-      Track(
-        id: 'trend_4',
-        title: 'Midnight Sun',
-        artistName: 'Solar Echo',
-        streamUrl:
-            'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3',
-        duration: const Duration(minutes: 3, seconds: 15),
-        artworkUrl: 'https://picsum.photos/400/400?random=4',
-        createdAt: DateTime.now(),
-        playCount: 22100,
-      ),
-      Track(
-        id: 'trend_5',
-        title: 'Urban Jungle',
-        artistName: 'Beat Maker X',
-        streamUrl:
-            'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3',
-        duration: const Duration(minutes: 4, seconds: 45),
-        artworkUrl: 'https://picsum.photos/400/400?random=5',
-        createdAt: DateTime.now(),
-        playCount: 5600,
-      ),
-      Track(
-        id: 'trend_6',
-        title: 'Electric Dreams',
-        artistName: 'Cyber Vision',
-        streamUrl:
-            'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3',
-        duration: const Duration(minutes: 3, seconds: 30),
-        artworkUrl: 'https://picsum.photos/400/400?random=6',
-        createdAt: DateTime.now(),
-        playCount: 31200,
-      ),
-    ];
-    for (var track in tracks) {
-      _mockTrackCache[track.id] = track;
+    try {
+      final url = genre != null
+          ? '${ApiEndpoints.trendingTracks}?genre=$genre'
+          : ApiEndpoints.trendingTracks;
+      
+      final response = await _apiService.get(url);
+      
+      if (response != null) {
+        List<dynamic> items = [];
+        if (response is List) {
+          items = response;
+        } else if (response is Map) {
+          items = (response['data'] ?? response['tracks'] ?? response['items'] ?? []) as List;
+        }
+
+        return items.map((data) => Track.fromJson(data)).toList();
+      }
+    } catch (e) {
+      debugPrint('Error fetching real trending tracks: $e');
     }
-    return tracks;
+    return []; // Return empty if anything fails
   }
 
   @override
   Future<List<Track>> searchTracks(String query) async {
-    // Search tracks remain a robust mock as requested
-    await Future.delayed(const Duration(milliseconds: 500));
-    final tracks = [
-      Track(
-        id: 'search_1',
-        title: '$query - Remix',
-        artistName: 'Pro Producer',
-        streamUrl:
-            'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3',
-        duration: const Duration(minutes: 3, seconds: 20),
-        artworkUrl: 'https://picsum.photos/400/400?random=11',
-        createdAt: DateTime.now(),
-      ),
-      Track(
-        id: 'search_2',
-        title: 'The Best of $query',
-        artistName: 'Compilation Experts',
-        streamUrl:
-            'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3',
-        duration: const Duration(minutes: 4, seconds: 05),
-        artworkUrl: 'https://picsum.photos/400/400?random=12',
-        createdAt: DateTime.now(),
-      ),
-      Track(
-        id: 'search_3',
-        title: '$query (Acoustic)',
-        artistName: 'Soft Strings',
-        streamUrl:
-            'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-9.mp3',
-        duration: const Duration(minutes: 2, seconds: 50),
-        artworkUrl: 'https://picsum.photos/400/400?random=13',
-        createdAt: DateTime.now(),
-      ),
-      Track(
-        id: 'search_4',
-        title: 'Forever $query',
-        artistName: 'Legendary Band',
-        streamUrl:
-            'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-10.mp3',
-        duration: const Duration(minutes: 5, seconds: 12),
-        artworkUrl: 'https://picsum.photos/400/400?random=14',
-        createdAt: DateTime.now(),
-      ),
-      Track(
-        id: 'search_5',
-        title: '$query - Night Drive',
-        artistName: 'Afterhours',
-        streamUrl:
-            'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-11.mp3',
-        duration: const Duration(minutes: 3, seconds: 55),
-        artworkUrl: 'https://picsum.photos/400/400?random=15',
-        createdAt: DateTime.now(),
-      ),
-    ];
-    for (var track in tracks) {
-      _mockTrackCache[track.id] = track;
+    try {
+      final response = await _apiService.get('${ApiEndpoints.tracks}?q=$query');
+      
+      if (response != null) {
+        List<dynamic> items = [];
+        if (response is List) {
+          items = response;
+        } else if (response is Map) {
+          items = (response['data'] ?? response['tracks'] ?? response['items'] ?? []) as List;
+        }
+
+        return items.map((data) => Track.fromJson(data)).toList();
+      }
+    } catch (e) {
+      debugPrint('Error searching tracks: $e');
     }
-    return tracks;
+    return [];
   }
 
   @override
@@ -350,31 +257,27 @@ class ApiTrackService implements TrackService {
   }
 
   @override
-  Future<void> recordPlay(String trackId) async {
-    debugPrint('Recording play for track: $trackId');
-
+  Future<void> recordPlay(String trackId, {int durationPlayedMs = 0}) async {
+    debugPrint('DEBUG: Attempting to record play for track: $trackId');
     try {
       final response = await _apiService.post(
-        ApiEndpoints.trackStatus(trackId),
-        body: {'status': 'played'},
+        ApiEndpoints.trackRecordPlay(trackId),
+        body: {'duration_played_ms': durationPlayedMs},
         authRequired: true,
       );
-      debugPrint('Record Play response: $response');
+      debugPrint('DEBUG: Record Play API Response: $response');
     } catch (e) {
-      debugPrint('Error recording play: $e');
-      rethrow;
+      debugPrint('DEBUG: Error recording play for track $trackId: $e');
     }
   }
 
   @override
-  Future<List<Track>> getListeningHistory({
+  Future<List<HistoryEntry>> getListeningHistory({
     int page = 1,
     int limit = 20,
   }) async {
-    debugPrint(
-      'Fetching listening history from API... (page: $page, limit: $limit)',
-    );
-    List<Track> realHistory = [];
+    debugPrint('Fetching listening history (page: $page, limit: $limit)');
+    final List<HistoryEntry> entries = [];
     try {
       final response = await _apiService.get(
         '${ApiEndpoints.listeningHistory}?page=$page&limit=$limit',
@@ -382,53 +285,78 @@ class ApiTrackService implements TrackService {
       );
 
       if (response != null) {
-        debugPrint('History API Response: $response');
+        debugPrint('DEBUG: Full History API Response: $response');
         List<dynamic> items = [];
         if (response is List) {
           items = response;
         } else if (response is Map) {
-          if (response['history'] is List) {
-            items = response['history'] as List;
-          } else if (response['data'] is List) {
-            items = response['data'] as List;
-          } else if (response['items'] is List) {
-            items = response['items'] as List;
-          } else {
-            debugPrint(
-              'History response Map detected but no "history", "data" or "items" list found.',
-            );
-          }
+          items = (response['history'] ?? response['data'] ?? response['items'] ?? []) as List;
         }
 
-        debugPrint('Found ${items.length} items in history response.');
+        debugPrint('Found ${items.length} history items.');
 
         for (final item in items) {
           try {
             if (item is Map<String, dynamic>) {
-              if (item.containsKey('track') &&
-                  item['track'] is Map<String, dynamic>) {
-                realHistory.add(Track.fromJson(item['track']));
-              } else {
-                realHistory.add(Track.fromJson(item));
+              // The API returns track nested in 'track_id' field, but let's check 'track' too just in case
+              Map<String, dynamic>? trackData;
+              if (item['track_id'] is Map<String, dynamic>) {
+                trackData = item['track_id'];
+              } else if (item['track'] is Map<String, dynamic>) {
+                trackData = item['track'];
+              } else if (item.containsKey('title') || item.containsKey('stream_url')) {
+                // Flat structure fallback
+                trackData = item;
               }
+
+              if (trackData == null) {
+                debugPrint('Could not find valid track data in history item: $item');
+                continue;
+              }
+
+              final track = Track.fromJson(trackData);
+              final playedAt = item['played_at'] != null
+                  ? DateTime.tryParse(item['played_at'].toString())
+                  : null;
+              final durationPlayedMs =
+                  (item['duration_played_ms'] as num?)?.toInt() ?? 0;
+              final isCompleted =
+                  (item['is_completed'] as bool?) ?? false;
+
+              entries.add(HistoryEntry(
+                track: track,
+                playedAt: playedAt ?? DateTime.now(),
+                durationPlayedMs: durationPlayedMs,
+                isCompleted: isCompleted,
+              ));
             }
           } catch (e) {
             debugPrint('Error parsing history item: $e');
           }
         }
       } else {
-        debugPrint('History API Response was null');
+        debugPrint('History API response was null');
       }
     } catch (e) {
       debugPrint('Error fetching listening history: $e');
     }
 
-    debugPrint(
-      'Returning ${realHistory.length} real history tracks from backend.',
-    );
+    debugPrint('Returning ${entries.length} history entries.');
+    return entries;
+  }
 
-    final seen = <String>{};
-    return realHistory.where((t) => seen.add(t.id)).toList();
+  @override
+  Future<void> clearListeningHistory() async {
+    try {
+      await _apiService.delete(
+        ApiEndpoints.clearListeningHistory,
+        authRequired: true,
+      );
+      debugPrint('Listening history cleared.');
+    } catch (e) {
+      debugPrint('Error clearing history: $e');
+      rethrow;
+    }
   }
 
   @override
