@@ -85,7 +85,7 @@ class _MutualFollowersScreenState extends State<MutualFollowersScreen> {
 
                   return ListView.separated(
                     itemCount: users.length,
-                    separatorBuilder: (_, _) => const SizedBox(height: 10),
+                    separatorBuilder: (_, __) => const SizedBox(height: 10),
                     itemBuilder: (context, index) {
                       final user = users[index];
                       return SocialUserTile(

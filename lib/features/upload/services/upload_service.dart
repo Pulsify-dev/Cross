@@ -94,6 +94,10 @@ class UploadService {
 			body['description'] = track.description.trim();
 		}
 
+		if (track.previewStartSeconds != null) {
+			body['preview_start_seconds'] = track.previewStartSeconds.toString();
+		}
+
 		_logCreateTrackRequest(
 			track: track,
 			fields: body,
@@ -265,6 +269,7 @@ class UploadService {
 		String? description,
 		List<String>? tags,
 		String? privacy,
+		int? previewStartSeconds,
 	}) async {
 		if (trackId.trim().isEmpty) {
 			throw const ApiException('Track id is required for metadata update.');
@@ -276,6 +281,7 @@ class UploadService {
 		if (description != null) body['description'] = description;
 		if (tags != null) body['tags'] = tags;
 		if (privacy != null) body['visibility'] = privacy;
+		if (previewStartSeconds != null) body['preview_start_seconds'] = previewStartSeconds;
 
 		if (body.isEmpty) {
 			throw const ApiException('No valid metadata fields to update.');
@@ -316,6 +322,7 @@ class UploadService {
 						status: mapped.status,
 						progressPercent: mapped.progressPercent,
 						processingErrorMessage: mapped.processingErrorMessage,
+						previewStartSeconds: mapped.previewStartSeconds ?? existing.previewStartSeconds,
 				);
 
 		_mockTracksById[trackId] = merged;

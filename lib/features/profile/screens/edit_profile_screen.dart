@@ -377,13 +377,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
                   final messenger = ScaffoldMessenger.of(context);
 
-                  if (profileProvider.profile == null) {
-                    messenger.showSnackBar(
-                      const SnackBar(content: Text('Unable to save profile.')),
-                    );
-                    return;
-                  }
-
                   final favoriteGenres = _favoriteGenresController.text
                       .split(',')
                       .map((genre) => genre.trim())

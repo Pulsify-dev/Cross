@@ -215,6 +215,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               const SizedBox(height: 28),
 
               GestureDetector(
+                key: const Key('forgot_password_back_to_login_link'),
                 onTap: _goBackToLogin,
                 child: Text(
                   'Back to Login',

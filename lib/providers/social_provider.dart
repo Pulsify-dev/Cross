@@ -111,6 +111,15 @@ class SocialProvider extends ChangeNotifier {
 		try {
 			_publicProfile = await _service.getPublicProfile(userId);
 			await loadRelationshipStatus(userId, notify: false);
+			if ((_publicProfile?.mutualFollowersCount ?? 0) == 0) {
+				try {
+					final mutualResponse = await _service.getMutualFollowers(userId, page: 1, limit: 1);
+					_listTotals[SocialListType.mutualFollowers] = mutualResponse.total;
+					if (_publicProfile != null && mutualResponse.total > 0) {
+						_publicProfile = _publicProfile!.copyWith(mutualFollowersCount: mutualResponse.total);
+					}
+				} catch (_) {}
+			}
 		} catch (e) {
 			_profileError = e.toString();
 		} finally {
@@ -299,6 +308,7 @@ class SocialProvider extends ChangeNotifier {
 		bool removeFromBlocked = false,
 		bool removeFromFollowersAndFollowing = false,
 	}) async {
+		if (_isMutatingRelationship) return;
 		_isMutatingRelationship = true;
 		_profileError = null;
 		notifyListeners();

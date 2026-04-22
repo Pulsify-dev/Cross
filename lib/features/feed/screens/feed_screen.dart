@@ -23,25 +23,24 @@ enum ActivityMessageFilter {
   unread,
 }
 
-class ActivityFeedScreen extends StatefulWidget {
+class FeedScreen extends StatefulWidget {
   final bool showBottomNavigationBar;
 
-  const ActivityFeedScreen({
+  const FeedScreen({
     super.key,
     this.showBottomNavigationBar = false,
   });
 
   @override
-  State<ActivityFeedScreen> createState() => _ActivityFeedScreenState();
+  State<FeedScreen> createState() => _FeedScreenState();
 }
 
-class _ActivityFeedScreenState extends State<ActivityFeedScreen>
+class _FeedScreenState extends State<FeedScreen>
     with SingleTickerProviderStateMixin {
   late final TabController _tabController;
   ActivityNotificationFilter _notificationFilter =
       ActivityNotificationFilter.likes;
   ActivityMessageFilter _messageFilter = ActivityMessageFilter.all;
-
   @override
   void initState() {
     super.initState();

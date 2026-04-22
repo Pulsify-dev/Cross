@@ -502,7 +502,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
       itemCount: trackItems.length,
-      separatorBuilder: (_, _) => const SizedBox(height: 12),
+      separatorBuilder: (_, __) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
         final track = trackItems[index];
         return _buildTrackItem(
@@ -559,7 +559,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         return ListView.separated(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
           itemCount: tracks.length,
-          separatorBuilder: (_, _) => const SizedBox(height: 12),
+          separatorBuilder: (_, __) => const SizedBox(height: 12),
           itemBuilder: (context, index) {
             final track = tracks[index];
             return _buildTrackItem(
