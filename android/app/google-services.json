@@ -7,6 +7,43 @@
   "client": [
     {
       "client_info": {
+        "mobilesdk_app_id": "1:48046590462:android:626b3a09476418a1c958af",
+        "android_client_info": {
+          "package_name": "Pulsify.release"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "48046590462-l33n9cibi0tg083qs6199o608uifa37n.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "Pulsify.release",
+            "certificate_hash": "84143cb301b8ef9f157658dc6a56a5fb68a59c8e"
+          }
+        },
+        {
+          "client_id": "48046590462-ggpsabgek56jagfi6o0sav2e9a87rdf8.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAV24r9GgQ8C9ovQEX1M8lAqWJYM5xKhg4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "48046590462-ggpsabgek56jagfi6o0sav2e9a87rdf8.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
         "mobilesdk_app_id": "1:48046590462:android:0e70fa6fca6fba19c958af",
         "android_client_info": {
           "package_name": "com.pulsify.release"
