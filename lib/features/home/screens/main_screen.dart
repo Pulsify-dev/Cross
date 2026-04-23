@@ -36,7 +36,7 @@ class _MainScreenState extends State<MainScreen> {
   void _onItemTapped(int index) {
     if (_selectedIndex == index) {
       if (index == 3) {
-        context.read<FeedProvider>().fetchActivityFeed();
+        context.read<FeedProvider>().fetchFeed();
         context.read<FeedProvider>().fetchTrendingTracks();
       }
       return;

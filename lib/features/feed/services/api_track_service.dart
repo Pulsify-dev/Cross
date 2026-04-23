@@ -307,8 +307,8 @@ class ApiTrackService implements TrackService {
   }
 
   @override
-  Future<List<Track>> getActivityFeed() async {
-    // Activity feed is mocked as requested
+  Future<List<Track>> getFeed() async {
+    // Feed is mocked as requested
     await Future.delayed(const Duration(milliseconds: 400));
     final tracks = [
       Track(
