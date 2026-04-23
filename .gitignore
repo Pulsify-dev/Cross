@@ -1,6 +1,10 @@
 # Claude Code
 .claude/
 
+# Release keystore — never commit
+*.jks
+*.b64
+
 # Miscellaneous
 *.class
 *.log

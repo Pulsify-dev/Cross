@@ -18,7 +18,15 @@ jobs:
           cache: true
       - name: Install the flutter dependancies
         run: flutter pub get
+      - name: Decode keystore
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/pulsify-release.jks
       - name: Build the APK
+        env:
+          KEYSTORE_PATH: pulsify-release.jks
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: flutter build apk --release
 
       - name: Upload to Firebase App Distribution
