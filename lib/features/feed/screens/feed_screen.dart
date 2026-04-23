@@ -2,14 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/feed_provider.dart';
 import '../../../providers/player_provider.dart';
-import '../../../providers/conversations_provider.dart';
-
-import '../../../providers/social_provider.dart';
 import '../../../routes/route_names.dart';
 import '../widgets/track_card.dart';
 import '../../player/widgets/mini_player.dart';
-import '../models/track.dart';
-import '../models/user.dart';
 
 class FeedScreen extends StatefulWidget {
   final bool showBottomNavigationBar;
