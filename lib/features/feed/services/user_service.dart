@@ -8,7 +8,6 @@ abstract class UserService {
   Future<void> forgotPassword(String email);
   Future<User?> updateProfile(User user);
   Future<User?> updateProfileImage(String filePath);
-  Future<List<User>> getSuggestedArtists();
   Future<User?> getPublicProfile(String userId);
   Future<List<User>> getSuggestedUsers({int page = 1, int limit = 20});
 }

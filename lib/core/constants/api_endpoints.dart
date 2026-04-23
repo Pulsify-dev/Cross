@@ -58,7 +58,12 @@ class ApiEndpoints {
   static String artistTracks(String artistId, {int page = 1, int limit = 20}) =>
       '/artists/$artistId/tracks?page=$page&limit=$limit';
 
-  static String _withPagination(String base, {int? page, int? limit, int? skip}) {
+  static String _withPagination(
+    String base, {
+    int? page,
+    int? limit,
+    int? skip,
+  }) {
     if (page == null && limit == null && skip == null) {
       return base;
     }
@@ -69,7 +74,7 @@ class ApiEndpoints {
     } else if (page != null && limit != null) {
       params.add('skip=${(page - 1) * limit}');
     } else if (page != null) {
-       params.add('skip=${(page - 1) * 20}');
+      params.add('skip=${(page - 1) * 20}');
     }
 
     if (limit != null) params.add('limit=$limit');
@@ -84,10 +89,15 @@ class ApiEndpoints {
       _withPagination('/conversations', page: page, limit: limit);
   static String startConversation() => '/conversations';
   static const String conversationsUnreadCount = '/conversations/unread-count';
-  static String conversationMessages(String conversationId,
-          {int page = 1, int limit = 50}) =>
-      _withPagination('/conversations/$conversationId/messages',
-          page: page, limit: limit);
+  static String conversationMessages(
+    String conversationId, {
+    int page = 1,
+    int limit = 50,
+  }) => _withPagination(
+    '/conversations/$conversationId/messages',
+    page: page,
+    limit: limit,
+  );
   static String sendMessage(String conversationId) =>
       '/conversations/$conversationId/messages';
   static String markConversationRead(String conversationId) =>
@@ -107,7 +117,11 @@ class ApiEndpoints {
   static String trackIsReposted(String trackId) => '/tracks/$trackId/reposted';
   static String trackComments(String trackId, {int page = 1, int limit = 20}) =>
       _withPagination('/tracks/$trackId/comments', page: page, limit: limit);
-  static String commentReplies(String commentId, {int page = 1, int limit = 20}) =>
+  static String commentReplies(
+    String commentId, {
+    int page = 1,
+    int limit = 20,
+  }) =>
       _withPagination('/comments/$commentId/replies', page: page, limit: limit);
   static String commentAction(String commentId) => '/comments/$commentId';
 }

@@ -239,16 +239,14 @@ class ApiTrackService implements TrackService {
 
   @override
   Future<void> recordPlay(String trackId, {int durationPlayedMs = 0}) async {
-    debugPrint('DEBUG: Attempting to record play for track: $trackId');
     try {
-      final response = await _apiService.post(
+      await _apiService.post(
         ApiEndpoints.trackRecordPlay(trackId),
         body: {'duration_played_ms': durationPlayedMs},
         authRequired: true,
       );
-      debugPrint('DEBUG: Record Play API Response: $response');
     } catch (e) {
-      debugPrint('DEBUG: Error recording play for track $trackId: $e');
+      debugPrint('Error recording play for track $trackId: $e');
     }
   }
 
@@ -257,8 +255,6 @@ class ApiTrackService implements TrackService {
     int page = 1,
     int limit = 20,
   }) async {
-    debugPrint('Fetching listening history (page: $page, limit: $limit)');
-    final List<HistoryEntry> entries = [];
     try {
       final response = await _apiService.get(
         '${ApiEndpoints.listeningHistory}?page=$page&limit=$limit',
@@ -266,64 +262,31 @@ class ApiTrackService implements TrackService {
       );
 
       if (response != null) {
-        debugPrint('DEBUG: Full History API Response: $response');
-        List<dynamic> items = [];
-        if (response is List) {
-          items = response;
-        } else if (response is Map) {
-          items = (response['history'] ?? response['data'] ?? response['items'] ?? []) as List;
+        final List<dynamic> historyData;
+        if (response is Map<String, dynamic>) {
+          historyData = (response['history'] ?? response['data'] ?? response['items'] ?? []) as List;
+        } else if (response is List) {
+          historyData = response;
+        } else {
+          historyData = [];
         }
 
-        debugPrint('Found ${items.length} history items.');
-
-        for (final item in items) {
+        final entries = <HistoryEntry>[];
+        for (final h in historyData) {
           try {
-            if (item is Map<String, dynamic>) {
-              // The API returns track nested in 'track_id' field, but let's check 'track' too just in case
-              Map<String, dynamic>? trackData;
-              if (item['track_id'] is Map<String, dynamic>) {
-                trackData = item['track_id'];
-              } else if (item['track'] is Map<String, dynamic>) {
-                trackData = item['track'];
-              } else if (item.containsKey('title') || item.containsKey('stream_url')) {
-                // Flat structure fallback
-                trackData = item;
-              }
-
-              if (trackData == null) {
-                debugPrint('Could not find valid track data in history item: $item');
-                continue;
-              }
-
-              final track = Track.fromJson(trackData);
-              final playedAt = item['played_at'] != null
-                  ? DateTime.tryParse(item['played_at'].toString())
-                  : null;
-              final durationPlayedMs =
-                  (item['duration_played_ms'] as num?)?.toInt() ?? 0;
-              final isCompleted =
-                  (item['is_completed'] as bool?) ?? false;
-
-              entries.add(HistoryEntry(
-                track: track,
-                playedAt: playedAt ?? DateTime.now(),
-                durationPlayedMs: durationPlayedMs,
-                isCompleted: isCompleted,
-              ));
+            if (h is Map<String, dynamic>) {
+              entries.add(HistoryEntry.fromJson(h));
             }
           } catch (e) {
-            debugPrint('Error parsing history item: $e');
+            debugPrint('Error parsing individual history entry: $e');
           }
         }
-      } else {
-        debugPrint('History API response was null');
+        return entries;
       }
     } catch (e) {
       debugPrint('Error fetching listening history: $e');
     }
-
-    debugPrint('Returning ${entries.length} history entries.');
-    return entries;
+    return [];
   }
 
   @override

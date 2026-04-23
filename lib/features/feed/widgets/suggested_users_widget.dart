@@ -4,7 +4,6 @@ import '../../../providers/feed_provider.dart';
 import '../../../routes/route_names.dart';
 import '../models/user.dart';
 
-
 class SuggestedUsersWidget extends StatefulWidget {
   const SuggestedUsersWidget({super.key});
 
@@ -19,7 +18,6 @@ class _SuggestedUsersWidgetState extends State<SuggestedUsersWidget> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final provider = context.read<FeedProvider>();
       provider.fetchSuggestedUsers();
-      provider.fetchSuggestedArtists();
     });
   }
 
@@ -27,28 +25,17 @@ class _SuggestedUsersWidgetState extends State<SuggestedUsersWidget> {
   Widget build(BuildContext context) {
     return Consumer<FeedProvider>(
       builder: (context, provider, child) {
-        if (provider.isLoading &&
-            provider.suggestedUsers.isEmpty &&
-            provider.suggestedArtists.isEmpty) {
+        if (provider.isLoading && provider.suggestedUsers.isEmpty) {
           return const SizedBox.shrink();
         }
 
         final users = provider.suggestedUsers;
-        final artists = provider.suggestedArtists;
-
-        if (users.isEmpty && artists.isEmpty) return const SizedBox.shrink();
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (artists.isNotEmpty) ...[
-              _buildSectionTitle('Recommended Artists'),
-              _buildUserList(artists),
-            ],
-            if (users.isNotEmpty) ...[
-              _buildSectionTitle('People you may know'),
-              _buildUserList(users),
-            ],
+            _buildSectionTitle('People you may know'),
+            _buildUserList(users),
           ],
         );
       },

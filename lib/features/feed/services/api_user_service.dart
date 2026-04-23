@@ -7,7 +7,6 @@ class ApiUserService implements UserService {
 
   ApiUserService(this._apiService);
 
-
   @override
   Future<User?> getPublicProfile(String userId) async {
     try {
@@ -54,54 +53,6 @@ class ApiUserService implements UserService {
       return [];
     }
     return [];
-  }
-
-  @override
-  Future<List<User>> getSuggestedArtists() async {
-    // Suggested artists are now mocked as requested
-    await Future.delayed(const Duration(milliseconds: 400));
-    return [
-      User(
-        id: 'artist_mock_1',
-        username: 'the_weeknd',
-        displayName: 'The Weeknd',
-        profileImageUrl: 'https://i.pravatar.cc/150?u=weeknd',
-        followersCount: 15000000,
-        tracksCount: 84,
-      ),
-      User(
-        id: 'artist_mock_2',
-        username: 'daft_punk',
-        displayName: 'Daft Punk',
-        profileImageUrl: 'https://i.pravatar.cc/150?u=daft',
-        followersCount: 20000000,
-        tracksCount: 120,
-      ),
-      User(
-        id: 'artist_mock_3',
-        username: 'billie_eilish',
-        displayName: 'Billie Eilish',
-        profileImageUrl: 'https://i.pravatar.cc/150?u=billie',
-        followersCount: 11000000,
-        tracksCount: 45,
-      ),
-      User(
-        id: 'artist_mock_4',
-        username: 'kanye_west',
-        displayName: 'Ye',
-        profileImageUrl: 'https://i.pravatar.cc/150?u=ye',
-        followersCount: 18000000,
-        tracksCount: 210,
-      ),
-      User(
-        id: 'artist_mock_5',
-        username: 'lana_del_rey',
-        displayName: 'Lana Del Rey',
-        profileImageUrl: 'https://i.pravatar.cc/150?u=lana',
-        followersCount: 9500000,
-        tracksCount: 62,
-      ),
-    ];
   }
 
   @override

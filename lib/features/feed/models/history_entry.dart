@@ -15,4 +15,20 @@ class HistoryEntry {
   });
 
   Duration get durationPlayed => Duration(milliseconds: durationPlayedMs);
+
+  factory HistoryEntry.fromJson(Map<String, dynamic> json) {
+    final trackData = json['track_id'] ?? json['track'];
+    if (trackData == null || trackData is! Map<String, dynamic>) {
+      throw Exception('Missing or invalid track data in history entry');
+    }
+
+    return HistoryEntry(
+      track: Track.fromJson(trackData),
+      playedAt: DateTime.parse(json['played_at'] ?? json['createdAt'] ?? DateTime.now().toIso8601String()),
+      durationPlayedMs: (json['duration_played_ms'] ?? 0) is int 
+          ? (json['duration_played_ms'] ?? 0) as int 
+          : (json['duration_played_ms'] ?? 0).toInt(),
+      isCompleted: json['is_completed'] ?? false,
+    );
+  }
 }

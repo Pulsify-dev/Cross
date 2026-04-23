@@ -35,6 +35,28 @@ class PlayerProvider with ChangeNotifier {
       _duration = dur ?? Duration.zero;
       notifyListeners();
     });
+
+    _player.processingStateStream.listen((state) {
+      if (state == ProcessingState.completed) {
+        _onTrackCompleted();
+      }
+    });
+  }
+
+  Future<void> _onTrackCompleted() async {
+    final completedTrackId = _currentTrack?.id;
+    final finalPosition = _position.inMilliseconds;
+
+    // Immediately move to next track
+    await nextTrack();
+
+    // Record the play in the background
+    if (completedTrackId != null) {
+      _trackService?.recordPlay(
+        completedTrackId,
+        durationPlayedMs: finalPosition,
+      );
+    }
   }
 
   Track? get currentTrack => _currentTrack;

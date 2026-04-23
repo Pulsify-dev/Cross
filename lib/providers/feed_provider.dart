@@ -22,7 +22,6 @@ class FeedProvider with ChangeNotifier {
   bool _isTrendingLoading = false;
   String? _error;
   String? _selectedGenre;
-  List<User> _suggestedArtists = [];
   List<User> _suggestedUsers = [];
 
   // History pagination
@@ -46,7 +45,6 @@ class FeedProvider with ChangeNotifier {
   bool get hasMoreHistory => _hasMoreHistory;
   String? get error => _error;
   String? get selectedGenre => _selectedGenre;
-  List<User> get suggestedArtists => _suggestedArtists;
   List<User> get suggestedUsers => _suggestedUsers;
 
   final Map<String, int> _trackLikeCounts = {};
@@ -101,18 +99,6 @@ class FeedProvider with ChangeNotifier {
     _error = null;
     try {
       _suggestedUsers = await _userService.getSuggestedUsers();
-    } catch (e) {
-      _error = e.toString();
-    } finally {
-      _setLoading(false);
-    }
-  }
-
-  Future<void> fetchSuggestedArtists() async {
-    _setLoading(true);
-    _error = null;
-    try {
-      _suggestedArtists = await _userService.getSuggestedArtists();
     } catch (e) {
       _error = e.toString();
     } finally {
