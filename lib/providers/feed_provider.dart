@@ -10,7 +10,7 @@ class FeedProvider with ChangeNotifier {
   final TrackService _trackService;
   final UserService _userService;
   List<Track> _trendingTracks = [];
-  List<Track> _activityFeed = [];
+  List<Track> _feed = [];
   List<HistoryEntry> _listeningHistory = [];
   List<Track> _likedTracks = [];
   List<Track> _userTracks = [];
@@ -30,7 +30,7 @@ class FeedProvider with ChangeNotifier {
   FeedProvider(this._trackService, this._userService);
 
   List<Track> get trendingTracks => _trendingTracks;
-  List<Track> get activityFeed => _activityFeed;
+  List<Track> get feed => _feed;
   List<HistoryEntry> get listeningHistory => _listeningHistory;
   List<Track> get likedTracks => _likedTracks;
   List<Track> get userTracks => _userTracks;
@@ -114,11 +114,11 @@ class FeedProvider with ChangeNotifier {
     }
   }
 
-  Future<void> fetchActivityFeed() async {
+  Future<void> fetchFeed() async {
     _setLoading(true);
     _error = null;
     try {
-      _activityFeed = await _trackService.getActivityFeed();
+      _feed = await _trackService.getFeed();
     } catch (e) {
       _error = e.toString();
     } finally {

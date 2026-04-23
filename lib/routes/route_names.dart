@@ -15,6 +15,7 @@ class RouteNames {
   static const String history = '/history';
   static const String mainScreen = '/main';
   static const String messages = '/messages';
+  static const String messageThread = '/message-thread';
   static const String searchResults = '/search-results';
   static const String followers = '/followers';
   static const String following = '/following';
@@ -24,4 +25,5 @@ class RouteNames {
   static const String suggestedUsers = '/suggested-users';
   static const String publicProfile = '/public-profile';
   static const String mutualFollowers = '/mutual-followers';
+  static const String chat = '/chat';
 }

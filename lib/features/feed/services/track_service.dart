@@ -11,8 +11,11 @@ abstract class TrackService {
   Future<void> unlikeTrack(String trackId);
   Future<List<Track>> getLikedTracks();
 
-  Future<List<Track>> getActivityFeed();
-  Future<List<HistoryEntry>> getListeningHistory({int page = 1, int limit = 20});
+  Future<List<Track>> getFeed();
+  Future<List<HistoryEntry>> getListeningHistory({
+    int page = 1,
+    int limit = 20,
+  });
   Future<void> clearListeningHistory();
 
   Future<List<Comment>> getComments(String trackId);

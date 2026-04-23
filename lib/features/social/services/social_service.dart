@@ -525,6 +525,17 @@ class MockSocialService implements SocialService {
 				],
 				fallback: 0,
 			),
+			'mutualFollowersCount': _firstInt(
+				[
+					raw['mutualFollowersCount'],
+					raw['mutual_followers_count'],
+					socialCountsMap['mutualFollowersCount'],
+					socialCountsMap['mutual_followers_count'],
+					countsMap['mutualFollowersCount'],
+					countsMap['mutual_followers_count'],
+				],
+				fallback: 0,
+			),
 			'trackCount': _firstInt(
 				[
 					raw['trackCount'],

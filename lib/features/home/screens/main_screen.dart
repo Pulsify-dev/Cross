@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:cross/core/theme/app_colors.dart';
 import 'package:cross/features/feed/screens/home_screen.dart';
 import 'package:cross/features/search/screens/search_screen.dart';
 import 'package:cross/features/library/screens/library_screen.dart';
+import 'package:cross/providers/feed_provider.dart';
 import 'package:cross/features/feed/screens/feed_screen.dart';
 import 'package:cross/features/player/widgets/mini_player.dart';
 
@@ -33,7 +35,13 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   void _onItemTapped(int index) {
-    if (_selectedIndex == index) return;
+    if (_selectedIndex == index) {
+      if (index == 3) {
+        context.read<FeedProvider>().fetchFeed();
+        context.read<FeedProvider>().fetchTrendingTracks();
+      }
+      return;
+    }
 
     setState(() {
       _selectedIndex = index;

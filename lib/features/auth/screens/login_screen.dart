@@ -292,6 +292,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         obscureText: isPasswordHidden,
                         textInputAction: TextInputAction.done,
                         suffixIcon: IconButton(
+                          key: const Key('login_password_visibility_toggle'),
                           onPressed: () {
                             setState(() {
                               isPasswordHidden = !isPasswordHidden;
@@ -441,6 +442,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   GestureDetector(
+                    key: const Key('login_signup_link'),
                     onTap: _goToSignUp,
                     child: Text(
                       'Sign Up',

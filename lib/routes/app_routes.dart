@@ -1,5 +1,6 @@
 import 'package:cross/features/library/screens/library_screen.dart';
 import 'package:cross/features/messages/screens/messages_screen.dart';
+import 'package:cross/features/messages/models/conversation.dart';
 import 'package:cross/features/search/screens/search_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:cross/features/auth/screens/login_screen.dart';
@@ -26,6 +27,7 @@ import 'package:cross/features/profile/screens/blocked_users_screen.dart';
 import 'package:cross/features/profile/screens/suggested_users_screen.dart';
 import 'package:cross/features/social/screens/mutual_followers_screen.dart';
 import 'package:cross/features/social/screens/public_profile_screen.dart';
+import 'package:cross/features/messages/screens/chat_screen.dart';
 
 class AppRoutes {
   static Route<dynamic> generateRoute(RouteSettings settings) {
@@ -39,9 +41,14 @@ class AppRoutes {
       case RouteNames.home:
         return MaterialPageRoute(builder: (_) => const HomeScreen());
       case RouteNames.mainScreen:
-        return MaterialPageRoute(builder: (context) => const MainScreen());
+        final initialIndex = settings.arguments is int ? settings.arguments as int : 0;
+        return MaterialPageRoute(
+          builder: (context) => MainScreen(initialIndex: initialIndex),
+        );
       case RouteNames.feed:
-        return MaterialPageRoute(builder: (_) => const FeedScreen());
+        return MaterialPageRoute(
+          builder: (_) => const FeedScreen(showBottomNavigationBar: true),
+        );
       case RouteNames.trackDetails:
         final track = settings.arguments as Track;
         return MaterialPageRoute(
@@ -74,6 +81,15 @@ class AppRoutes {
         );
       case RouteNames.messages:
         return MaterialPageRoute(builder: (_) => const MessagesScreen());
+      case RouteNames.messageThread:
+        final convArg = settings.arguments as Conversation;
+        return MaterialPageRoute(
+          builder: (_) => ChatScreen(
+            userId: convArg.otherUser.id,
+            displayName: convArg.otherUser.displayName,
+            avatarUrl: convArg.otherUser.profileImageUrl,
+          ),
+        );
       case RouteNames.profile:
         return MaterialPageRoute(builder: (_) => const UserProfileScreen());
       case RouteNames.editProfile:
@@ -120,6 +136,16 @@ class AppRoutes {
             : '';
         return MaterialPageRoute(
           builder: (_) => MutualFollowersScreen(userId: userId),
+        );
+
+      case RouteNames.chat:
+        final args = settings.arguments as Map<String, dynamic>;
+        return MaterialPageRoute(
+          builder: (_) => ChatScreen(
+            userId: args['userId'] as String,
+            displayName: args['displayName'] as String,
+            avatarUrl: args['avatarUrl'] as String?,
+          ),
         );
 
       default:

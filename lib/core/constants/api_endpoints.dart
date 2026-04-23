@@ -68,7 +68,21 @@ class ApiEndpoints {
   }
 
   static const String trendingTracks = '/tracks/trending';
-  static const String activityFeed = '/tracks/feed';
+  static const String feed = '/tracks/feed';
+
+  static String conversations({int page = 1, int limit = 20}) =>
+      _withPagination('/conversations', page: page, limit: limit);
+  static String startConversation() => '/conversations';
+  static const String conversationsUnreadCount = '/conversations/unread-count';
+  static String conversationMessages(String conversationId,
+          {int page = 1, int limit = 50}) =>
+      _withPagination('/conversations/$conversationId/messages',
+          page: page, limit: limit);
+  static String sendMessage(String conversationId) =>
+      '/conversations/$conversationId/messages';
+  static String markConversationRead(String conversationId) =>
+      '/conversations/$conversationId/read';
+
   static const String listeningHistory = '/users/me/history';
   static const String clearListeningHistory = '/users/me/history';
   static const String likedTracks = '/users/me/likes';

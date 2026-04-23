@@ -427,6 +427,7 @@ class UploadProvider extends ChangeNotifier {
 				description: updatedTrack.description,
 				tags: updatedTrack.tags,
 				privacy: updatedTrack.privacy,
+				previewStartSeconds: updatedTrack.previewStartSeconds,
 			);
 
 			if (saved == null) return null;
