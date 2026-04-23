@@ -51,6 +51,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "48046590462-o901k5o8pa12urq7a0jns9pm5sggfer5.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.pulsify.release",
+            "certificate_hash": "753c900dde03115311e2e26501d2841b00cba8b5"
+          }
+        },
+        {
           "client_id": "48046590462-ggpsabgek56jagfi6o0sav2e9a87rdf8.apps.googleusercontent.com",
           "client_type": 3
         }
