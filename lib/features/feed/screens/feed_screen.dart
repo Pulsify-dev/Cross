@@ -3,8 +3,7 @@ import 'package:provider/provider.dart';
 import '../../../providers/feed_provider.dart';
 import '../../../providers/player_provider.dart';
 import '../../../routes/route_names.dart';
-import '../widgets/track_card.dart';
-import '../../player/widgets/mini_player.dart';
+import '../widgets/feed_item_widget.dart';
 
 class FeedScreen extends StatefulWidget {
   final bool showBottomNavigationBar;
@@ -25,7 +24,7 @@ class _FeedScreenState extends State<FeedScreen>
     _tabController = TabController(length: 2, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<FeedProvider>().fetchFeed();
-      context.read<FeedProvider>().fetchTrendingTracks();
+      context.read<FeedProvider>().fetchDiscoveryFeed();
     });
   }
 
@@ -59,7 +58,7 @@ class _FeedScreenState extends State<FeedScreen>
             icon: const Icon(Icons.refresh),
             onPressed: () {
               if (_tabController.index == 0) {
-                context.read<FeedProvider>().fetchTrendingTracks();
+                context.read<FeedProvider>().fetchDiscoveryFeed();
               } else {
                 context.read<FeedProvider>().fetchFeed();
               }
@@ -67,16 +66,9 @@ class _FeedScreenState extends State<FeedScreen>
           ),
         ],
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [_buildDiscoverTab(), _buildFollowingTab()],
-            ),
-          ),
-          const MiniPlayer(),
-        ],
+      body: TabBarView(
+        controller: _tabController,
+        children: [_buildDiscoverTab(), _buildFollowingTab()],
       ),
       bottomNavigationBar: widget.showBottomNavigationBar
           ? _buildBottomNavigationBar(context)
@@ -87,41 +79,41 @@ class _FeedScreenState extends State<FeedScreen>
   Widget _buildDiscoverTab() {
     return Consumer<FeedProvider>(
       builder: (context, provider, child) {
-        if (provider.isTrendingLoading && provider.trendingTracks.isEmpty) {
+        if (provider.isDiscoveryLoading && provider.discoveryFeed.isEmpty) {
           return const Center(child: CircularProgressIndicator());
         }
 
-        if (provider.error != null && provider.trendingTracks.isEmpty) {
+        if (provider.error != null && provider.discoveryFeed.isEmpty) {
           return Center(child: Text('Error: ${provider.error}'));
         }
 
-        if (provider.trendingTracks.isEmpty) {
-          return const Center(child: Text('No trending tracks found.'));
+        if (provider.discoveryFeed.isEmpty) {
+          return const Center(child: Text('No tracks found in discovery.'));
         }
 
         return RefreshIndicator(
-          onRefresh: () => provider.fetchTrendingTracks(),
+          onRefresh: () => provider.fetchDiscoveryFeed(),
           child: ListView.builder(
-            itemCount: provider.trendingTracks.length,
+            itemCount: provider.discoveryFeed.length,
             padding: const EdgeInsets.all(16),
             itemBuilder: (context, index) {
-              final track = provider.trendingTracks[index];
+              final item = provider.discoveryFeed[index];
               return Padding(
                 padding: const EdgeInsets.only(bottom: 20),
-                child: TrackCard(
-                  track: track,
+                child: FeedItemWidget(
+                  item: item,
                   onPlay: () {
                     context.read<PlayerProvider>().playTrack(
-                      track,
-                      playlist: provider.trendingTracks,
+                      item.track,
+                      playlist: provider.discoveryFeed.map((e) => e.track).toList(),
                     );
                   },
                   onDetails: () {
                     Navigator.of(
                       context,
-                    ).pushNamed(RouteNames.trackDetails, arguments: track);
+                    ).pushNamed(RouteNames.trackDetails, arguments: item.track);
                   },
-                  onLikeToggle: () => provider.toggleLike(track),
+                  onLikeToggle: () => provider.toggleLike(item.track),
                 ),
               );
             },
@@ -152,23 +144,23 @@ class _FeedScreenState extends State<FeedScreen>
             itemCount: provider.feed.length,
             padding: const EdgeInsets.all(16),
             itemBuilder: (context, index) {
-              final track = provider.feed[index];
+              final item = provider.feed[index];
               return Padding(
                 padding: const EdgeInsets.only(bottom: 20),
-                child: TrackCard(
-                  track: track,
+                child: FeedItemWidget(
+                  item: item,
                   onPlay: () {
                     context.read<PlayerProvider>().playTrack(
-                      track,
-                      playlist: provider.feed,
+                      item.track,
+                      playlist: provider.feed.map((e) => e.track).toList(),
                     );
                   },
                   onDetails: () {
                     Navigator.of(
                       context,
-                    ).pushNamed(RouteNames.trackDetails, arguments: track);
+                    ).pushNamed(RouteNames.trackDetails, arguments: item.track);
                   },
-                  onLikeToggle: () => provider.toggleLike(track),
+                  onLikeToggle: () => provider.toggleLike(item.track),
                 ),
               );
             },

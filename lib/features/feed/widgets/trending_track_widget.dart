@@ -14,16 +14,6 @@ class TrendingTrackWidget extends StatefulWidget {
 }
 
 class _TrendingTrackWidgetState extends State<TrendingTrackWidget> {
-  final List<String> _genres = [
-    'ELECTRONIC',
-    'TECHNO',
-    'INDIE',
-    'HOUSE',
-    'LATIN',
-    'BASS',
-    'AMBIENT',
-  ];
-
   @override
   void initState() {
     super.initState();
@@ -46,7 +36,7 @@ class _TrendingTrackWidgetState extends State<TrendingTrackWidget> {
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
               Text(
-                'Trending by genre',
+                'Trending Now',
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: Theme.of(context).colorScheme.onSurface,
@@ -55,70 +45,12 @@ class _TrendingTrackWidgetState extends State<TrendingTrackWidget> {
             ],
           ),
         ),
-        _buildGenreSelector(),
-        const SizedBox(height: 20),
         _buildHorizontalTrendingGroup(),
       ],
     );
   }
 
-  Widget _buildGenreSelector() {
-    return Consumer<FeedProvider>(
-      builder: (context, provider, child) {
-        return SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
-            children: _genres.map((genre) {
-              final isSelected =
-                  (provider.selectedGenre?.toUpperCase() ?? 'ELECTRONIC') ==
-                  genre;
-              return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: InkWell(
-                  onTap: () => provider.setGenre(genre.toLowerCase()),
-                  borderRadius: BorderRadius.circular(20),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 10,
-                    ),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: isSelected
-                            ? Theme.of(context).colorScheme.primary
-                            : Theme.of(
-                                context,
-                              ).colorScheme.onSurface.withValues(alpha: 0.2),
-                        width: 1.5,
-                      ),
-                      color: isSelected
-                          ? Theme.of(
-                              context,
-                            ).colorScheme.primary.withValues(alpha: 0.1)
-                          : Colors.transparent,
-                    ),
-                    child: Text(
-                      genre,
-                      style: TextStyle(
-                        color: isSelected
-                            ? Theme.of(context).colorScheme.primary
-                            : Theme.of(context).colorScheme.onSurface,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                        letterSpacing: 1.1,
-                      ),
-                    ),
-                  ),
-                ),
-              );
-            }).toList(),
-          ),
-        );
-      },
-    );
-  }
+
 
   Widget _buildHorizontalTrendingGroup() {
     return Consumer<FeedProvider>(

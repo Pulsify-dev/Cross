@@ -38,7 +38,7 @@ class _MainScreenState extends State<MainScreen> {
     if (_selectedIndex == index) {
       if (index == 3) {
         context.read<FeedProvider>().fetchFeed();
-        context.read<FeedProvider>().fetchTrendingTracks();
+        context.read<FeedProvider>().fetchDiscoveryFeed();
       }
       return;
     }

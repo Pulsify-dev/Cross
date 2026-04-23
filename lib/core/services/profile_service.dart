@@ -181,22 +181,6 @@ class ProfileService {
     }
   }
 
-  Future<List<ProfileData>> searchUsers({required String query}) async {
-    try {
-      final endpoint = '${ApiEndpoints.searchUsers}?q=$query';
-      final response = await _apiService.get(
-        endpoint,
-        authRequired: true,
-      );
-
-      if (response is List) {
-        return response.map((item) => ProfileData.fromJson(item)).toList();
-      }
-      return [];
-    } catch (e) {
-      rethrow;
-    }
-  }
 
   Future<ProfileData> getPublicProfile({required String userId}) async {
     try {

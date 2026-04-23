@@ -10,6 +10,7 @@ class RouteNames {
   static const String search = '/search';
   static const String comments = '/comments';
   static const String likes = '/likes';
+  static const String reposts = '/reposts';
   static const String likedTracks = '/liked-tracks';
   static const String library = '/library';
   static const String history = '/history';

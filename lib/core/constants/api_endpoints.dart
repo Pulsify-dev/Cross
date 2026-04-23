@@ -11,8 +11,11 @@ class ApiEndpoints {
   static const String myProfile = '/users/me';
   static const String uploadAvatar = '/users/me/avatar';
   static const String changePassword = '/users/me/password';
+  static String globalSearch(String query, {int limit = 20, int offset = 0}) =>
+      '/search?q=${Uri.encodeQueryComponent(query)}&limit=$limit&offset=$offset';
+  static String searchSuggestions(String query, {int limit = 10}) =>
+      '/search/suggestions?q=${Uri.encodeQueryComponent(query)}&limit=$limit';
   static const String confirmEmailChange = '/users/confirm-email-change';
-  static const String searchUsers = '/users/search';
   static String publicProfile(String userId) => '/users/$userId';
   static String profile(String userId) => '/users/$userId';
   static String editProfile(String userId) => '/users/$userId/edit';
@@ -67,8 +70,8 @@ class ApiEndpoints {
     return '$base?${params.join('&')}';
   }
 
-  static const String trendingTracks = '/tracks/trending';
-  static const String feed = '/tracks/feed';
+  static const String trendingTracks = '/trending';
+  static const String feed = '/feed';
 
   static String conversations({int page = 1, int limit = 20}) =>
       _withPagination('/conversations', page: page, limit: limit);
@@ -87,4 +90,12 @@ class ApiEndpoints {
   static const String clearListeningHistory = '/users/me/history';
   static const String likedTracks = '/users/me/likes';
   static String trackRecordPlay(String trackId) => '/tracks/$trackId/play';
+  static String trackLike(String trackId) => '/tracks/$trackId/like';
+  static String trackLikes(String trackId, {int page = 1, int limit = 20}) =>
+      _withPagination('/tracks/$trackId/likes', page: page, limit: limit);
+  static String trackIsLiked(String trackId) => '/tracks/$trackId/liked';
+  static String trackRepost(String trackId) => '/tracks/$trackId/repost';
+  static String trackReposts(String trackId, {int page = 1, int limit = 20}) =>
+      _withPagination('/tracks/$trackId/reposts', page: page, limit: limit);
+  static String trackIsReposted(String trackId) => '/tracks/$trackId/reposted';
 }

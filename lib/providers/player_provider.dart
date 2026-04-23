@@ -14,6 +14,7 @@ class PlayerProvider with ChangeNotifier {
   bool _isPlaying = false;
   Duration _duration = Duration.zero;
   Duration _position = Duration.zero;
+  final Map<String, List<double>> _waveformCache = {};
   List<double>? _currentWaveform;
   Map<String, dynamic>? _currentStatus;
 
@@ -42,9 +43,25 @@ class PlayerProvider with ChangeNotifier {
   Duration get position => _position;
   List<Track> get queue => _queue;
   int get currentIndex => _currentIndex;
-  List<double>? get currentWaveform => _currentWaveform;
+  
+  List<double>? get currentWaveform => _currentTrack != null ? _waveformCache[_currentTrack!.id] : null;
+  List<double>? getWaveform(String trackId) => _waveformCache[trackId];
+  
   Map<String, dynamic>? get currentStatus => _currentStatus;
 
+  Future<void> loadWaveform(String trackId) async {
+    if (_waveformCache.containsKey(trackId)) return;
+    
+    try {
+      final wf = await _trackService?.getTrackWaveform(trackId);
+      if (wf != null) {
+        _waveformCache[trackId] = wf;
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('Error loading waveform: $e');
+    }
+  }
   Future<void> playTrack(Track track, {List<Track>? playlist}) async {
     if (playlist != null) {
       _queue = playlist;
@@ -64,7 +81,6 @@ class PlayerProvider with ChangeNotifier {
     }
 
     _currentTrack = track;
-    _currentWaveform = null;
     _currentStatus = null;
     notifyListeners();
 
@@ -72,12 +88,8 @@ class PlayerProvider with ChangeNotifier {
     // Record eagerly so it shows up in history immediately
     _trackService?.recordPlay(track.id, durationPlayedMs: 0);
     
-    _trackService?.getTrackWaveform(track.id).then((wf) {
-      if (_currentTrack?.id == track.id) {
-        _currentWaveform = wf;
-        notifyListeners();
-      }
-    });
+    // Use the cache-based load method
+    loadWaveform(track.id);
 
     _trackService?.getTrackStatus(track.id).then((status) {
       if (_currentTrack?.id == track.id) {

@@ -19,6 +19,7 @@ import 'package:cross/features/library/screens/listening_history_screen.dart';
 import 'package:cross/features/search/screens/search_results_screen.dart';
 import 'package:cross/features/player/screens/track_comments_screen.dart';
 import 'package:cross/features/player/screens/track_likes_screen.dart';
+import 'package:cross/features/player/screens/track_reposts_screen.dart';
 import 'package:cross/features/profile/screens/followers_screen.dart';
 import 'package:cross/features/profile/screens/following_screen.dart';
 import 'package:cross/features/upload/screens/upload_track_screen.dart';
@@ -71,6 +72,11 @@ class AppRoutes {
         final track = settings.arguments as Track;
         return MaterialPageRoute(
           builder: (_) => TrackLikesScreen(track: track),
+        );
+      case RouteNames.reposts:
+        final track = settings.arguments as Track;
+        return MaterialPageRoute(
+          builder: (_) => TrackRepostsScreen(track: track),
         );
       case RouteNames.search:
         return MaterialPageRoute(builder: (_) => const SearchScreen());

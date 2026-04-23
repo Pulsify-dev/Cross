@@ -55,9 +55,19 @@ class Track {
     return Track(
       id: json['id']?.toString() ?? json['_id']?.toString() ?? '',
       title: json['title']?.toString() ?? 'Untitled Track',
-      artistName: json['artistName']?.toString() ??
-          json['artist_name']?.toString() ??
-          'Unknown Artist',
+      artistName: () {
+        if (json['artist_name'] != null) return json['artist_name'].toString();
+        if (json['artistName'] != null) return json['artistName'].toString();
+        
+        final artist = json['artist_id'] ?? json['artist'] ?? json['uploader'];
+        if (artist is Map<String, dynamic>) {
+          return artist['display_name']?.toString() ?? 
+                 artist['displayName']?.toString() ?? 
+                 artist['username']?.toString() ?? 
+                 'Unknown Artist';
+        }
+        return 'Unknown Artist';
+      }(),
       artworkUrl: normalizeUrl(json['artworkUrl'] ?? json['artwork_url']),
       streamUrl: normalizeUrl(json['streamUrl'] ?? json['stream_url'] ?? json['audio_url']),
       duration: Duration(

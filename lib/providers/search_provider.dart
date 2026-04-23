@@ -2,98 +2,84 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import '../features/feed/models/track.dart';
 import '../features/feed/models/user.dart';
-import '../features/feed/services/track_service.dart';
+import '../features/feed/models/playlist.dart';
 import '../features/feed/services/user_service.dart';
+import '../features/search/models/search_models.dart';
+import '../features/search/services/search_service.dart';
 
 class SearchProvider with ChangeNotifier {
-  final TrackService _trackService;
+  final SearchService _searchService;
   final UserService _userService;
 
-  List<Track> _searchResults = [];
-  List<User> _userSearchResults = [];
-  final List<String> _trackHistory = [];
-  final List<String> _userHistory = [];
+  GlobalSearchResponse _searchResponse = GlobalSearchResponse();
+  List<SearchSuggestion> _suggestions = [];
+  
+  final List<String> _searchHistory = [];
   bool _isLoading = false;
-  Timer? _debounce;
+  Timer? _suggestionDebounce;
 
-  SearchProvider(this._trackService, this._userService);
+  SearchProvider(this._searchService, this._userService);
 
-  List<Track> get searchResults => _searchResults;
-  List<User> get userSearchResults => _userSearchResults;
-  List<String> get trackHistory => List.unmodifiable(_trackHistory);
-  List<String> get userHistory => List.unmodifiable(_userHistory);
+  GlobalSearchResponse get searchResponse => _searchResponse;
+  List<SearchSuggestion> get suggestions => _suggestions;
+  List<String> get searchHistory => List.unmodifiable(_searchHistory);
   bool get isLoading => _isLoading;
 
-  void search(String query) {
-    if (_debounce?.isActive ?? false) _debounce!.cancel();
-    _debounce = Timer(const Duration(milliseconds: 500), () async {
+  Future<void> search(String query) async {
+    _suggestionDebounce?.cancel();
+    
+    if (query.isEmpty) {
+      _searchResponse = GlobalSearchResponse();
+      _suggestions = [];
+      notifyListeners();
+      return;
+    }
+
+    _setLoading(true);
+    try {
+      _searchResponse = await _searchService.search(query);
+      _addToHistory(query);
+      notifyListeners();
+    } catch (e) {
+      _searchResponse = GlobalSearchResponse();
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  void getSuggestions(String query) {
+    _suggestionDebounce?.cancel();
+    _suggestionDebounce = Timer(const Duration(milliseconds: 300), () async {
       if (query.isEmpty) {
-        _searchResults = [];
-        _userSearchResults = [];
+        _suggestions = [];
         notifyListeners();
         return;
       }
 
-      _setLoading(true);
       try {
-        final tracksFuture = _trackService.searchTracks(query);
-        final usersFuture = _userService.searchUsers(query);
-
-        final results = await Future.wait([tracksFuture, usersFuture]);
-        _searchResults = results[0] as List<Track>;
-        _userSearchResults = results[1] as List<User>;
+        _suggestions = await _searchService.getSuggestions(query);
         notifyListeners();
       } catch (e) {
-        _searchResults = [];
-        _userSearchResults = [];
-      } finally {
-        _setLoading(false);
+        _suggestions = [];
       }
     });
   }
 
-  /// Call this when a track from results is played or opened.
-  void recordTrackSearch(String query) {
+  void _addToHistory(String query) {
     final q = query.trim();
-    if (q.isEmpty || _searchResults.isEmpty) return;
-    _addTo(_trackHistory, q);
+    if (q.isEmpty) return;
+    _searchHistory.remove(q);
+    _searchHistory.insert(0, q);
+    if (_searchHistory.length > 20) _searchHistory.removeRange(20, _searchHistory.length);
+  }
+
+  void removeFromHistory(String query) {
+    _searchHistory.remove(query);
     notifyListeners();
   }
 
-  /// Call this when a user profile from results is opened.
-  void recordUserSearch(String query) {
-    final q = query.trim();
-    if (q.isEmpty || _userSearchResults.isEmpty) return;
-    _addTo(_userHistory, q);
-    notifyListeners();
-  }
-
-  void _addTo(List<String> history, String query) {
-    if (query.isEmpty) return;
-    history.remove(query);
-    history.insert(0, query);
-    if (history.length > 20) history.removeRange(20, history.length);
-  }
-
-  // ── Track history ──────────────────────────────────────────────────────────
-  void removeFromTrackHistory(String query) {
-    _trackHistory.remove(query);
-    notifyListeners();
-  }
-
-  void clearTrackHistory() {
-    _trackHistory.clear();
-    notifyListeners();
-  }
-
-  // ── User history ───────────────────────────────────────────────────────────
-  void removeFromUserHistory(String query) {
-    _userHistory.remove(query);
-    notifyListeners();
-  }
-
-  void clearUserHistory() {
-    _userHistory.clear();
+  void clearHistory() {
+    _searchHistory.clear();
     notifyListeners();
   }
 
@@ -108,7 +94,7 @@ class SearchProvider with ChangeNotifier {
 
   @override
   void dispose() {
-    _debounce?.cancel();
+    _suggestionDebounce?.cancel();
     super.dispose();
   }
 }

@@ -1,3 +1,4 @@
+import '../models/feed_item.dart';
 import '../../../core/services/api_service.dart';
 import '../../../core/constants/api_endpoints.dart';
 import '../models/track.dart';
@@ -110,11 +111,18 @@ class ApiTrackService implements TrackService {
   }
 
   @override
-  Future<List<Track>> getTrendingTracks({String? genre}) async {
+  Future<List<Track>> getTrendingTracks({
+    String? genre,
+    int page = 1,
+    int limit = 20,
+  }) async {
     try {
-      final url = genre != null
-          ? '${ApiEndpoints.trendingTracks}?genre=$genre'
-          : ApiEndpoints.trendingTracks;
+      final queryParams = <String>[];
+      if (genre != null) queryParams.add('genre=$genre');
+      queryParams.add('page=$page');
+      queryParams.add('limit=$limit');
+      
+      final url = '${ApiEndpoints.trendingTracks}?${queryParams.join('&')}';
       
       final response = await _apiService.get(url);
       
@@ -123,7 +131,14 @@ class ApiTrackService implements TrackService {
         if (response is List) {
           items = response;
         } else if (response is Map) {
-          items = (response['data'] ?? response['tracks'] ?? response['items'] ?? []) as List;
+          final data = response['data'];
+          if (data is List) {
+            items = data;
+          } else if (data is Map) {
+            items = (data['tracks'] ?? data['items'] ?? []) as List;
+          } else {
+            items = (response['tracks'] ?? response['items'] ?? []) as List;
+          }
         }
 
         return items.map((data) => Track.fromJson(data)).toList();
@@ -134,40 +149,15 @@ class ApiTrackService implements TrackService {
     return []; // Return empty if anything fails
   }
 
-  @override
-  Future<List<Track>> searchTracks(String query) async {
-    try {
-      final response = await _apiService.get('${ApiEndpoints.tracks}?q=$query');
-      
-      if (response != null) {
-        List<dynamic> items = [];
-        if (response is List) {
-          items = response;
-        } else if (response is Map) {
-          items = (response['data'] ?? response['tracks'] ?? response['items'] ?? []) as List;
-        }
-
-        return items.map((data) => Track.fromJson(data)).toList();
-      }
-    } catch (e) {
-      debugPrint('Error searching tracks: $e');
-    }
-    return [];
-  }
 
   @override
   Future<void> likeTrack(String trackId) async {
-    // Check if it's a mock track
-    if (trackId.startsWith('search_') || trackId.startsWith('trend_')) {
-      final track = _mockTrackCache[trackId];
-      if (track != null && !_localLikedTracks.any((t) => t.id == trackId)) {
-        _localLikedTracks.add(track);
-      }
-      return;
-    }
-
     try {
-      await _apiService.post('/tracks/$trackId/like', body: {});
+      await _apiService.post(
+        ApiEndpoints.trackLike(trackId),
+        body: {},
+        authRequired: true,
+      );
     } catch (e) {
       rethrow;
     }
@@ -175,13 +165,11 @@ class ApiTrackService implements TrackService {
 
   @override
   Future<void> unlikeTrack(String trackId) async {
-    if (trackId.startsWith('search_') || trackId.startsWith('trend_')) {
-      _localLikedTracks.removeWhere((t) => t.id == trackId);
-      return;
-    }
-
     try {
-      await _apiService.delete('/tracks/$trackId/like');
+      await _apiService.delete(
+        ApiEndpoints.trackLike(trackId),
+        authRequired: true,
+      );
     } catch (e) {
       rethrow;
     }
@@ -189,16 +177,13 @@ class ApiTrackService implements TrackService {
 
   @override
   Future<List<Track>> getLikedTracks() async {
-    List<Track> realLikedTracks = [];
     try {
-      final response = await _apiService.get(ApiEndpoints.likedTracks);
+      final response = await _apiService.get(ApiEndpoints.likedTracks, authRequired: true);
       if (response != null) {
         if (response is List) {
-          realLikedTracks = response
-              .map((data) => Track.fromJson(data))
-              .toList();
+          return response.map((data) => Track.fromJson(data)).toList();
         } else if (response['data'] is List) {
-          realLikedTracks = (response['data'] as List)
+          return (response['data'] as List)
               .map((data) => Track.fromJson(data))
               .toList();
         }
@@ -206,54 +191,50 @@ class ApiTrackService implements TrackService {
     } catch (e) {
       rethrow;
     }
-
-    // Merge real and local mock likes
-    final merged = [..._localLikedTracks, ...realLikedTracks];
-    final seen = <String>{};
-    return merged.where((t) => seen.add(t.id)).toList();
+    return [];
   }
 
   @override
-  Future<List<Track>> getFeed() async {
-    // Feed is mocked as requested
-    await Future.delayed(const Duration(milliseconds: 400));
-    final tracks = [
-      Track(
-        id: 'activity_1',
-        title: 'Deep House Vibes',
-        artistName: 'Luna Bay',
-        streamUrl:
-            'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3',
-        duration: const Duration(minutes: 5, seconds: 12),
-        artworkUrl: 'https://picsum.photos/200/200?random=10',
-        createdAt: DateTime.now().subtract(const Duration(hours: 2)),
-      ),
-      Track(
-        id: 'activity_2',
-        title: 'Midnight Wanderer',
-        artistName: 'Echo Pulse',
-        streamUrl:
-            'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3',
-        duration: const Duration(minutes: 3, seconds: 45),
-        artworkUrl: 'https://picsum.photos/200/200?random=11',
-        createdAt: DateTime.now().subtract(const Duration(hours: 5)),
-      ),
-      Track(
-        id: 'activity_3',
-        title: 'Golden Hour',
-        artistName: 'Sunkissed',
-        streamUrl:
-            'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3',
-        duration: const Duration(minutes: 4, seconds: 20),
-        artworkUrl: 'https://picsum.photos/200/200?random=12',
-        createdAt: DateTime.now().subtract(const Duration(hours: 12)),
-      ),
-    ];
-
-    for (var track in tracks) {
-      _mockTrackCache[track.id] = track;
+  Future<bool> isTrackLiked(String trackId) async {
+    try {
+      final response = await _apiService.get(
+        ApiEndpoints.trackIsLiked(trackId),
+        authRequired: true,
+      );
+      if (response != null && response is Map<String, dynamic>) {
+        return response['liked'] ?? false;
+      }
+    } catch (e) {
+      debugPrint('Error checking if track is liked: $e');
     }
-    return tracks;
+    return false;
+  }
+
+  @override
+  Future<List<FeedItem>> getFeed({
+    int page = 1,
+    int limit = 20,
+    bool authRequired = true,
+  }) async {
+    try {
+      final response = await _apiService.get(
+        '${ApiEndpoints.feed}?page=$page&limit=$limit',
+        authRequired: authRequired,
+      );
+
+      if (response != null && response is Map<String, dynamic>) {
+        final data = response['data'] as Map<String, dynamic>?;
+        if (data != null && data['items'] != null) {
+          final items = data['items'] as List;
+          return items
+              .map((i) => FeedItem.fromJson(i as Map<String, dynamic>))
+              .toList();
+        }
+      }
+    } catch (e) {
+      debugPrint('Error fetching feed: $e');
+    }
+    return [];
   }
 
   @override
@@ -410,7 +391,7 @@ class ApiTrackService implements TrackService {
         body: {
           'text': text,
           'timestampSeconds': timestampInTrack.inSeconds,
-          'parentCommentId': ?parentCommentId,
+          'parentCommentId': parentCommentId,
         },
       );
     } catch (e) {
@@ -425,7 +406,22 @@ class ApiTrackService implements TrackService {
   Future<void> unlikeComment(String commentId) async {}
 
   @override
-  Future<List<User>> getTrackLikes(String trackId) async => [];
+  Future<List<User>> getTrackLikes(String trackId) async {
+    try {
+      final response = await _apiService.get(ApiEndpoints.trackLikes(trackId));
+      if (response != null && response is Map<String, dynamic>) {
+        final likers = response['likers'] as List?;
+        if (likers != null) {
+          return likers
+              .map((u) => User.fromJson(u as Map<String, dynamic>))
+              .toList();
+        }
+      }
+    } catch (e) {
+      debugPrint('Error fetching track likes: $e');
+    }
+    return [];
+  }
 
   @override
   Future<List<Track>> getUserTracks(String userId) async {
@@ -449,5 +445,64 @@ class ApiTrackService implements TrackService {
   }
 
   @override
+  @override
+  Future<void> repostTrack(String trackId) async {
+    try {
+      await _apiService.post(
+        ApiEndpoints.trackRepost(trackId),
+        body: {},
+        authRequired: true,
+      );
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<void> unrepostTrack(String trackId) async {
+    try {
+      await _apiService.delete(
+        ApiEndpoints.trackRepost(trackId),
+        authRequired: true,
+      );
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<bool> isTrackReposted(String trackId) async {
+    try {
+      final response = await _apiService.get(
+        ApiEndpoints.trackIsReposted(trackId),
+        authRequired: true,
+      );
+      if (response != null && response is Map<String, dynamic>) {
+        return response['reposted'] ?? false;
+      }
+    } catch (e) {
+      debugPrint('Error checking if track is reposted: $e');
+    }
+    return false;
+  }
+
+  @override
+  Future<List<User>> getTrackReposts(String trackId) async {
+    try {
+      final response = await _apiService.get(ApiEndpoints.trackReposts(trackId));
+      if (response != null && response is Map<String, dynamic>) {
+        final reposters = response['reposters'] as List?;
+        if (reposters != null) {
+          return reposters
+              .map((u) => User.fromJson(u as Map<String, dynamic>))
+              .toList();
+        }
+      }
+    } catch (e) {
+      debugPrint('Error fetching track reposts: $e');
+    }
+    return [];
+  }
+
   void setCurrentUser(User? user) {}
 }

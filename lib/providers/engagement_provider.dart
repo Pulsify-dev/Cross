@@ -7,6 +7,7 @@ class EngagementProvider with ChangeNotifier {
   final TrackService _trackService;
   List<Comment> _comments = [];
   List<User> _trackLikes = [];
+  List<User> _trackReposts = [];
   bool _isLoading = false;
   String? _error;
 
@@ -14,6 +15,7 @@ class EngagementProvider with ChangeNotifier {
 
   List<Comment> get comments => _comments;
   List<User> get trackLikes => _trackLikes;
+  List<User> get trackReposts => _trackReposts;
   bool get isLoading => _isLoading;
   String? get error => _error;
 
@@ -34,6 +36,18 @@ class EngagementProvider with ChangeNotifier {
     _error = null;
     try {
       _trackLikes = await _trackService.getTrackLikes(trackId);
+    } catch (e) {
+      _error = e.toString();
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<void> fetchTrackReposts(String trackId) async {
+    _setLoading(true);
+    _error = null;
+    try {
+      _trackReposts = await _trackService.getTrackReposts(trackId);
     } catch (e) {
       _error = e.toString();
     } finally {

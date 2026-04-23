@@ -7,6 +7,7 @@ import '../../../routes/route_names.dart';
 import '../../feed/widgets/track_tile.dart';
 import '../../player/screens/track_details_screen.dart';
 import '../../../providers/social_provider.dart';
+import '../models/search_models.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -15,22 +16,13 @@ class SearchScreen extends StatefulWidget {
   State<SearchScreen> createState() => _SearchScreenState();
 }
 
-class _SearchScreenState extends State<SearchScreen>
-    with SingleTickerProviderStateMixin {
+class _SearchScreenState extends State<SearchScreen> {
   final _searchController = TextEditingController();
-  late TabController _tabController;
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-    _tabController.addListener(() => setState(() {})); // rebuild on tab switch
-  }
+  bool _showSuggestions = false;
 
   @override
   void dispose() {
     _searchController.dispose();
-    _tabController.dispose();
     super.dispose();
   }
 
@@ -39,19 +31,20 @@ class _SearchScreenState extends State<SearchScreen>
     _searchController.selection = TextSelection.fromPosition(
       TextPosition(offset: query.length),
     );
+    _triggerSearch(query);
+  }
+
+  void _triggerSearch(String query) {
+    setState(() {
+      _showSuggestions = false;
+    });
     context.read<SearchProvider>().search(query);
-    setState(() {});
   }
 
   bool get _isTyping => _searchController.text.isNotEmpty;
 
-  Widget _buildHistory(
-    BuildContext context,
-    SearchProvider search,
-    List<String> history,
-    void Function(String) onRemove,
-    VoidCallback onClearAll,
-  ) {
+  Widget _buildHistory(BuildContext context, SearchProvider search) {
+    final history = search.searchHistory;
     if (history.isEmpty) {
       return Center(
         child: Column(
@@ -60,18 +53,12 @@ class _SearchScreenState extends State<SearchScreen>
             Icon(
               Icons.search,
               size: 64,
-              color: Theme.of(
-                context,
-              ).colorScheme.onSurface.withValues(alpha: 0.3),
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
             ),
             const SizedBox(height: 16),
-            Text(
+            const Text(
               'No recent searches',
-              style: TextStyle(
-                color: Theme.of(
-                  context,
-                ).colorScheme.onSurface.withValues(alpha: 0.5),
-              ),
+              style: TextStyle(color: Colors.grey),
             ),
           ],
         ),
@@ -81,7 +68,6 @@ class _SearchScreenState extends State<SearchScreen>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Header
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 16, 8, 4),
           child: Row(
@@ -93,49 +79,27 @@ class _SearchScreenState extends State<SearchScreen>
                   context,
                 ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
               ),
-              TextButton.icon(
-                key: const Key('search_delete_all_button'),
-                onPressed: onClearAll,
-                icon: Icon(
-                  Icons.delete_sweep_outlined,
-                  size: 18,
-                  color: Theme.of(context).colorScheme.error,
-                ),
-                label: Text(
-                  'Delete All',
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.error,
-                    fontSize: 13,
-                  ),
+              TextButton(
+                onPressed: () => search.clearHistory(),
+                child: Text(
+                  'Clear All',
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
                 ),
               ),
             ],
           ),
         ),
-        // List
         Expanded(
           child: ListView.builder(
             itemCount: history.length,
             itemBuilder: (context, index) {
               final query = history[index];
               return ListTile(
-                leading: Icon(
-                  Icons.history,
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.onSurface.withValues(alpha: 0.5),
-                ),
+                leading: const Icon(Icons.history),
                 title: Text(query),
                 trailing: IconButton(
-                  icon: Icon(
-                    Icons.close,
-                    size: 18,
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.onSurface.withValues(alpha: 0.4),
-                  ),
-                  tooltip: 'Remove',
-                  onPressed: () => onRemove(query),
+                  icon: const Icon(Icons.close, size: 18),
+                  onPressed: () => search.removeFromHistory(query),
                 ),
                 onTap: () => _onHistoryTap(query),
               );
@@ -146,141 +110,164 @@ class _SearchScreenState extends State<SearchScreen>
     );
   }
 
+  Widget _buildSuggestions(SearchProvider search) {
+    final query = _searchController.text.trim();
+    if (query.isEmpty) return const SizedBox.shrink();
+
+    return Container(
+      color: Theme.of(context).scaffoldBackgroundColor,
+      child: ListView(
+        children: [
+          ListTile(
+            leading: const Icon(Icons.search, color: Colors.blue),
+            title: Text('Search for "$query"'),
+            onTap: () => _triggerSearch(query),
+          ),
+          ...search.suggestions.map((suggestion) => ListTile(
+                leading: Icon(
+                  suggestion.type == 'track'
+                      ? Icons.music_note
+                      : suggestion.type == 'artist'
+                          ? Icons.person
+                          : Icons.search,
+                  size: 20,
+                ),
+                title: Text(suggestion.text),
+                onTap: () {
+                  _searchController.text = suggestion.text;
+                  _triggerSearch(suggestion.text);
+                },
+              )),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        title: TextField(
-          key: const Key('search_input_field'),
-          controller: _searchController,
-          autofocus: true,
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-            color: Theme.of(context).colorScheme.onSurface,
+        automaticallyImplyLeading: false,
+        titleSpacing: 16,
+        title: Container(
+          height: 40,
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+            borderRadius: BorderRadius.circular(20),
           ),
-          decoration: InputDecoration(
-            hintText: 'Search for tracks or artists',
-            hintStyle: TextStyle(
-              color: Theme.of(
-                context,
-              ).colorScheme.onSurface.withValues(alpha: 0.5),
+          child: TextField(
+            controller: _searchController,
+            autofocus: true,
+            style: const TextStyle(fontSize: 14),
+            decoration: InputDecoration(
+              hintText: 'Search Pulsify...',
+              hintStyle: TextStyle(
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                fontSize: 14,
+              ),
+              prefixIcon: Icon(
+                Icons.search,
+                size: 20,
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+              ),
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(vertical: 8),
+              suffixIcon: _isTyping
+                  ? IconButton(
+                      icon: const Icon(Icons.clear, size: 18),
+                      onPressed: () {
+                        _searchController.clear();
+                        context.read<SearchProvider>().search('');
+                        setState(() {
+                          _showSuggestions = false;
+                        });
+                      },
+                    )
+                  : null,
             ),
-            border: InputBorder.none,
-            suffixIcon: _isTyping
-                ? IconButton(
-                    key: const Key('search_clear_button'),
-                    icon: const Icon(Icons.clear),
-                    onPressed: () {
-                      _searchController.clear();
-                      context.read<SearchProvider>().search('');
-                      setState(() {});
-                    },
-                  )
-                : null,
+            onChanged: (value) {
+              setState(() {
+                _showSuggestions = true;
+              });
+              context.read<SearchProvider>().getSuggestions(value);
+            },
+            onSubmitted: (value) => _triggerSearch(value),
           ),
-          onChanged: (value) {
-            context.read<SearchProvider>().search(value);
-            setState(() {});
-          },
-        ),
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: const [
-            Tab(text: 'Tracks'),
-            Tab(text: 'People'),
-          ],
         ),
       ),
       body: Consumer<SearchProvider>(
         builder: (context, search, child) {
+          if (_showSuggestions && _isTyping) {
+            return _buildSuggestions(search);
+          }
+
           if (search.isLoading) {
             return const Center(child: CircularProgressIndicator());
           }
 
-          // ── Empty query — show per-tab history ─────────────────────────
           if (!_isTyping) {
-            return TabBarView(
-              controller: _tabController,
-              children: [
-                // Tracks history
-                _buildHistory(
-                  context,
-                  search,
-                  search.trackHistory,
-                  search.removeFromTrackHistory,
-                  search.clearTrackHistory,
-                ),
-                // Users history
-                _buildHistory(
-                  context,
-                  search,
-                  search.userHistory,
-                  search.removeFromUserHistory,
-                  search.clearUserHistory,
-                ),
-              ],
-            );
+            return _buildHistory(context, search);
           }
 
-          // ── No results  ────────────────────────────────────────────────
-          if (search.searchResults.isEmpty &&
-              search.userSearchResults.isEmpty) {
+          if (search.searchResponse.isEmpty) {
             return Center(
-              child: Text(
-                'No results found',
-                style: TextStyle(
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.onSurface.withValues(alpha: 0.5),
-                ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.search_off_rounded,
+                    size: 64,
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'No results found for "${_searchController.text}"',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                      fontSize: 16,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Try searching for something else',
+                    style: TextStyle(color: Colors.grey, fontSize: 14),
+                  ),
+                ],
               ),
             );
           }
 
-          // ── Results ────────────────────────────────────────────────────
-          return TabBarView(
-            controller: _tabController,
+          return ListView(
+            padding: const EdgeInsets.symmetric(vertical: 8),
             children: [
-              // Tracks Tab
-              ListView.builder(
-                padding: const EdgeInsets.all(16),
-                itemCount: search.searchResults.length,
-                itemBuilder: (context, index) {
-                  final track = search.searchResults[index];
-                  return TrackTile(
+              if (search.searchResponse.tracks.isNotEmpty) ...[
+                _buildSectionHeader('Tracks'),
+                ...search.searchResponse.tracks.map(
+                  (track) => TrackTile(
                     track: track,
                     showLike: true,
                     onPlay: () {
-                      search.recordTrackSearch(_searchController.text);
                       context.read<PlayerProvider>().playTrack(
                         track,
-                        playlist: search.searchResults,
+                        playlist: search.searchResponse.tracks,
                       );
                     },
                     onDetails: () {
-                      search.recordTrackSearch(_searchController.text);
                       Navigator.of(context).push(
                         MaterialPageRoute(
                           builder: (_) => TrackDetailsScreen(track: track),
                         ),
                       );
                     },
-                    onLikeToggle: () {
-                      context.read<FeedProvider>().toggleLike(track);
-                    },
-                  );
-                },
-              ),
-              // People Tab
-              ListView.builder(
-                padding: const EdgeInsets.all(16),
-                itemCount: search.userSearchResults.length,
-                itemBuilder: (context, index) {
-                  final user = search.userSearchResults[index];
-                  return ListTile(
+                    onLikeToggle: () =>
+                        context.read<FeedProvider>().toggleLike(track),
+                  ),
+                ),
+              ],
+              if (search.searchResponse.users.isNotEmpty) ...[
+                _buildSectionHeader('People'),
+                ...search.searchResponse.users.map(
+                  (user) => ListTile(
                     leading: CircleAvatar(
                       backgroundImage: user.profileImageUrl != null
                           ? NetworkImage(user.profileImageUrl!)
@@ -291,24 +278,64 @@ class _SearchScreenState extends State<SearchScreen>
                     ),
                     title: Text(user.displayName),
                     subtitle: Text('@${user.username}'),
-                    onTap: () async {
-                      search.recordUserSearch(_searchController.text);
-                      await context.read<SocialProvider>().loadPublicProfile(
-                        user.id,
-                      );
-                      if (!context.mounted) return;
+                    onTap: () {
                       Navigator.pushNamed(
                         context,
                         RouteNames.publicProfile,
                         arguments: user.id,
                       );
                     },
-                  );
-                },
-              ),
+                  ),
+                ),
+              ],
+              if (search.searchResponse.playlists.isNotEmpty) ...[
+                _buildSectionHeader('Playlists'),
+                ...search.searchResponse.playlists.map(
+                  (playlist) => ListTile(
+                    leading: Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(4),
+                        image: playlist.artworkUrl != null
+                            ? DecorationImage(
+                                image: NetworkImage(playlist.artworkUrl!),
+                                fit: BoxFit.cover,
+                              )
+                            : null,
+                        color: Colors.grey[800],
+                      ),
+                      child: playlist.artworkUrl == null
+                          ? const Icon(Icons.playlist_play)
+                          : null,
+                    ),
+                    title: Text(playlist.name),
+                    subtitle: Text(
+                      '${playlist.trackCount} tracks • ${playlist.creator?.displayName ?? 'Unknown'}',
+                    ),
+                    onTap: () {
+                      // Navigate to playlist details
+                    },
+                  ),
+                ),
+              ],
             ],
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      child: Text(
+        title,
+        style: const TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+          color: Colors.grey,
+        ),
       ),
     );
   }

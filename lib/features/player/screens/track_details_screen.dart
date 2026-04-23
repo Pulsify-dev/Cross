@@ -24,6 +24,12 @@ class _TrackDetailsScreenState extends State<TrackDetailsScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final player = Provider.of<PlayerProvider>(context, listen: false);
+      final feed = Provider.of<FeedProvider>(context, listen: false);
+      
+      player.loadWaveform(widget.track.id);
+      feed.checkIfLiked(widget.track);
+      feed.checkIfReposted(widget.track);
+      
       if (player.currentTrack?.id == widget.track.id) {
         setState(() => _followingPlayer = true);
       }
@@ -53,9 +59,7 @@ class _TrackDetailsScreenState extends State<TrackDetailsScreen> {
           final status = player.currentTrack?.id == displayTrack.id
               ? player.currentStatus
               : null;
-          final waveform = player.currentTrack?.id == displayTrack.id
-              ? player.currentWaveform
-              : null;
+          final waveform = player.getWaveform(displayTrack.id);
 
           return Container(
             width: double.infinity,
@@ -290,7 +294,16 @@ class _TrackDetailsScreenState extends State<TrackDetailsScreen> {
                                 '/likes',
                                 arguments: displayTrack,
                               ),
-                              tooltip: 'Likes',
+                              tooltip: 'Likers',
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.groups_outlined),
+                              onPressed: () => Navigator.pushNamed(
+                                context,
+                                '/reposts',
+                                arguments: displayTrack,
+                              ),
+                              tooltip: 'Reposters',
                             ),
                           ],
                         );

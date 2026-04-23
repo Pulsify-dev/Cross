@@ -12,13 +12,11 @@ class ProfileProvider extends ChangeNotifier {
   ProfileData? _profile;
   bool _isLoading = false;
   String? _errorMessage;
-  List<ProfileData> _searchResults = [];
   ProfileData? _publicProfile;
 
   ProfileData? get profile => _profile;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
-  List<ProfileData> get searchResults => _searchResults;
   ProfileData? get publicProfile => _publicProfile;
 
   Future<void> loadProfile({required String userId}) async {
@@ -147,21 +145,6 @@ class ProfileProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> searchUsers({required String query}) async {
-    _isLoading = true;
-    _errorMessage = null;
-    _searchResults = [];
-    notifyListeners();
-
-    try {
-      _searchResults = await _profileService.searchUsers(query: query);
-    } catch (e) {
-      _errorMessage = e.toString();
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
-  }
 
   Future<void> loadPublicProfile({required String userId}) async {
     _isLoading = true;

@@ -7,37 +7,6 @@ class ApiUserService implements UserService {
 
   ApiUserService(this._apiService);
 
-  @override
-  Future<List<User>> searchUsers(
-    String query, {
-    int page = 1,
-    int limit = 20,
-  }) async {
-    try {
-      final response = await _apiService.get(
-        '/users?q=${Uri.encodeComponent(query)}&page=$page&limit=$limit',
-      );
-      if (response != null) {
-        if (response is List) {
-          return response.map((data) => User.fromJson(data)).toList();
-        }
-
-        final List? users =
-            response['users'] ??
-            (response['data'] is List ? response['data'] : null) ??
-            (response['data'] is Map
-                ? (response['data']['users'] ?? response['data']['results'])
-                : null);
-
-        if (users != null) {
-          return users.map((data) => User.fromJson(data)).toList();
-        }
-      }
-    } catch (e) {
-      rethrow;
-    }
-    return [];
-  }
 
   @override
   Future<User?> getPublicProfile(String userId) async {
