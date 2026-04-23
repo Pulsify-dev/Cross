@@ -341,21 +341,43 @@ class ApiTrackService implements TrackService {
   }
 
   @override
-  Future<List<Comment>> getComments(String trackId) async {
-    // Check mock
-    if (trackId.startsWith('search_') || trackId.startsWith('trend_')) {
-      return _localComments[trackId] ?? [];
-    }
-
+  Future<({List<Comment> comments, int total})> getComments(String trackId) async {
     try {
-      final response = await _apiService.get('/tracks/$trackId/comments');
-      if (response != null && response is List) {
-        return response.map((data) => Comment.fromJson(data)).toList();
+      final response = await _apiService.get(ApiEndpoints.trackComments(trackId));
+      if (response != null && response is Map<String, dynamic>) {
+        final commentsData = response['comments'] as List?;
+        final total = response['comments_count'] ?? 0;
+        if (commentsData != null) {
+          final comments = commentsData
+              .map((data) => Comment.fromJson(data as Map<String, dynamic>))
+              .toList();
+          return (comments: comments, total: total as int);
+        }
       }
     } catch (e) {
-      rethrow;
+      debugPrint('Error fetching comments: $e');
     }
-    return [];
+    return (comments: <Comment>[], total: 0);
+  }
+
+  @override
+  Future<({List<Comment> replies, int total})> getCommentReplies(String commentId) async {
+    try {
+      final response = await _apiService.get(ApiEndpoints.commentReplies(commentId));
+      if (response != null && response is Map<String, dynamic>) {
+        final repliesData = response['replies'] as List?;
+        final total = response['replies_count'] ?? 0;
+        if (repliesData != null) {
+          final replies = repliesData
+              .map((data) => Comment.fromJson(data as Map<String, dynamic>))
+              .toList();
+          return (replies: replies, total: total as int);
+        }
+      }
+    } catch (e) {
+      debugPrint('Error fetching replies: $e');
+    }
+    return (replies: <Comment>[], total: 0);
   }
 
   @override
@@ -366,33 +388,15 @@ class ApiTrackService implements TrackService {
     Duration timestampInTrack, {
     String? parentCommentId,
   }) async {
-    final newComment = Comment(
-      id: 'mock_comment_${DateTime.now().millisecondsSinceEpoch}',
-      trackId: trackId,
-      userId: userId,
-      username: 'You (Mock)',
-      text: text,
-      timestampInTrack: timestampInTrack,
-      createdAt: DateTime.now(),
-    );
-
-    // Check mock
-    if (trackId.startsWith('search_') || trackId.startsWith('trend_')) {
-      if (!_localComments.containsKey(trackId)) {
-        _localComments[trackId] = [];
-      }
-      _localComments[trackId]!.insert(0, newComment);
-      return;
-    }
-
     try {
       await _apiService.post(
-        '/tracks/$trackId/comments',
+        ApiEndpoints.trackComments(trackId),
         body: {
           'text': text,
-          'timestampSeconds': timestampInTrack.inSeconds,
-          'parentCommentId': parentCommentId,
+          'timestamp_seconds': timestampInTrack.inSeconds,
+          'parent_comment_id': parentCommentId,
         },
+        authRequired: true,
       );
     } catch (e) {
       rethrow;
@@ -401,6 +405,31 @@ class ApiTrackService implements TrackService {
 
   @override
   Future<void> likeComment(String commentId) async {}
+
+  @override
+  Future<void> updateComment(String commentId, String text) async {
+    try {
+      await _apiService.patch(
+        ApiEndpoints.commentAction(commentId),
+        body: {'text': text},
+        authRequired: true,
+      );
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<void> deleteComment(String commentId) async {
+    try {
+      await _apiService.delete(
+        ApiEndpoints.commentAction(commentId),
+        authRequired: true,
+      );
+    } catch (e) {
+      rethrow;
+    }
+  }
 
   @override
   Future<void> unlikeComment(String commentId) async {}
@@ -444,7 +473,6 @@ class ApiTrackService implements TrackService {
     return [];
   }
 
-  @override
   @override
   Future<void> repostTrack(String trackId) async {
     try {

@@ -6,6 +6,7 @@ import '../../../providers/feed_provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../utils/number_formatter.dart';
 import '../widgets/waveform_widget.dart';
+import '../../../providers/engagement_provider.dart';
 
 class TrackDetailsScreen extends StatefulWidget {
   final Track track;
@@ -29,6 +30,7 @@ class _TrackDetailsScreenState extends State<TrackDetailsScreen> {
       player.loadWaveform(widget.track.id);
       feed.checkIfLiked(widget.track);
       feed.checkIfReposted(widget.track);
+      context.read<EngagementProvider>().fetchComments(widget.track.id);
       
       if (player.currentTrack?.id == widget.track.id) {
         setState(() => _followingPlayer = true);
@@ -225,11 +227,16 @@ class _TrackDetailsScreenState extends State<TrackDetailsScreen> {
                                   ),
                                   tooltip: 'Comments',
                                 ),
-                                Text(
-                                  NumberFormatter.format(
-                                    displayTrack.commentCount,
-                                  ),
-                                  style: const TextStyle(fontSize: 12),
+                                Consumer<EngagementProvider>(
+                                  builder: (context, engagementProvider, _) {
+                                    final count = engagementProvider.commentsCount > 0
+                                        ? engagementProvider.commentsCount
+                                        : displayTrack.commentCount;
+                                    return Text(
+                                      NumberFormatter.format(count),
+                                      style: const TextStyle(fontSize: 12),
+                                    );
+                                  },
                                 ),
                               ],
                             ),

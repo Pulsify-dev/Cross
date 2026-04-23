@@ -8,6 +8,8 @@ class EngagementProvider with ChangeNotifier {
   List<Comment> _comments = [];
   List<User> _trackLikes = [];
   List<User> _trackReposts = [];
+  List<Comment> _commentReplies = [];
+  int _commentsCount = 0;
   bool _isLoading = false;
   String? _error;
 
@@ -16,6 +18,8 @@ class EngagementProvider with ChangeNotifier {
   List<Comment> get comments => _comments;
   List<User> get trackLikes => _trackLikes;
   List<User> get trackReposts => _trackReposts;
+  List<Comment> get commentReplies => _commentReplies;
+  int get commentsCount => _commentsCount;
   bool get isLoading => _isLoading;
   String? get error => _error;
 
@@ -23,11 +27,23 @@ class EngagementProvider with ChangeNotifier {
     _setLoading(true);
     _error = null;
     try {
-      _comments = await _trackService.getComments(trackId);
+      final result = await _trackService.getComments(trackId);
+      _comments = result.comments;
+      _commentsCount = result.total;
     } catch (e) {
       _error = e.toString();
     } finally {
       _setLoading(false);
+    }
+  }
+
+  Future<void> fetchCommentsCount(String trackId) async {
+    try {
+      final result = await _trackService.getComments(trackId);
+      _commentsCount = result.total;
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error fetching comments count: $e');
     }
   }
 
@@ -90,6 +106,64 @@ class EngagementProvider with ChangeNotifier {
       _error = e.toString();
       notifyListeners();
     }
+  }
+
+  Future<void> fetchCommentReplies(String commentId) async {
+    _setLoading(true);
+    _error = null;
+    try {
+      final result = await _trackService.getCommentReplies(commentId);
+      _commentReplies = result.replies;
+    } catch (e) {
+      _error = e.toString();
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  /// Returns replies list directly for inline display per comment.
+  Future<List<Comment>> fetchCommentRepliesById(String commentId) async {
+    try {
+      final result = await _trackService.getCommentReplies(commentId);
+      return result.replies;
+    } catch (e) {
+      return [];
+    }
+  }
+
+  Future<void> updateComment(String trackId, String commentId, String text) async {
+    try {
+      await _trackService.updateComment(commentId, text);
+      await fetchComments(trackId);
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+    }
+  }
+
+  Future<void> deleteComment(String trackId, String commentId) async {
+    try {
+      await _trackService.deleteComment(commentId);
+      await fetchComments(trackId);
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+    }
+  }
+
+  /// Silently delete a comment without refreshing the comment list.
+  Future<void> deleteCommentOnly(String commentId) async {
+    try {
+      await _trackService.deleteComment(commentId);
+    } catch (e) {
+      // Silently ignore if reply already deleted or not found
+    }
+  }
+
+  /// Adjusts the local comments count by [delta] (use negative to decrement).
+  void adjustCommentsCount(int delta) {
+    _commentsCount = (_commentsCount + delta).clamp(0, _commentsCount + delta.abs());
+    notifyListeners();
   }
 
   void _setLoading(bool value) {

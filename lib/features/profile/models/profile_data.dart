@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 class ProfileData {
   ProfileData({
+    this.id,
     this.avatarPath,
     this.avatarBytes,
     required this.username,
@@ -16,6 +17,7 @@ class ProfileData {
     this.isPrivate,
   });
 
+  final String? id;
   final String? avatarPath;
   final Uint8List? avatarBytes;
   final String username;
@@ -28,6 +30,7 @@ class ProfileData {
   final bool? isPrivate;
 
   ProfileData copyWith({
+    String? id,
     String? avatarPath,
     Uint8List? avatarBytes,
     String? username,
@@ -40,6 +43,7 @@ class ProfileData {
     bool? isPrivate,
   }) {
     return ProfileData(
+      id: id ?? this.id,
       avatarPath: avatarPath ?? this.avatarPath,
       avatarBytes: avatarBytes ?? this.avatarBytes,
       username: username ?? this.username,
@@ -57,16 +61,22 @@ class ProfileData {
     final profileJson = _extractProfileJson(json);
 
     return ProfileData(
-      avatarPath: _extractString(
-        profileJson,
-        ['avatarPath', 'avatar_url', 'avatarUrl', 'profileImageUrl'],
-      ),
+      id: _extractString(profileJson, ['id', 'user_id', '_id']),
+      avatarPath: _extractString(profileJson, [
+        'avatarPath',
+        'avatar_url',
+        'avatarUrl',
+        'profileImageUrl',
+      ]),
       username: _extractString(profileJson, ['username', 'name']),
       bio: _extractString(profileJson, ['bio', 'description', 'about']),
       email: _extractString(profileJson, ['email']),
       displayName: _extractString(profileJson, ['display_name', 'displayName']),
       location: _extractString(profileJson, ['location']),
-      favoriteGenres: _extractList(profileJson, ['favorite_genres', 'favoriteGenres']),
+      favoriteGenres: _extractList(profileJson, [
+        'favorite_genres',
+        'favoriteGenres',
+      ]),
       socialLinks: _extractMap(profileJson, ['social_links', 'socialLinks']),
       isPrivate: _extractBool(profileJson, ['is_private', 'isPrivate']),
     );
@@ -74,6 +84,7 @@ class ProfileData {
 
   Map<String, dynamic> toJson() {
     return {
+      'id': id,
       'avatarPath': avatarPath,
       'username': username,
       'bio': bio,
@@ -103,10 +114,7 @@ class ProfileData {
     return json;
   }
 
-  static String _extractString(
-    Map<String, dynamic> json,
-    List<String> keys,
-  ) {
+  static String _extractString(Map<String, dynamic> json, List<String> keys) {
     for (final key in keys) {
       final value = json[key];
       if (value != null) {
@@ -143,10 +151,7 @@ class ProfileData {
     return null;
   }
 
-  static bool? _extractBool(
-    Map<String, dynamic> json,
-    List<String> keys,
-  ) {
+  static bool? _extractBool(Map<String, dynamic> json, List<String> keys) {
     for (final key in keys) {
       final value = json[key];
       if (value is bool) {

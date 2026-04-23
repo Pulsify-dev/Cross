@@ -5,6 +5,7 @@ import '../../feed/models/track.dart';
 import '../../feed/models/comment.dart';
 import '../../../providers/engagement_provider.dart';
 import '../../../providers/player_provider.dart';
+import '../../../providers/profile_provider.dart';
 
 class TrackCommentsScreen extends StatefulWidget {
   final Track track;
@@ -17,6 +18,16 @@ class TrackCommentsScreen extends StatefulWidget {
 
 class _TrackCommentsScreenState extends State<TrackCommentsScreen> {
   final TextEditingController _commentController = TextEditingController();
+  Comment? _replyingTo;
+
+  // Track which comments have their replies expanded
+  final Map<String, bool> _expandedReplies = {};
+  // Track which comments are currently loading replies
+  final Map<String, bool> _loadingReplies = {};
+  // Store fetched replies per comment id
+  final Map<String, List<Comment>> _repliesMap = {};
+  // Track locally deleted comments to hide them immediately
+  final Set<String> _deletedCommentIds = {};
 
   @override
   void initState() {
@@ -26,12 +37,39 @@ class _TrackCommentsScreenState extends State<TrackCommentsScreen> {
     });
   }
 
-  Comment? _replyingTo;
-
   @override
   void dispose() {
     _commentController.dispose();
     super.dispose();
+  }
+
+  Future<void> _toggleReplies(Comment comment) async {
+    final commentId = comment.id;
+
+    if (_expandedReplies[commentId] == true) {
+      setState(() => _expandedReplies[commentId] = false);
+      return;
+    }
+
+    // Fetch if not yet loaded
+    if (!_repliesMap.containsKey(commentId)) {
+      setState(() => _loadingReplies[commentId] = true);
+      try {
+        final result = await context
+            .read<EngagementProvider>()
+            .fetchCommentRepliesById(commentId);
+        if (mounted) {
+          setState(() {
+            _repliesMap[commentId] = result;
+            _loadingReplies[commentId] = false;
+          });
+        }
+      } catch (_) {
+        if (mounted) setState(() => _loadingReplies[commentId] = false);
+      }
+    }
+
+    if (mounted) setState(() => _expandedReplies[commentId] = true);
   }
 
   @override
@@ -39,8 +77,12 @@ class _TrackCommentsScreenState extends State<TrackCommentsScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Consumer<EngagementProvider>(
-          builder: (context, provider, _) =>
-              Text('Comments (${provider.comments.length})'),
+          builder: (context, provider, _) {
+            final count = provider.commentsCount > 0
+                ? provider.commentsCount
+                : provider.comments.length;
+            return Text('Comments ($count)');
+          },
         ),
       ),
       body: Column(
@@ -58,41 +100,74 @@ class _TrackCommentsScreenState extends State<TrackCommentsScreen> {
                   );
                 }
 
-                // Group replies by parentCommentId
+                // Only show top-level comments (no parent) and filter out deleted ones
                 final parentComments = provider.comments
-                    .where((c) => c.parentCommentId == null)
-                    .toList();
-                final replies = provider.comments
-                    .where((c) => c.parentCommentId != null)
+                    .where((c) => (c.parentCommentId == null || c.parentCommentId!.isEmpty) && !_deletedCommentIds.contains(c.id))
                     .toList();
 
                 return ListView.builder(
                   itemCount: parentComments.length,
                   itemBuilder: (context, index) {
                     final comment = parentComments[index];
-                    final commentReplies = replies
-                        .where((r) => r.parentCommentId == comment.id)
+                    final isExpanded = _expandedReplies[comment.id] == true;
+                    final isLoadingReplies = _loadingReplies[comment.id] == true;
+                    final replies = (_repliesMap[comment.id] ?? [])
+                        .where((r) => !_deletedCommentIds.contains(r.id))
                         .toList();
 
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         _buildCommentTile(comment, provider),
-                        if (commentReplies.isNotEmpty)
+
+                        // Show Replies button
+                        if (comment.repliesCount > 0 || replies.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(left: 72, bottom: 4),
+                            child: isLoadingReplies
+                                ? const SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                  )
+                                : TextButton.icon(
+                                    onPressed: () => _toggleReplies(comment),
+                                    icon: Icon(
+                                      isExpanded
+                                          ? Icons.keyboard_arrow_up
+                                          : Icons.keyboard_arrow_down,
+                                      size: 16,
+                                    ),
+                                    label: Text(
+                                      isExpanded
+                                          ? 'Hide replies'
+                                          : 'View ${comment.repliesCount > 0 ? comment.repliesCount : replies.length} ${(comment.repliesCount == 1 || replies.length == 1) ? "reply" : "replies"}',
+                                      style: const TextStyle(fontSize: 12),
+                                    ),
+                                    style: TextButton.styleFrom(
+                                      padding: EdgeInsets.zero,
+                                      minimumSize: Size.zero,
+                                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                      foregroundColor: Theme.of(context).colorScheme.primary,
+                                    ),
+                                  ),
+                          ),
+
+                        // Replies list
+                        if (isExpanded && replies.isNotEmpty)
                           Padding(
                             padding: const EdgeInsets.only(left: 48),
                             child: Column(
-                              children: commentReplies
-                                  .map(
-                                    (reply) => _buildCommentTile(
-                                      reply,
-                                      provider,
-                                      isReply: true,
-                                    ),
-                                  )
+                              children: replies
+                                  .map((reply) => _buildCommentTile(
+                                        reply,
+                                        provider,
+                                        isReply: true,
+                                      ))
                                   .toList(),
                             ),
                           ),
+
                         const Divider(height: 1),
                       ],
                     );
@@ -145,25 +220,51 @@ class _TrackCommentsScreenState extends State<TrackCommentsScreen> {
                 DateFormat('MMM d').format(comment.createdAt),
                 style: TextStyle(color: Colors.grey[600], fontSize: 12),
               ),
-              const Spacer(),
-              _buildInteractionButton(
-                icon: comment.isLiked ? Icons.favorite : Icons.favorite_border,
-                label: comment.likeCount.toString(),
-                color: comment.isLiked
-                    ? Theme.of(context).colorScheme.secondary
-                    : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
-                onTap: () =>
-                    provider.toggleCommentLike(widget.track.id, comment),
-              ),
+              const SizedBox(width: 8),
               if (!isReply)
                 _buildInteractionButton(
                   icon: Icons.reply,
                   label: 'Reply',
                   onTap: () {
                     setState(() => _replyingTo = comment);
-                    FocusScope.of(context).requestFocus();
+                    FocusScope.of(context).requestFocus(FocusNode());
+                    Future.delayed(const Duration(milliseconds: 100), () {
+                      FocusScope.of(context).requestFocus();
+                    });
                   },
                 ),
+              const Spacer(),
+              Consumer<ProfileProvider>(
+                builder: (context, profileProvider, _) {
+                  final isOwnComment =
+                      profileProvider.profile?.id == comment.userId;
+                  if (!isOwnComment) return const SizedBox.shrink();
+                  return Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.edit_outlined, size: 16),
+                        onPressed: () => _showEditDialog(comment, provider),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                        visualDensity: VisualDensity.compact,
+                      ),
+                      const SizedBox(width: 8),
+                      IconButton(
+                        icon: const Icon(Icons.delete_outline, size: 16),
+                        onPressed: () => _showDeleteConfirm(
+                          comment,
+                          provider,
+                          parentCommentId: comment.parentCommentId,
+                        ),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                        visualDensity: VisualDensity.compact,
+                      ),
+                    ],
+                  );
+                },
+              ),
             ],
           ),
         ],
@@ -206,6 +307,131 @@ class _TrackCommentsScreenState extends State<TrackCommentsScreen> {
     );
   }
 
+  void _showEditDialog(Comment comment, EngagementProvider provider) {
+    final TextEditingController editController =
+        TextEditingController(text: comment.text);
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Edit Comment'),
+        content: TextField(
+          controller: editController,
+          autofocus: true,
+          decoration: const InputDecoration(hintText: 'Enter new comment...'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              if (editController.text.isNotEmpty) {
+                provider.updateComment(
+                  widget.track.id,
+                  comment.id,
+                  editController.text,
+                );
+                Navigator.pop(context);
+              }
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showDeleteConfirm(Comment comment, EngagementProvider provider, {String? parentCommentId}) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Comment'),
+        content: const Text('Are you sure you want to delete this comment?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              
+              // Optimistic delete: add to hidden set and decrement count
+              setState(() {
+                _deletedCommentIds.add(comment.id);
+              });
+              
+              if (parentCommentId != null) {
+                // Deleting a reply
+                provider.adjustCommentsCount(-1);
+                
+                // Also remove from local map if it exists
+                if (_repliesMap.containsKey(parentCommentId)) {
+                  setState(() {
+                    _repliesMap[parentCommentId]!.removeWhere((r) => r.id == comment.id);
+                  });
+                }
+
+                try {
+                  await provider.deleteCommentOnly(comment.id);
+                } catch (_) {
+                  // Restore on failure
+                  if (mounted) {
+                    provider.adjustCommentsCount(1);
+                    setState(() {
+                      _deletedCommentIds.remove(comment.id);
+                    });
+                  }
+                }
+              } else {
+                // Deleting a parent
+                final knownReplies = _repliesMap[comment.id] ?? [];
+                final totalToDelete = 1 + knownReplies.length;
+                provider.adjustCommentsCount(-totalToDelete);
+
+                // Add all replies to deleted set too
+                setState(() {
+                  for (final r in knownReplies) {
+                    _deletedCommentIds.add(r.id);
+                  }
+                });
+
+                try {
+                  for (final reply in knownReplies) {
+                    await provider.deleteCommentOnly(reply.id);
+                  }
+                  await provider.deleteComment(widget.track.id, comment.id);
+                } catch (_) {
+                  // Restore on failure (best effort)
+                  if (mounted) {
+                    provider.adjustCommentsCount(totalToDelete);
+                    setState(() {
+                      _deletedCommentIds.remove(comment.id);
+                      for (final r in knownReplies) {
+                        _deletedCommentIds.remove(r.id);
+                      }
+                    });
+                  }
+                }
+                
+                if (!mounted) return;
+                setState(() {
+                  _repliesMap.remove(comment.id);
+                  _expandedReplies.remove(comment.id);
+                  _loadingReplies.remove(comment.id);
+                });
+              }
+            },
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildCommentInput() {
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -244,7 +470,8 @@ class _TrackCommentsScreenState extends State<TrackCommentsScreen> {
             color: Theme.of(context).colorScheme.surface,
             border: Border(
               top: BorderSide(
-                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
+                color:
+                    Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
               ),
             ),
           ),
@@ -268,26 +495,7 @@ class _TrackCommentsScreenState extends State<TrackCommentsScreen> {
                     Icons.send,
                     color: Theme.of(context).colorScheme.primary,
                   ),
-                  onPressed: () {
-                    if (_commentController.text.isNotEmpty) {
-                      final player = context.read<PlayerProvider>();
-                      final timestamp =
-                          player.currentTrack?.id == widget.track.id
-                          ? player.position
-                          : Duration.zero;
-
-                      context.read<EngagementProvider>().addComment(
-                        widget.track.id,
-                        'current_user_id',
-                        _commentController.text,
-                        timestamp,
-                        parentCommentId: _replyingTo?.id,
-                      );
-                      _commentController.clear();
-                      setState(() => _replyingTo = null);
-                      FocusScope.of(context).unfocus();
-                    }
-                  },
+                  onPressed: _submitComment,
                 ),
               ],
             ),
@@ -295,6 +503,43 @@ class _TrackCommentsScreenState extends State<TrackCommentsScreen> {
         ),
       ],
     );
+  }
+
+  Future<void> _submitComment() async {
+    if (_commentController.text.isEmpty) return;
+
+    final player = context.read<PlayerProvider>();
+    final timestamp = player.currentTrack?.id == widget.track.id
+        ? player.position
+        : Duration.zero;
+
+    final currentUserId =
+        context.read<ProfileProvider>().profile?.id ?? 'unknown';
+    final parentId = _replyingTo?.id;
+    final text = _commentController.text;
+
+    _commentController.clear();
+    final replyTarget = _replyingTo;
+    setState(() => _replyingTo = null);
+    FocusScope.of(context).unfocus();
+
+    await context.read<EngagementProvider>().addComment(
+      widget.track.id,
+      currentUserId,
+      text,
+      timestamp,
+      parentCommentId: parentId,
+    );
+
+    // If it was a reply, refresh that comment's replies if already expanded
+    if (replyTarget != null && _expandedReplies[replyTarget.id] == true) {
+      final result = await context
+          .read<EngagementProvider>()
+          .fetchCommentRepliesById(replyTarget.id);
+      if (mounted) {
+        setState(() => _repliesMap[replyTarget.id] = result);
+      }
+    }
   }
 
   String _formatDuration(Duration d) {

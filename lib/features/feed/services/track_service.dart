@@ -32,7 +32,7 @@ abstract class TrackService {
   Future<bool> isTrackReposted(String trackId);
   Future<List<User>> getTrackReposts(String trackId);
   
-  Future<List<Comment>> getComments(String trackId);
+  Future<({List<Comment> comments, int total})> getComments(String trackId);
   Future<void> addComment(
     String trackId,
     String userId,
@@ -40,6 +40,10 @@ abstract class TrackService {
     Duration timestampInTrack, {
     String? parentCommentId,
   });
+  Future<void> updateComment(String commentId, String text);
+  Future<void> deleteComment(String commentId);
+  Future<({List<Comment> replies, int total})> getCommentReplies(String commentId);
+  
   Future<void> likeComment(String commentId);
   Future<void> unlikeComment(String commentId);
   Future<void> recordPlay(String trackId, {int durationPlayedMs = 0});

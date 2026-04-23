@@ -58,13 +58,20 @@ class ApiEndpoints {
   static String artistTracks(String artistId, {int page = 1, int limit = 20}) =>
       '/artists/$artistId/tracks?page=$page&limit=$limit';
 
-  static String _withPagination(String base, {int? page, int? limit}) {
-    if (page == null && limit == null) {
+  static String _withPagination(String base, {int? page, int? limit, int? skip}) {
+    if (page == null && limit == null && skip == null) {
       return base;
     }
 
     final params = <String>[];
-    if (page != null) params.add('page=$page');
+    if (skip != null) {
+      params.add('skip=$skip');
+    } else if (page != null && limit != null) {
+      params.add('skip=${(page - 1) * limit}');
+    } else if (page != null) {
+       params.add('skip=${(page - 1) * 20}');
+    }
+
     if (limit != null) params.add('limit=$limit');
 
     return '$base?${params.join('&')}';
@@ -98,4 +105,9 @@ class ApiEndpoints {
   static String trackReposts(String trackId, {int page = 1, int limit = 20}) =>
       _withPagination('/tracks/$trackId/reposts', page: page, limit: limit);
   static String trackIsReposted(String trackId) => '/tracks/$trackId/reposted';
+  static String trackComments(String trackId, {int page = 1, int limit = 20}) =>
+      _withPagination('/tracks/$trackId/comments', page: page, limit: limit);
+  static String commentReplies(String commentId, {int page = 1, int limit = 20}) =>
+      _withPagination('/comments/$commentId/replies', page: page, limit: limit);
+  static String commentAction(String commentId) => '/comments/$commentId';
 }
