@@ -85,12 +85,35 @@ class _TrackDetailsScreenState extends State<TrackDetailsScreen> {
                       tag: 'track_${displayTrack.id}',
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(12),
-                        child: CachedNetworkImage(
-                          imageUrl: displayTrack.artworkUrl ?? '',
-                          width: MediaQuery.of(context).size.width * 0.7,
-                          height: MediaQuery.of(context).size.width * 0.7,
-                          fit: BoxFit.cover,
-                        ),
+                        child: (displayTrack.artworkUrl != null && displayTrack.artworkUrl!.isNotEmpty)
+                            ? CachedNetworkImage(
+                                imageUrl: displayTrack.artworkUrl!,
+                                width: MediaQuery.of(context).size.width * 0.7,
+                                height: MediaQuery.of(context).size.width * 0.7,
+                                fit: BoxFit.cover,
+                                placeholder: (context, url) => Container(
+                                  color: Theme.of(context).colorScheme.surface,
+                                  child: const Center(child: CircularProgressIndicator()),
+                                ),
+                                errorWidget: (context, url, error) => Container(
+                                  color: Theme.of(context).colorScheme.surface,
+                                  child: Icon(
+                                    Icons.music_note,
+                                    size: 100,
+                                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                                  ),
+                                ),
+                              )
+                            : Container(
+                                width: MediaQuery.of(context).size.width * 0.7,
+                                height: MediaQuery.of(context).size.width * 0.7,
+                                color: Theme.of(context).colorScheme.surface,
+                                child: Icon(
+                                  Icons.music_note,
+                                  size: 100,
+                                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                                ),
+                              ),
                       ),
                     ),
                     const SizedBox(height: 32),

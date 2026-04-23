@@ -21,6 +21,17 @@ class _SearchScreenState extends State<SearchScreen> {
   bool _showSuggestions = false;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final feedProvider = context.read<FeedProvider>();
+      if (feedProvider.trendingTracks.isEmpty) {
+        feedProvider.fetchTrendingTracks();
+      }
+    });
+  }
+
+  @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
@@ -43,9 +54,11 @@ class _SearchScreenState extends State<SearchScreen> {
 
   bool get _isTyping => _searchController.text.isNotEmpty;
 
-  Widget _buildHistory(BuildContext context, SearchProvider search) {
+  Widget _buildDiscoveryView(BuildContext context, SearchProvider search, FeedProvider feed) {
     final history = search.searchHistory;
-    if (history.isEmpty) {
+    final trending = feed.trendingTracks;
+
+    if (history.isEmpty && trending.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -53,11 +66,11 @@ class _SearchScreenState extends State<SearchScreen> {
             Icon(
               Icons.search,
               size: 64,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
             ),
             const SizedBox(height: 16),
             const Text(
-              'No recent searches',
+              'Search for tracks, artists, and more',
               style: TextStyle(color: Colors.grey),
             ),
           ],
@@ -65,47 +78,72 @@ class _SearchScreenState extends State<SearchScreen> {
       );
     }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return ListView(
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 8, 4),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Recent Searches',
-                style: Theme.of(
-                  context,
-                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-              ),
-              TextButton(
-                onPressed: () => search.clearHistory(),
-                child: Text(
-                  'Clear All',
-                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+        if (history.isNotEmpty) ...[
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 8, 4),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Recent Searches',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
                 ),
-              ),
-            ],
+                TextButton(
+                  onPressed: () => search.clearHistory(),
+                  child: Text(
+                    'Clear All',
+                    style: TextStyle(color: Theme.of(context).colorScheme.error),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-        Expanded(
-          child: ListView.builder(
-            itemCount: history.length,
-            itemBuilder: (context, index) {
-              final query = history[index];
-              return ListTile(
-                leading: const Icon(Icons.history),
-                title: Text(query),
-                trailing: IconButton(
-                  icon: const Icon(Icons.close, size: 18),
-                  onPressed: () => search.removeFromHistory(query),
+          ...history.take(5).map((query) => ListTile(
+            leading: const Icon(Icons.history, size: 20),
+            title: Text(query),
+            trailing: IconButton(
+              icon: const Icon(Icons.close, size: 16),
+              onPressed: () => search.removeFromHistory(query),
+            ),
+            onTap: () => _onHistoryTap(query),
+          )),
+          const Divider(),
+        ],
+        if (trending.isNotEmpty) ...[
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: Row(
+              children: [
+                Icon(Icons.trending_up, color: Theme.of(context).colorScheme.primary, size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  'Trending Now',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
                 ),
-                onTap: () => _onHistoryTap(query),
+              ],
+            ),
+          ),
+          ...trending.map((track) => TrackTile(
+            track: track,
+            showLike: true,
+            onPlay: () {
+              context.read<PlayerProvider>().playTrack(
+                track,
+                playlist: trending,
               );
             },
-          ),
-        ),
+            onDetails: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => TrackDetailsScreen(track: track),
+                ),
+              );
+            },
+            onLikeToggle: () => context.read<FeedProvider>().toggleLike(track),
+          )),
+        ],
       ],
     );
   }
@@ -195,8 +233,8 @@ class _SearchScreenState extends State<SearchScreen> {
           ),
         ),
       ),
-      body: Consumer<SearchProvider>(
-        builder: (context, search, child) {
+      body: Consumer2<SearchProvider, FeedProvider>(
+        builder: (context, search, feed, child) {
           if (_showSuggestions && _isTyping) {
             return _buildSuggestions(search);
           }
@@ -206,7 +244,7 @@ class _SearchScreenState extends State<SearchScreen> {
           }
 
           if (!_isTyping) {
-            return _buildHistory(context, search);
+            return _buildDiscoveryView(context, search, feed);
           }
 
           if (search.searchResponse.isEmpty) {

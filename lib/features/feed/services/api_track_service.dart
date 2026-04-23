@@ -122,7 +122,7 @@ class ApiTrackService implements TrackService {
       queryParams.add('page=$page');
       queryParams.add('limit=$limit');
       
-      final url = '${ApiEndpoints.trendingTracks}?${queryParams.join('&')}';
+      final url = '${ApiEndpoints.charts}?${queryParams.join('&')}';
       
       final response = await _apiService.get(url);
       

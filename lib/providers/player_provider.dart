@@ -106,6 +106,22 @@ class PlayerProvider with ChangeNotifier {
     _currentStatus = null;
     notifyListeners();
 
+    // Background fetch full track details to populate missing data (counts, artwork)
+    _trackService?.getTrackById(track.id).then((fullTrack) {
+      if (fullTrack != null && _currentTrack?.id == track.id) {
+        // Update both the original object and the current track object
+        track.artworkUrl = fullTrack.artworkUrl;
+        track.likeCount = fullTrack.likeCount;
+        track.commentCount = fullTrack.commentCount;
+        track.repostCount = fullTrack.repostCount;
+        track.isLiked = fullTrack.isLiked;
+        track.isReposted = fullTrack.isReposted;
+        
+        _currentTrack = fullTrack;
+        notifyListeners();
+      }
+    }).catchError((e) => debugPrint('Error fetching track details in player: $e'));
+
     onTrackStarted?.call(track);
     // Record eagerly so it shows up in history immediately
     _trackService?.recordPlay(track.id, durationPlayedMs: 0);

@@ -83,6 +83,7 @@ class ApiEndpoints {
   }
 
   static const String trendingTracks = '/trending';
+  static const String charts = '/charts';
   static const String feed = '/feed';
 
   static String conversations({int page = 1, int limit = 20}) =>

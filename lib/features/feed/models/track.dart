@@ -4,8 +4,8 @@ import '../../../../core/constants/api_constants.dart';
 class Track {
   final String id;
   final String title;
-  final String artistName;
-  final String? artworkUrl;
+  String artistName;
+  String? artworkUrl;
   final String streamUrl;
   final Duration duration;
   final int playCount;
@@ -55,11 +55,6 @@ class Track {
       // If it starts with // it's a protocol-relative URL
       if (url.startsWith('//')) return 'https:$url';
 
-      // Ensure we don't end up with double slashes
-      final apiBase = ApiConstants.baseUrl.endsWith('/')
-          ? ApiConstants.baseUrl.substring(0, ApiConstants.baseUrl.length - 1)
-          : ApiConstants.baseUrl;
-
       final rootBase = ApiConstants.socketUrl.endsWith('/')
           ? ApiConstants.socketUrl.substring(
               0,
@@ -68,14 +63,7 @@ class Track {
           : ApiConstants.socketUrl;
 
       final path = url.startsWith('/') ? url : '/$url';
-
-      if (path.contains('/uploads/') ||
-          path.contains('/media/') ||
-          path.contains('/images/')) {
-        return '$rootBase$path';
-      }
-
-      return '$apiBase$path';
+      return '$rootBase$path';
     }
 
     return Track(
@@ -92,12 +80,15 @@ class Track {
               artist['username']?.toString() ??
               'Unknown Artist';
         }
+        
+        // If it's just an ID string, we return 'Unknown Artist' 
+        // but the caller can choose to ignore it if they already have a name.
         return 'Unknown Artist';
       }(),
       artworkUrl: normalizeUrl(() {
         final artwork =
-            json['artworkUrl'] ??
             json['artwork_url'] ??
+            json['artworkUrl'] ??
             json['artwork'] ??
             json['cover_url'] ??
             json['cover'] ??
@@ -108,7 +99,18 @@ class Track {
         if (artwork is Map) {
           return artwork['url'] ?? artwork['path'] ?? artwork['link'];
         }
-        return artwork?.toString();
+        
+        if (artwork != null && artwork.toString().isNotEmpty) {
+          return artwork.toString();
+        }
+
+        // Fallback to artist/uploader avatar
+        final u = json['uploader'] ?? json['artist'] ?? json['user'];
+        if (u is Map) {
+          return u['profileImageUrl'] ?? u['avatar_url'] ?? u['avatar'];
+        }
+        
+        return null;
       }()),
       streamUrl: normalizeUrl(
         json['streamUrl'] ??
@@ -118,27 +120,24 @@ class Track {
             (json['audio'] is Map ? json['audio']['url'] : json['audio']),
       ),
       duration: Duration(
-        seconds:
-            (json['durationSeconds'] ??
+        seconds: (json['duration'] ??
+                json['durationSeconds'] ??
+                json['duration_seconds'] ??
+                0) is int
+            ? (json['duration'] ??
+                json['durationSeconds'] ??
+                json['duration_seconds'] ??
+                0)
+            : (json['duration'] ??
+                    json['durationSeconds'] ??
                     json['duration_seconds'] ??
-                    json['duration'] ??
                     0)
-                is int
-            ? (json['durationSeconds'] ??
-                      json['duration_seconds'] ??
-                      json['duration'] ??
-                      0)
-                  as int
-            : (json['durationSeconds'] ??
-                      json['duration_seconds'] ??
-                      json['duration'] ??
-                      0)
-                  .toInt(),
+                .toInt(),
       ),
-      playCount: (json['playCount'] ?? json['play_count'] ?? 0) as int,
-      likeCount: (json['likeCount'] ?? json['like_count'] ?? 0) as int,
-      commentCount: (json['commentCount'] ?? json['comment_count'] ?? 0) as int,
-      repostCount: (json['repostCount'] ?? json['repost_count'] ?? 0) as int,
+      playCount: (json['play_count'] ?? json['playCount'] ?? 0) as int,
+      likeCount: (json['like_count'] ?? json['likeCount'] ?? 0) as int,
+      commentCount: (json['comment_count'] ?? json['commentCount'] ?? 0) as int,
+      repostCount: (json['repost_count'] ?? json['repostCount'] ?? 0) as int,
       genres: List<String>.from(
         json['genres'] ?? (json['genre'] != null ? [json['genre']] : []),
       ),
@@ -147,9 +146,13 @@ class Track {
           : json['created_at'] != null
           ? DateTime.parse(json['created_at'])
           : DateTime.now(),
-      uploader: json['uploader'] != null
-          ? User.fromJson(json['uploader'])
-          : null,
+      uploader: () {
+        final u = json['uploader'] ?? json['artist'] ?? json['user'];
+        if (u is Map<String, dynamic>) {
+          return User.fromJson(u);
+        }
+        return null;
+      }(),
       isLiked: (json['isLiked'] ?? json['is_liked'] ?? false) as bool,
       isReposted: (json['isReposted'] ?? json['is_reposted'] ?? false) as bool,
       status: json['status']?.toString(),
