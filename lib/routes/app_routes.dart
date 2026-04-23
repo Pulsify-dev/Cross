@@ -1,6 +1,5 @@
 import 'package:cross/features/library/screens/library_screen.dart';
 import 'package:cross/features/messages/screens/messages_screen.dart';
-import 'package:cross/features/messages/screens/message_thread_screen.dart';
 import 'package:cross/features/messages/models/conversation.dart';
 import 'package:cross/features/search/screens/search_screen.dart';
 import 'package:flutter/material.dart';
@@ -28,6 +27,7 @@ import 'package:cross/features/profile/screens/blocked_users_screen.dart';
 import 'package:cross/features/profile/screens/suggested_users_screen.dart';
 import 'package:cross/features/social/screens/mutual_followers_screen.dart';
 import 'package:cross/features/social/screens/public_profile_screen.dart';
+import 'package:cross/features/messages/screens/chat_screen.dart';
 
 class AppRoutes {
   static Route<dynamic> generateRoute(RouteSettings settings) {
@@ -82,9 +82,13 @@ class AppRoutes {
       case RouteNames.messages:
         return MaterialPageRoute(builder: (_) => const MessagesScreen());
       case RouteNames.messageThread:
-        final conversation = settings.arguments as Conversation;
+        final convArg = settings.arguments as Conversation;
         return MaterialPageRoute(
-          builder: (_) => MessageThreadScreen(conversation: conversation),
+          builder: (_) => ChatScreen(
+            userId: convArg.otherUser.id,
+            displayName: convArg.otherUser.displayName,
+            avatarUrl: convArg.otherUser.profileImageUrl,
+          ),
         );
       case RouteNames.profile:
         return MaterialPageRoute(builder: (_) => const UserProfileScreen());
@@ -132,6 +136,16 @@ class AppRoutes {
             : '';
         return MaterialPageRoute(
           builder: (_) => MutualFollowersScreen(userId: userId),
+        );
+
+      case RouteNames.chat:
+        final args = settings.arguments as Map<String, dynamic>;
+        return MaterialPageRoute(
+          builder: (_) => ChatScreen(
+            userId: args['userId'] as String,
+            displayName: args['displayName'] as String,
+            avatarUrl: args['avatarUrl'] as String?,
+          ),
         );
 
       default:

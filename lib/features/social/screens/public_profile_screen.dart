@@ -4,7 +4,6 @@ import 'package:cross/features/social/widgets/avatar_url_utils.dart';
 import 'package:cross/features/social/widgets/follow_action_button.dart';
 import 'package:cross/features/social/widgets/social_list_state_view.dart';
 import 'package:cross/features/upload/models/upload_model.dart';
-import 'package:cross/providers/messaging_provider.dart';
 import 'package:cross/providers/upload_provider.dart';
 import 'package:cross/providers/social_provider.dart';
 import 'package:cross/routes/route_names.dart';
@@ -233,20 +232,38 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
           isLoading: provider.isMutatingRelationship,
           onPressed: () => provider.toggleFollowState(widget.userId),
         ),
-        const SizedBox(width: 8),
-        OutlinedButton(
-          onPressed: provider.isMutatingRelationship
-              ? null
-              : () => provider.blockUser(widget.userId),
-          style: OutlinedButton.styleFrom(
-            foregroundColor: AppColors.textPrimary,
-            side: const BorderSide(color: AppColors.border),
-          ),
-          child: const Text('Block'),
-        ),
         if (!isSelf) ...[
           const SizedBox(width: 8),
-          _ChatActionButton(targetUserId: widget.userId),
+          OutlinedButton(
+            onPressed: provider.isMutatingRelationship
+                ? null
+                : () => provider.blockUser(widget.userId),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.textPrimary,
+              side: const BorderSide(color: AppColors.border),
+            ),
+            child: const Text('Block'),
+          ),
+          const SizedBox(width: 8),
+          OutlinedButton.icon(
+            onPressed: () {
+              final profile = provider.publicProfile;
+              Navigator.of(context).pushNamed(
+                RouteNames.chat,
+                arguments: {
+                  'userId': widget.userId,
+                  'displayName': profile?.displayName ?? '',
+                  'avatarUrl': profile?.avatarUrl,
+                },
+              );
+            },
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.primary,
+              side: const BorderSide(color: AppColors.primary),
+            ),
+            icon: const Icon(Icons.send_rounded, size: 18),
+            label: const Text('Message'),
+          ),
         ],
       ],
     );
@@ -520,43 +537,6 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _ChatActionButton extends StatelessWidget {
-  const _ChatActionButton({required this.targetUserId});
-
-  final String targetUserId;
-
-  @override
-  Widget build(BuildContext context) {
-    return OutlinedButton.icon(
-      onPressed: () async {
-        final messagingProvider = context.read<MessagingProvider>();
-        final conversation = await messagingProvider.startOrOpenConversation(targetUserId);
-
-        if (conversation == null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Unable to open chat.')),
-          );
-          return;
-        }
-
-        if (!context.mounted) return;
-
-        Navigator.pushNamed(
-          context,
-          RouteNames.messageThread,
-          arguments: conversation,
-        );
-      },
-      style: OutlinedButton.styleFrom(
-        foregroundColor: AppColors.textPrimary,
-        side: const BorderSide(color: AppColors.border),
-      ),
-      icon: const Icon(Icons.chat_bubble_outline),
-      label: const Text('Message'),
     );
   }
 }

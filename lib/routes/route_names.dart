@@ -25,4 +25,5 @@ class RouteNames {
   static const String suggestedUsers = '/suggested-users';
   static const String publicProfile = '/public-profile';
   static const String mutualFollowers = '/mutual-followers';
+  static const String chat = '/chat';
 }

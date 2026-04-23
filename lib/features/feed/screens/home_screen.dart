@@ -58,7 +58,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           IconButton(
             onPressed: () {
-              Navigator.of(context).pushNamed(RouteNames.activityFeed);
+              Navigator.of(context).pushNamed(RouteNames.messages);
             },
             icon: const Icon(Icons.chat_bubble_outline),
             tooltip: 'Activity',

@@ -15,10 +15,10 @@ import 'providers/profile_provider.dart';
 import 'providers/search_provider.dart';
 import 'providers/social_provider.dart';
 import 'providers/upload_provider.dart';
-import 'providers/messaging_provider.dart';
-import 'features/messages/services/message_service.dart';
+import 'providers/conversations_provider.dart';
+import 'features/messages/services/messaging_service.dart';
+import 'features/messages/services/api_messaging_service.dart';
 import 'features/messages/services/socket_service.dart';
-import 'core/services/session_service.dart';
 import 'routes/app_routes.dart';
 import 'routes/route_names.dart';
 
@@ -68,24 +68,21 @@ class PulsifyApp extends StatelessWidget {
           create: (context) => EngagementProvider(context.read<TrackService>()),
         ),
         ChangeNotifierProvider(create: (_) => ProfileProvider()),
-        Provider<MessageService>(
-          create: (context) => MessageService(context.read<ApiService>()),
+        Provider<MessagingService>(
+          create: (context) =>
+              ApiMessagingService(context.read<ApiService>()),
         ),
         Provider<SocketService>(
-          create: (_) => SocketService(SessionService()),
+          create: (_) => SocketService(),
+          dispose: (_, service) => service.dispose(),
         ),
-        ChangeNotifierProxyProvider<AuthProvider, MessagingProvider>(
-          create: (context) => MessagingProvider(
-            context.read<MessageService>(),
+        ChangeNotifierProxyProvider<AuthProvider, ConversationsProvider>(
+          create: (context) => ConversationsProvider(
+            context.read<MessagingService>(),
             context.read<SocketService>(),
           ),
-          update: (context, authProvider, messagingProvider) {
-            final provider = messagingProvider ??
-                MessagingProvider(
-                  context.read<MessageService>(),
-                  context.read<SocketService>(),
-                );
-            provider.setCurrentUserId(authProvider.currentUser?.id ?? '');
+          update: (_, authProvider, provider) {
+            provider!.setCurrentUser(authProvider.currentUser?.id);
             return provider;
           },
         ),

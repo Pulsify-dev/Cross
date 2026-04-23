@@ -2,12 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/feed_provider.dart';
 import '../../../providers/player_provider.dart';
-import '../../../providers/messaging_provider.dart';
+import '../../../providers/conversations_provider.dart';
 import '../../../providers/social_provider.dart';
 import '../../../routes/route_names.dart';
 import '../widgets/track_card.dart';
 import '../../player/widgets/mini_player.dart';
-import '../../messages/models/conversation.dart';
 import '../models/track.dart';
 import '../models/user.dart';
 
@@ -53,7 +52,7 @@ class _FeedScreenState extends State<FeedScreen>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<FeedProvider>().fetchActivityFeed();
       context.read<FeedProvider>().fetchTrendingTracks();
-      context.read<MessagingProvider>().fetchConversations();
+      context.read<ConversationsProvider>().loadConversations();
     });
   }
 
@@ -455,7 +454,7 @@ class _FeedScreenState extends State<FeedScreen>
   }
 
   Widget _buildMessagesTab(BuildContext context) {
-    return Consumer<MessagingProvider>(
+    return Consumer<ConversationsProvider>(
       builder: (context, messagingProvider, child) {
         final allConversations = messagingProvider.conversations;
         final conversations = _messageFilter == ActivityMessageFilter.unread
@@ -464,17 +463,17 @@ class _FeedScreenState extends State<FeedScreen>
                 .toList()
             : allConversations;
 
-        if (messagingProvider.isLoadingConversations &&
+        if (messagingProvider.isLoading &&
             allConversations.isEmpty) {
           return const Center(child: CircularProgressIndicator());
         }
 
-        if (messagingProvider.errorMessage != null && allConversations.isEmpty) {
+        if (messagingProvider.error != null && allConversations.isEmpty) {
           return Center(
             child: Padding(
               padding: const EdgeInsets.all(24.0),
               child: Text(
-                messagingProvider.errorMessage!,
+                messagingProvider.error!,
                 textAlign: TextAlign.center,
               ),
             ),
@@ -549,17 +548,17 @@ class _FeedScreenState extends State<FeedScreen>
   Widget _buildConversationTile(
       BuildContext context, Conversation conversation) {
     final timeString =
-        _formatMessageTime(conversation.lastMessageTime ?? DateTime.now());
+        _formatMessageTime(conversation.lastMessageAt ?? DateTime.now());
 
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       leading: CircleAvatar(
         radius: 28,
-        backgroundImage: conversation.otherUser.profileImageUrl != null
-            ? NetworkImage(conversation.otherUser.profileImageUrl!)
+        backgroundImage: conversation.avatarUrl != null
+            ? NetworkImage(conversation.avatarUrl!)
             : null,
         backgroundColor: Theme.of(context).colorScheme.primary,
-        child: conversation.otherUser.profileImageUrl == null
+        child: conversation.avatarUrl == null
             ? Icon(
                 Icons.person,
                 color: Theme.of(context).colorScheme.onPrimary,
@@ -567,13 +566,17 @@ class _FeedScreenState extends State<FeedScreen>
             : null,
       ),
       title: Text(
-        conversation.otherUser.displayName,
+        conversation.displayName,
         style: Theme.of(context).textTheme.bodyLarge?.copyWith(
           fontWeight: FontWeight.w600,
         ),
       ),
       subtitle: Text(
-        conversation.lastMessage?.content ?? 'No messages yet',
+        conversation.lastMessage != null
+            ? (conversation.lastMessage!.isMe
+                ? 'You: ${conversation.lastMessage!.text}'
+                : '${conversation.displayName}: ${conversation.lastMessage!.text}')
+            : 'No messages yet',
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
         style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -615,11 +618,13 @@ class _FeedScreenState extends State<FeedScreen>
         ],
       ),
       onTap: () {
-        // Mark conversation as read before navigating
-        context.read<MessagingProvider>().markConversationRead(conversation.id);
         Navigator.of(context).pushNamed(
-          RouteNames.messageThread,
-          arguments: conversation,
+          RouteNames.chat,
+          arguments: {
+            'userId': conversation.userId,
+            'displayName': conversation.displayName,
+            'avatarUrl': conversation.avatarUrl,
+          },
         );
       },
       onLongPress: () {
@@ -630,12 +635,8 @@ class _FeedScreenState extends State<FeedScreen>
 
   void _showConversationOptions(
       BuildContext context, Conversation conversation) {
-    final messagingProvider = context.read<MessagingProvider>();
     final socialProvider = context.read<SocialProvider>();
-    final latestConversation =
-      messagingProvider.getConversation(conversation.id) ?? conversation;
-    final isBlocked = latestConversation.isBlocked ||
-      socialProvider.isUserBlocked(conversation.otherUser.id);
+    final isBlocked = socialProvider.isUserBlocked(conversation.userId);
 
     showModalBottomSheet(
       context: context,
@@ -649,7 +650,7 @@ class _FeedScreenState extends State<FeedScreen>
               Navigator.pop(context);
               Navigator.of(context).pushNamed(
                 RouteNames.publicProfile,
-                arguments: conversation.otherUser.id,
+                arguments: conversation.userId,
               );
             },
           ),
@@ -659,8 +660,7 @@ class _FeedScreenState extends State<FeedScreen>
               title: const Text('Block User'),
               onTap: () async {
                 Navigator.pop(context);
-                await socialProvider.blockUser(conversation.otherUser.id);
-                messagingProvider.blockUser(conversation.otherUser.id);
+                await socialProvider.blockUser(conversation.userId);
                 if (!context.mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('User blocked')),
@@ -673,8 +673,7 @@ class _FeedScreenState extends State<FeedScreen>
               title: const Text('Unblock User'),
               onTap: () async {
                 Navigator.pop(context);
-                await socialProvider.unblockUser(conversation.otherUser.id);
-                messagingProvider.unblockUser(conversation.otherUser.id);
+                await socialProvider.unblockUser(conversation.userId);
                 if (!context.mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('User unblocked')),
