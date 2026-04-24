@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../core/services/api_service.dart';
 import '../../../providers/feed_provider.dart';
 import '../../../utils/number_formatter.dart';
 import '../models/track.dart';
@@ -87,7 +88,9 @@ class _TrackTileState extends State<TrackTile> {
         });
       }
     } catch (e) {
-      debugPrint('Failed to fetch full track details: $e');
+      if (e is! ApiException || e.statusCode != 404) {
+        debugPrint('Failed to fetch full track details: $e');
+      }
     } finally {
       if (mounted) {
         setState(() {

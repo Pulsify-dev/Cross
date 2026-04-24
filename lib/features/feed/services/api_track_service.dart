@@ -23,7 +23,7 @@ class ApiTrackService implements TrackService {
   @override
   Future<Track?> getTrackById(String id) async {
     try {
-      final response = await _apiService.get(ApiEndpoints.trackById(id));
+      final response = await _apiService.get(ApiEndpoints.trackById(id), authRequired: true);
       if (response != null) {
         return Track.fromJson(response);
       }

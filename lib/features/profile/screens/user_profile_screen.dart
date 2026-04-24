@@ -19,16 +19,36 @@ class UserProfileScreen extends StatefulWidget {
 }
 
 class _UserProfileScreenState extends State<UserProfileScreen> {
+  AuthProvider? _authProviderListener;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
+      _authProviderListener = context.read<AuthProvider>();
+      _authProviderListener!.addListener(_onAuthUserChanged);
       _loadUploadedTracksForCurrentArtist();
       _loadProfile();
       _loadSocialStats();
     });
+  }
+
+  @override
+  void dispose() {
+    _authProviderListener?.removeListener(_onAuthUserChanged);
+    super.dispose();
+  }
+
+  void _onAuthUserChanged() {
+    if (!mounted) return;
+    final authProvider = context.read<AuthProvider>();
+    if (authProvider.currentUser != null && !authProvider.isLoading) {
+      final uploadProvider = context.read<UploadProvider>();
+      if (uploadProvider.errorMessage != null && uploadProvider.allUploadedTracks.isEmpty) {
+        _loadUploadedTracksForCurrentArtist();
+      }
+    }
   }
 
   Future<void> _loadProfile() async {
