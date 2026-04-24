@@ -76,11 +76,12 @@ class _TrackDetailsScreenState extends State<TrackDetailsScreen> {
               ),
             ),
             child: SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  children: [
-                    const Spacer(),
+              child: Center(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(vertical: 24.0, horizontal: 24.0),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
                     Hero(
                       tag: 'track_${displayTrack.id}',
                       child: ClipRRect(
@@ -235,10 +236,14 @@ class _TrackDetailsScreenState extends State<TrackDetailsScreen> {
                     const SizedBox(height: 24),
                     Consumer<FeedProvider>(
                       builder: (context, feedProvider, child) {
-                        return Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                        return Wrap(
+                          alignment: WrapAlignment.center,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          spacing: 16,
+                          runSpacing: 16,
                           children: [
                             Column(
+                              mainAxisSize: MainAxisSize.min,
                               children: [
                                 IconButton(
                                   key: const Key('player_comment_button'),
@@ -263,8 +268,8 @@ class _TrackDetailsScreenState extends State<TrackDetailsScreen> {
                                 ),
                               ],
                             ),
-                            const SizedBox(width: 32),
                             Column(
+                              mainAxisSize: MainAxisSize.min,
                               children: [
                                 IconButton(
                                   key: const Key('player_like_button'),
@@ -290,8 +295,8 @@ class _TrackDetailsScreenState extends State<TrackDetailsScreen> {
                                 ),
                               ],
                             ),
-                            const SizedBox(width: 32),
                             Column(
+                              mainAxisSize: MainAxisSize.min,
                               children: [
                                 IconButton(
                                   icon: Icon(
@@ -316,7 +321,6 @@ class _TrackDetailsScreenState extends State<TrackDetailsScreen> {
                                 ),
                               ],
                             ),
-                            const SizedBox(width: 32),
                             IconButton(
                               icon: const Icon(Icons.people_outline),
                               onPressed: () => Navigator.pushNamed(
@@ -339,10 +343,10 @@ class _TrackDetailsScreenState extends State<TrackDetailsScreen> {
                         );
                       },
                     ),
-                    const Spacer(),
-                  ],
-                ),
-              ),
+                        ],
+                      ),
+                    ),
+                  ),
             ),
           );
         },
