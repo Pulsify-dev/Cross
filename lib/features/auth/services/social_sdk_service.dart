@@ -5,7 +5,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 class SocialSdkService {
   final GoogleSignIn _googleSignIn = GoogleSignIn(
     scopes: <String>['email', 'profile'],
-    serverClientId: '48046590462-ggpsabgek56jagfi6o0sav2e9a87rdf8.apps.googleusercontent.com',
+    serverClientId: '667533159556-8cpfmbuas4pv4jg7mgbeebjrv2665un3.apps.googleusercontent.com',
   );
 
   Future<String?> getGoogleProviderToken() async {
