@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
-import '../features/feed/models/user.dart';
 import '../features/feed/services/user_service.dart';
 import '../features/search/models/search_models.dart';
 import '../features/search/services/search_service.dart';
@@ -68,8 +67,9 @@ class SearchProvider with ChangeNotifier {
     if (q.isEmpty) return;
     _searchHistory.remove(q);
     _searchHistory.insert(0, q);
-    if (_searchHistory.length > 20)
+    if (_searchHistory.length > 20) {
       _searchHistory.removeRange(20, _searchHistory.length);
+    }
   }
 
   void removeFromHistory(String query) {

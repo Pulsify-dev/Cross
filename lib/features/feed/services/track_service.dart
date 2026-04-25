@@ -31,7 +31,7 @@ abstract class TrackService {
   Future<void> unrepostTrack(String trackId);
   Future<bool> isTrackReposted(String trackId);
   Future<List<User>> getTrackReposts(String trackId);
-  
+
   Future<({List<Comment> comments, int total})> getComments(String trackId);
   Future<void> addComment(
     String trackId,
@@ -42,8 +42,10 @@ abstract class TrackService {
   });
   Future<void> updateComment(String commentId, String text);
   Future<void> deleteComment(String commentId);
-  Future<({List<Comment> replies, int total})> getCommentReplies(String commentId);
-  
+  Future<({List<Comment> replies, int total})> getCommentReplies(
+    String commentId,
+  );
+
   Future<void> likeComment(String commentId);
   Future<void> unlikeComment(String commentId);
   Future<void> recordPlay(String trackId, {int durationPlayedMs = 0});
@@ -57,5 +59,4 @@ abstract class TrackService {
   Future<List<double>?> getTrackWaveform(String trackId);
   Future<String?> getStreamUrl(String trackId);
   Future<Map<String, dynamic>> getTrackStatus(String trackId);
-  void setCurrentUser(User? user);
 }

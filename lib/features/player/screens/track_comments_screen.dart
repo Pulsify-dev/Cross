@@ -102,7 +102,12 @@ class _TrackCommentsScreenState extends State<TrackCommentsScreen> {
 
                 // Only show top-level comments (no parent) and filter out deleted ones
                 final parentComments = provider.comments
-                    .where((c) => (c.parentCommentId == null || c.parentCommentId!.isEmpty) && !_deletedCommentIds.contains(c.id))
+                    .where(
+                      (c) =>
+                          (c.parentCommentId == null ||
+                              c.parentCommentId!.isEmpty) &&
+                          !_deletedCommentIds.contains(c.id),
+                    )
                     .toList();
 
                 return ListView.builder(
@@ -110,7 +115,8 @@ class _TrackCommentsScreenState extends State<TrackCommentsScreen> {
                   itemBuilder: (context, index) {
                     final comment = parentComments[index];
                     final isExpanded = _expandedReplies[comment.id] == true;
-                    final isLoadingReplies = _loadingReplies[comment.id] == true;
+                    final isLoadingReplies =
+                        _loadingReplies[comment.id] == true;
                     final replies = (_repliesMap[comment.id] ?? [])
                         .where((r) => !_deletedCommentIds.contains(r.id))
                         .toList();
@@ -128,7 +134,9 @@ class _TrackCommentsScreenState extends State<TrackCommentsScreen> {
                                 ? const SizedBox(
                                     height: 20,
                                     width: 20,
-                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
                                   )
                                 : TextButton.icon(
                                     onPressed: () => _toggleReplies(comment),
@@ -147,8 +155,11 @@ class _TrackCommentsScreenState extends State<TrackCommentsScreen> {
                                     style: TextButton.styleFrom(
                                       padding: EdgeInsets.zero,
                                       minimumSize: Size.zero,
-                                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                      foregroundColor: Theme.of(context).colorScheme.primary,
+                                      tapTargetSize:
+                                          MaterialTapTargetSize.shrinkWrap,
+                                      foregroundColor: Theme.of(
+                                        context,
+                                      ).colorScheme.primary,
                                     ),
                                   ),
                           ),
@@ -159,11 +170,13 @@ class _TrackCommentsScreenState extends State<TrackCommentsScreen> {
                             padding: const EdgeInsets.only(left: 48),
                             child: Column(
                               children: replies
-                                  .map((reply) => _buildCommentTile(
-                                        reply,
-                                        provider,
-                                        isReply: true,
-                                      ))
+                                  .map(
+                                    (reply) => _buildCommentTile(
+                                      reply,
+                                      provider,
+                                      isReply: true,
+                                    ),
+                                  )
                                   .toList(),
                             ),
                           ),
@@ -227,10 +240,7 @@ class _TrackCommentsScreenState extends State<TrackCommentsScreen> {
                   label: 'Reply',
                   onTap: () {
                     setState(() => _replyingTo = comment);
-                    FocusScope.of(context).requestFocus(FocusNode());
-                    Future.delayed(const Duration(milliseconds: 100), () {
-                      FocusScope.of(context).requestFocus();
-                    });
+                    FocusScope.of(context).requestFocus();
                   },
                 ),
               const Spacer(),
@@ -289,7 +299,9 @@ class _TrackCommentsScreenState extends State<TrackCommentsScreen> {
               size: 16,
               color:
                   color ??
-                  Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                  Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: 0.5),
             ),
             const SizedBox(width: 4),
             Text(
@@ -297,7 +309,9 @@ class _TrackCommentsScreenState extends State<TrackCommentsScreen> {
               style: TextStyle(
                 color:
                     color ??
-                    Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                    Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withValues(alpha: 0.5),
                 fontSize: 12,
               ),
             ),
@@ -308,8 +322,9 @@ class _TrackCommentsScreenState extends State<TrackCommentsScreen> {
   }
 
   void _showEditDialog(Comment comment, EngagementProvider provider) {
-    final TextEditingController editController =
-        TextEditingController(text: comment.text);
+    final TextEditingController editController = TextEditingController(
+      text: comment.text,
+    );
 
     showDialog(
       context: context,
@@ -343,7 +358,11 @@ class _TrackCommentsScreenState extends State<TrackCommentsScreen> {
     );
   }
 
-  void _showDeleteConfirm(Comment comment, EngagementProvider provider, {String? parentCommentId}) {
+  void _showDeleteConfirm(
+    Comment comment,
+    EngagementProvider provider, {
+    String? parentCommentId,
+  }) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -357,20 +376,22 @@ class _TrackCommentsScreenState extends State<TrackCommentsScreen> {
           TextButton(
             onPressed: () async {
               Navigator.pop(context);
-              
+
               // Optimistic delete: add to hidden set and decrement count
               setState(() {
                 _deletedCommentIds.add(comment.id);
               });
-              
+
               if (parentCommentId != null) {
                 // Deleting a reply
                 provider.adjustCommentsCount(-1);
-                
+
                 // Also remove from local map if it exists
                 if (_repliesMap.containsKey(parentCommentId)) {
                   setState(() {
-                    _repliesMap[parentCommentId]!.removeWhere((r) => r.id == comment.id);
+                    _repliesMap[parentCommentId]!.removeWhere(
+                      (r) => r.id == comment.id,
+                    );
                   });
                 }
 
@@ -415,7 +436,7 @@ class _TrackCommentsScreenState extends State<TrackCommentsScreen> {
                     });
                   }
                 }
-                
+
                 if (!mounted) return;
                 setState(() {
                   _repliesMap.remove(comment.id);
@@ -470,8 +491,9 @@ class _TrackCommentsScreenState extends State<TrackCommentsScreen> {
             color: Theme.of(context).colorScheme.surface,
             border: Border(
               top: BorderSide(
-                color:
-                    Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.1),
               ),
             ),
           ),
@@ -523,7 +545,9 @@ class _TrackCommentsScreenState extends State<TrackCommentsScreen> {
     setState(() => _replyingTo = null);
     FocusScope.of(context).unfocus();
 
-    await context.read<EngagementProvider>().addComment(
+    final engagementProvider = context.read<EngagementProvider>();
+
+    await engagementProvider.addComment(
       widget.track.id,
       currentUserId,
       text,
@@ -533,9 +557,8 @@ class _TrackCommentsScreenState extends State<TrackCommentsScreen> {
 
     // If it was a reply, refresh that comment's replies if already expanded
     if (replyTarget != null && _expandedReplies[replyTarget.id] == true) {
-      final result = await context
-          .read<EngagementProvider>()
-          .fetchCommentRepliesById(replyTarget.id);
+      final result =
+          await engagementProvider.fetchCommentRepliesById(replyTarget.id);
       if (mounted) {
         setState(() => _repliesMap[replyTarget.id] = result);
       }

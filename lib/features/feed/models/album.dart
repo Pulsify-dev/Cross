@@ -1,4 +1,3 @@
-import 'user.dart';
 import 'track.dart';
 
 class Album {
@@ -36,7 +35,9 @@ class Album {
       artworkUrl: json['artwork_url'],
       trackCount: json['track_count'] ?? 0,
       genre: json['genre'],
-      createdAt: json['createdAt'] != null ? DateTime.tryParse(json['createdAt']) : null,
+      createdAt: json['createdAt'] != null
+          ? DateTime.tryParse(json['createdAt'])
+          : null,
       tracks: json['tracks'] != null
           ? (json['tracks'] as List).map((i) => Track.fromJson(i)).toList()
           : [],

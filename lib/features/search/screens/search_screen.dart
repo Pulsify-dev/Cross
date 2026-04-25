@@ -7,7 +7,6 @@ import '../../../routes/route_names.dart';
 import '../../feed/widgets/track_tile.dart';
 import '../../player/screens/track_details_screen.dart';
 import '../models/search_models.dart';
-import '../../player/screens/track_details_screen.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
