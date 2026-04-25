@@ -6,8 +6,6 @@ import '../../../providers/player_provider.dart';
 import '../../../routes/route_names.dart';
 import '../../feed/widgets/track_tile.dart';
 import '../../player/screens/track_details_screen.dart';
-import '../../../providers/social_provider.dart';
-import '../models/search_models.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -54,7 +52,11 @@ class _SearchScreenState extends State<SearchScreen> {
 
   bool get _isTyping => _searchController.text.isNotEmpty;
 
-  Widget _buildDiscoveryView(BuildContext context, SearchProvider search, FeedProvider feed) {
+  Widget _buildDiscoveryView(
+    BuildContext context,
+    SearchProvider search,
+    FeedProvider feed,
+  ) {
     final history = search.searchHistory;
     final trending = feed.trendingTracks;
 
@@ -66,7 +68,9 @@ class _SearchScreenState extends State<SearchScreen> {
             Icon(
               Icons.search,
               size: 64,
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.3),
             ),
             const SizedBox(height: 16),
             const Text(
@@ -88,27 +92,35 @@ class _SearchScreenState extends State<SearchScreen> {
               children: [
                 Text(
                   'Recent Searches',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 TextButton(
                   onPressed: () => search.clearHistory(),
                   child: Text(
                     'Clear All',
-                    style: TextStyle(color: Theme.of(context).colorScheme.error),
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
                   ),
                 ),
               ],
             ),
           ),
-          ...history.take(5).map((query) => ListTile(
-            leading: const Icon(Icons.history, size: 20),
-            title: Text(query),
-            trailing: IconButton(
-              icon: const Icon(Icons.close, size: 16),
-              onPressed: () => search.removeFromHistory(query),
-            ),
-            onTap: () => _onHistoryTap(query),
-          )),
+          ...history
+              .take(5)
+              .map(
+                (query) => ListTile(
+                  leading: const Icon(Icons.history, size: 20),
+                  title: Text(query),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.close, size: 16),
+                    onPressed: () => search.removeFromHistory(query),
+                  ),
+                  onTap: () => _onHistoryTap(query),
+                ),
+              ),
           const Divider(),
         ],
         if (trending.isNotEmpty) ...[
@@ -116,33 +128,42 @@ class _SearchScreenState extends State<SearchScreen> {
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
             child: Row(
               children: [
-                Icon(Icons.trending_up, color: Theme.of(context).colorScheme.primary, size: 20),
+                Icon(
+                  Icons.trending_up,
+                  color: Theme.of(context).colorScheme.primary,
+                  size: 20,
+                ),
                 const SizedBox(width: 8),
                 Text(
                   'Trending Now',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ],
             ),
           ),
-          ...trending.map((track) => TrackTile(
-            track: track,
-            showLike: true,
-            onPlay: () {
-              context.read<PlayerProvider>().playTrack(
-                track,
-                playlist: trending,
-              );
-            },
-            onDetails: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => TrackDetailsScreen(track: track),
-                ),
-              );
-            },
-            onLikeToggle: () => context.read<FeedProvider>().toggleLike(track),
-          )),
+          ...trending.map(
+            (track) => TrackTile(
+              track: track,
+              showLike: true,
+              onPlay: () {
+                context.read<PlayerProvider>().playTrack(
+                  track,
+                  playlist: trending,
+                );
+              },
+              onDetails: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => TrackDetailsScreen(track: track),
+                  ),
+                );
+              },
+              onLikeToggle: () =>
+                  context.read<FeedProvider>().toggleLike(track),
+            ),
+          ),
         ],
       ],
     );
@@ -161,21 +182,23 @@ class _SearchScreenState extends State<SearchScreen> {
             title: Text('Search for "$query"'),
             onTap: () => _triggerSearch(query),
           ),
-          ...search.suggestions.map((suggestion) => ListTile(
-                leading: Icon(
-                  suggestion.type == 'track'
-                      ? Icons.music_note
-                      : suggestion.type == 'artist'
-                          ? Icons.person
-                          : Icons.search,
-                  size: 20,
-                ),
-                title: Text(suggestion.text),
-                onTap: () {
-                  _searchController.text = suggestion.text;
-                  _triggerSearch(suggestion.text);
-                },
-              )),
+          ...search.suggestions.map(
+            (suggestion) => ListTile(
+              leading: Icon(
+                suggestion.type == 'track'
+                    ? Icons.music_note
+                    : suggestion.type == 'artist'
+                    ? Icons.person
+                    : Icons.search,
+                size: 20,
+              ),
+              title: Text(suggestion.text),
+              onTap: () {
+                _searchController.text = suggestion.text;
+                _triggerSearch(suggestion.text);
+              },
+            ),
+          ),
         ],
       ),
     );
@@ -190,7 +213,9 @@ class _SearchScreenState extends State<SearchScreen> {
         title: Container(
           height: 40,
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+            color: Theme.of(
+              context,
+            ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
             borderRadius: BorderRadius.circular(20),
           ),
           child: TextField(
@@ -200,13 +225,17 @@ class _SearchScreenState extends State<SearchScreen> {
             decoration: InputDecoration(
               hintText: 'Search Pulsify...',
               hintStyle: TextStyle(
-                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.5),
                 fontSize: 14,
               ),
               prefixIcon: Icon(
                 Icons.search,
                 size: 20,
-                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.5),
               ),
               border: InputBorder.none,
               contentPadding: const EdgeInsets.symmetric(vertical: 8),
@@ -255,13 +284,17 @@ class _SearchScreenState extends State<SearchScreen> {
                   Icon(
                     Icons.search_off_rounded,
                     size: 64,
-                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withValues(alpha: 0.2),
                   ),
                   const SizedBox(height: 16),
                   Text(
                     'No results found for "${_searchController.text}"',
                     style: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withValues(alpha: 0.5),
                       fontSize: 16,
                     ),
                   ),
