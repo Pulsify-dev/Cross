@@ -58,6 +58,7 @@ class _LikedTracksScreenState extends State<LikedTracksScreen> {
                         final track = provider.likedTracks[index];
                         return TrackTile(
                           track: track,
+                          showLike: true,
                           onPlay: () {
                             context.read<FeedProvider>().cleanupUnlikedTracks();
                             context.read<PlayerProvider>().playTrack(

@@ -134,7 +134,6 @@ class _SearchScreenState extends State<SearchScreen> {
           ...trending.map(
             (track) => TrackTile(
               track: track,
-              showLike: true,
               onPlay: () {
                 context.read<PlayerProvider>().playTrack(
                   track,
@@ -338,7 +337,6 @@ class _SearchScreenState extends State<SearchScreen> {
         final track = tracks[index];
         return TrackTile(
           track: track,
-          showLike: true,
           onPlay: () {
             context.read<PlayerProvider>().playTrack(track, playlist: tracks);
           },

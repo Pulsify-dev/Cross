@@ -76,7 +76,6 @@ class _ListeningHistoryWidgetState extends State<ListeningHistoryWidget> {
                 final track = historyEntry.track;
                 return TrackTile(
                   track: track,
-                  showLike: true,
                   onPlay: () {
                     context.read<PlayerProvider>().playTrack(
                           track,

@@ -32,7 +32,6 @@ class SearchResultsScreen extends StatelessWidget {
                 _buildSectionHeader('Tracks'),
                 ...searchProvider.searchResponse.tracks.map((track) => TrackTile(
                       track: track,
-                      showLike: true,
                       onPlay: () {
                         context.read<PlayerProvider>().playTrack(
                               track,
