@@ -50,6 +50,7 @@ class PulsifyApp extends StatelessWidget {
           create: (context) => ApiSearchService(
             context.read<ApiService>(),
             context.read<TrackService>(),
+            context.read<UserService>(),
           ),
         ),
         ChangeNotifierProvider(

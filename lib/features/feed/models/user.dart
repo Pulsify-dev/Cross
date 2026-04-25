@@ -1,3 +1,5 @@
+import '../../../../core/constants/api_constants.dart';
+
 class User {
   final String id;
   final String username;
@@ -22,12 +24,28 @@ class User {
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
+    String? normalizeUrl(String? url) {
+      if (url == null || url.isEmpty) return null;
+      if (url.startsWith('http')) return url;
+      if (url.startsWith('//')) return 'https:$url';
+      final rootBase = ApiConstants.socketUrl.endsWith('/')
+          ? ApiConstants.socketUrl.substring(0, ApiConstants.socketUrl.length - 1)
+          : ApiConstants.socketUrl;
+      final path = url.startsWith('/') ? url : '/$url';
+      return '$rootBase$path';
+    }
+
     return User(
       id: json['id'] ?? json['_id'] ?? json['user_id'] ?? '',
       username: json['username'] ?? '',
       email: json['email'],
       displayName: json['displayName'] ?? json['display_name'] ?? 'Unknown',
-      profileImageUrl: json['profileImageUrl'] ?? json['avatar_url'],
+      profileImageUrl: normalizeUrl(json['profileImageUrl'] ??
+          json['profile_image_url'] ??
+          json['avatar_url'] ??
+          json['avatarUrl'] ??
+          json['avatar'] ??
+          json['image_url']),
       followersCount: json['followersCount'] ?? 0,
       followingCount: json['followingCount'] ?? 0,
       tracksCount: json['tracksCount'] ?? 0,
