@@ -3,7 +3,8 @@ import 'package:provider/provider.dart';
 import '../../../providers/feed_provider.dart';
 import '../../../providers/player_provider.dart';
 import '../../../routes/route_names.dart';
-import '../widgets/feed_item_widget.dart';
+import '../widgets/vertical_feed_item.dart';
+import '../../player/screens/track_comments_screen.dart';
 
 class FeedScreen extends StatefulWidget {
   final bool showBottomNavigationBar;
@@ -22,6 +23,11 @@ class _FeedScreenState extends State<FeedScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(() {
+      if (_tabController.indexIsChanging) {
+        setState(() {});
+      }
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<FeedProvider>().fetchFeed();
       context.read<FeedProvider>().fetchDiscoveryFeed();
@@ -37,42 +43,81 @@ class _FeedScreenState extends State<FeedScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        title: const Text(
-          'Feed',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        bottom: TabBar(
-          controller: _tabController,
-          indicatorColor: Theme.of(context).colorScheme.primary,
-          labelColor: Theme.of(context).colorScheme.primary,
-          unselectedLabelColor: Colors.grey,
-          tabs: const [
-            Tab(text: 'Discover'),
-            Tab(text: 'Following'),
-          ],
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () {
-              if (_tabController.index == 0) {
-                context.read<FeedProvider>().fetchDiscoveryFeed();
-              } else {
-                context.read<FeedProvider>().fetchFeed();
-              }
-            },
+      backgroundColor: Colors.black,
+      body: Stack(
+        children: [
+          // Content
+          TabBarView(
+            controller: _tabController,
+            children: [_buildDiscoverTab(), _buildFollowingTab()],
+          ),
+
+          // Top Navigation (Discover / Following)
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.3),
+                      borderRadius: BorderRadius.circular(25),
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _tabButton('Discover', 0),
+                        _tabButton('Following', 1),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          
+          // More options button (Top right)
+          SafeArea(
+            child: Align(
+              alignment: Alignment.topRight,
+              child: Padding(
+                padding: const EdgeInsets.only(top: 8, right: 8),
+                child: IconButton(
+                  icon: const Icon(Icons.more_vert, color: Colors.white),
+                  onPressed: () {},
+                ),
+              ),
+            ),
           ),
         ],
-      ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [_buildDiscoverTab(), _buildFollowingTab()],
       ),
       bottomNavigationBar: widget.showBottomNavigationBar
           ? _buildBottomNavigationBar(context)
           : null,
+    );
+  }
+
+  Widget _tabButton(String label, int index) {
+    final isSelected = _tabController.index == index;
+    return GestureDetector(
+      onTap: () => _tabController.animateTo(index),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.grey.withValues(alpha: 0.5) : Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? Colors.white : Colors.white.withValues(alpha: 0.6),
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
+          ),
+        ),
+      ),
     );
   }
 
@@ -83,41 +128,59 @@ class _FeedScreenState extends State<FeedScreen>
           return const Center(child: CircularProgressIndicator());
         }
 
-        if (provider.error != null && provider.discoveryFeed.isEmpty) {
-          return Center(child: Text('Error: ${provider.error}'));
-        }
-
         if (provider.discoveryFeed.isEmpty) {
-          return const Center(child: Text('No tracks found in discovery.'));
+          return const Center(
+            child: Text(
+              'No tracks found in discovery.',
+              style: TextStyle(color: Colors.white),
+            ),
+          );
         }
 
-        return RefreshIndicator(
-          onRefresh: () => provider.fetchDiscoveryFeed(),
-          child: ListView.builder(
-            itemCount: provider.discoveryFeed.length,
-            padding: const EdgeInsets.all(16),
-            itemBuilder: (context, index) {
-              final item = provider.discoveryFeed[index];
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 20),
-                child: FeedItemWidget(
-                  item: item,
-                  onPlay: () {
-                    context.read<PlayerProvider>().playTrack(
-                      item.track,
-                      playlist: provider.discoveryFeed.map((e) => e.track).toList(),
-                    );
-                  },
-                  onDetails: () {
-                    Navigator.of(
-                      context,
-                    ).pushNamed(RouteNames.trackDetails, arguments: item.track);
-                  },
-                  onLikeToggle: () => provider.toggleLike(item.track),
-                ),
-              );
-            },
-          ),
+        return PageView.builder(
+          scrollDirection: Axis.vertical,
+          itemCount: provider.discoveryFeed.length,
+          itemBuilder: (context, index) {
+            final item = provider.discoveryFeed[index];
+            return VerticalFeedItem(
+              track: item.track,
+              onPlay: () {
+                context.read<PlayerProvider>().playTrack(
+                  item.track,
+                  playlist: provider.discoveryFeed.map((e) => e.track).toList(),
+                );
+              },
+              onDetails: () {
+                Navigator.of(
+                  context,
+                ).pushNamed(RouteNames.trackDetails, arguments: item.track);
+              },
+              onLikeToggle: () => provider.toggleLike(item.track),
+              onRepostToggle: () => provider.toggleRepost(item.track),
+              onCommentTap: () {
+                showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  builder: (context) => Container(
+                    height: MediaQuery.of(context).size.height * 0.75,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).scaffoldBackgroundColor,
+                      borderRadius:
+                          const BorderRadius.vertical(top: Radius.circular(20)),
+                    ),
+                    child: TrackCommentsScreen(track: item.track),
+                  ),
+                );
+              },
+              onFollowTap: () {
+                final targetId = item.track.uploader?.id ?? item.track.artistId;
+                if (targetId != null) {
+                  provider.toggleFollow(targetId);
+                }
+              },
+            );
+          },
         );
       },
     );
@@ -130,41 +193,59 @@ class _FeedScreenState extends State<FeedScreen>
           return const Center(child: CircularProgressIndicator());
         }
 
-        if (provider.error != null && provider.feed.isEmpty) {
-          return Center(child: Text('Error: ${provider.error}'));
-        }
-
         if (provider.feed.isEmpty) {
-          return const Center(child: Text('No tracks from people you follow.'));
+          return const Center(
+            child: Text(
+              'No tracks from people you follow.',
+              style: TextStyle(color: Colors.white),
+            ),
+          );
         }
 
-        return RefreshIndicator(
-          onRefresh: () => provider.fetchFeed(),
-          child: ListView.builder(
-            itemCount: provider.feed.length,
-            padding: const EdgeInsets.all(16),
-            itemBuilder: (context, index) {
-              final item = provider.feed[index];
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 20),
-                child: FeedItemWidget(
-                  item: item,
-                  onPlay: () {
-                    context.read<PlayerProvider>().playTrack(
-                      item.track,
-                      playlist: provider.feed.map((e) => e.track).toList(),
-                    );
-                  },
-                  onDetails: () {
-                    Navigator.of(
-                      context,
-                    ).pushNamed(RouteNames.trackDetails, arguments: item.track);
-                  },
-                  onLikeToggle: () => provider.toggleLike(item.track),
-                ),
-              );
-            },
-          ),
+        return PageView.builder(
+          scrollDirection: Axis.vertical,
+          itemCount: provider.feed.length,
+          itemBuilder: (context, index) {
+            final item = provider.feed[index];
+            return VerticalFeedItem(
+              track: item.track,
+              onPlay: () {
+                context.read<PlayerProvider>().playTrack(
+                  item.track,
+                  playlist: provider.feed.map((e) => e.track).toList(),
+                );
+              },
+              onDetails: () {
+                Navigator.of(
+                  context,
+                ).pushNamed(RouteNames.trackDetails, arguments: item.track);
+              },
+              onLikeToggle: () => provider.toggleLike(item.track),
+              onRepostToggle: () => provider.toggleRepost(item.track),
+              onCommentTap: () {
+                showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  builder: (context) => Container(
+                    height: MediaQuery.of(context).size.height * 0.75,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).scaffoldBackgroundColor,
+                      borderRadius:
+                          const BorderRadius.vertical(top: Radius.circular(20)),
+                    ),
+                    child: TrackCommentsScreen(track: item.track),
+                  ),
+                );
+              },
+              onFollowTap: () {
+                final targetId = item.track.uploader?.id ?? item.track.artistId;
+                if (targetId != null) {
+                  provider.toggleFollow(targetId);
+                }
+              },
+            );
+          },
         );
       },
     );

@@ -29,6 +29,7 @@ class FeedProvider with ChangeNotifier {
   static const int _historyLimit = 20;
   bool _hasMoreHistory = true;
   bool _isHistoryLoading = false;
+  final Set<String> _followingUserIds = {};
 
   FeedProvider(this._trackService, this._userService);
 
@@ -48,6 +49,8 @@ class FeedProvider with ChangeNotifier {
   List<User> get suggestedUsers => _suggestedUsers;
 
   final Map<String, int> _trackLikeCounts = {};
+  final Set<String> _repostedTrackIds = {};
+  final Map<String, int> _trackRepostCounts = {};
 
   bool isTrackLiked(String trackId) {
     return _likedTracks.any((t) => t.id == trackId);
@@ -55,6 +58,18 @@ class FeedProvider with ChangeNotifier {
 
   int getTrackLikeCount(Track track) {
     return _trackLikeCounts[track.id] ?? track.likeCount;
+  }
+
+  bool isFollowingUser(String userId) {
+    return _followingUserIds.contains(userId);
+  }
+
+  bool isTrackReposted(String trackId) {
+    return _repostedTrackIds.contains(trackId);
+  }
+
+  int getTrackRepostCount(Track track) {
+    return _trackRepostCounts[track.id] ?? track.repostCount;
   }
 
   Future<void> fetchTrendingTracks() async {
@@ -111,6 +126,7 @@ class FeedProvider with ChangeNotifier {
     _error = null;
     try {
       _feed = await _trackService.getFeed(authRequired: true);
+      _syncFeedItemStatuses(_feed);
     } catch (e) {
       _error = e.toString();
     } finally {
@@ -124,6 +140,7 @@ class FeedProvider with ChangeNotifier {
     _error = null;
     try {
       _discoveryFeed = await _trackService.getFeed(authRequired: false);
+      _syncFeedItemStatuses(_discoveryFeed);
     } catch (e) {
       _error = e.toString();
     } finally {
@@ -219,13 +236,15 @@ class FeedProvider with ChangeNotifier {
       if (isLiked) {
         await _trackService.unlikeTrack(trackId);
         _likedTracks.removeWhere((t) => t.id == trackId);
+        _trackLikeCounts[trackId] = (getTrackLikeCount(track) > 0) ? getTrackLikeCount(track) - 1 : 0;
         track.isLiked = false;
-        track.likeCount = (track.likeCount > 0) ? track.likeCount - 1 : 0;
+        track.likeCount = _trackLikeCounts[trackId]!;
       } else {
         await _trackService.likeTrack(trackId);
         _likedTracks.add(track);
+        _trackLikeCounts[trackId] = getTrackLikeCount(track) + 1;
         track.isLiked = true;
-        track.likeCount++;
+        track.likeCount = _trackLikeCounts[trackId]!;
       }
       notifyListeners();
     } catch (e) {
@@ -254,18 +273,56 @@ class FeedProvider with ChangeNotifier {
   }
 
   Future<void> toggleRepost(Track track) async {
+    final trackId = track.id;
+    final isReposted = isTrackReposted(trackId);
     try {
-      if (track.isReposted) {
-        await _trackService.unrepostTrack(track.id);
+      if (isReposted) {
+        await _trackService.unrepostTrack(trackId);
+        _repostedTrackIds.remove(trackId);
+        _trackRepostCounts[trackId] =
+            (getTrackRepostCount(track) > 0) ? getTrackRepostCount(track) - 1 : 0;
         track.isReposted = false;
-        track.repostCount = (track.repostCount > 0) ? track.repostCount - 1 : 0;
+        track.repostCount = _trackRepostCounts[trackId]!;
       } else {
-        await _trackService.repostTrack(track.id);
+        await _trackService.repostTrack(trackId);
+        _repostedTrackIds.add(trackId);
+        _trackRepostCounts[trackId] = getTrackRepostCount(track) + 1;
         track.isReposted = true;
-        track.repostCount++;
+        track.repostCount = _trackRepostCounts[trackId]!;
       }
       notifyListeners();
     } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+    }
+  }
+
+  Future<void> toggleFollow(String userId) async {
+    if (userId.isEmpty) return;
+    
+    final wasFollowing = isFollowingUser(userId);
+    
+    // Optimistic update
+    if (wasFollowing) {
+      _followingUserIds.remove(userId);
+    } else {
+      _followingUserIds.add(userId);
+    }
+    notifyListeners();
+
+    try {
+      if (wasFollowing) {
+        await _userService.unfollowUser(userId);
+      } else {
+        await _userService.followUser(userId);
+      }
+    } catch (e) {
+      // Rollback on error
+      if (wasFollowing) {
+        _followingUserIds.add(userId);
+      } else {
+        _followingUserIds.remove(userId);
+      }
       _error = e.toString();
       notifyListeners();
     }
@@ -311,5 +368,27 @@ class FeedProvider with ChangeNotifier {
   void _setLoading(bool value) {
     _isLoading = value;
     notifyListeners();
+  }
+
+  void _syncTrackStatuses(List<Track> tracks) {
+    for (final track in tracks) {
+      if (track.isLiked && !isTrackLiked(track.id)) {
+        if (!_likedTracks.any((t) => t.id == track.id)) {
+          _likedTracks.add(track);
+        }
+      }
+      if (track.isReposted) {
+        _repostedTrackIds.add(track.id);
+      }
+      _trackLikeCounts[track.id] = track.likeCount;
+      _trackRepostCounts[track.id] = track.repostCount;
+      if (track.uploader != null && track.uploader!.isFollowing) {
+        _followingUserIds.add(track.uploader!.id);
+      }
+    }
+  }
+
+  void _syncFeedItemStatuses(List<FeedItem> items) {
+    _syncTrackStatuses(items.map((e) => e.track).toList());
   }
 }

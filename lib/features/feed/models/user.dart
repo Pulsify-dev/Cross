@@ -10,6 +10,7 @@ class User {
   final int followingCount;
   final int tracksCount;
   final String? bio;
+  final bool isFollowing;
 
   User({
     required this.id,
@@ -21,6 +22,7 @@ class User {
     this.followingCount = 0,
     this.tracksCount = 0,
     this.bio,
+    this.isFollowing = false,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
@@ -50,6 +52,7 @@ class User {
       followingCount: json['followingCount'] ?? 0,
       tracksCount: json['tracksCount'] ?? 0,
       bio: json['bio'],
+      isFollowing: json['isFollowing'] ?? json['is_following'] ?? false,
     );
   }
 
@@ -63,6 +66,7 @@ class User {
     int? followingCount,
     int? tracksCount,
     String? bio,
+    bool? isFollowing,
   }) {
     return User(
       id: id ?? this.id,
@@ -74,6 +78,7 @@ class User {
       followingCount: followingCount ?? this.followingCount,
       tracksCount: tracksCount ?? this.tracksCount,
       bio: bio ?? this.bio,
+      isFollowing: isFollowing ?? this.isFollowing,
     );
   }
 }

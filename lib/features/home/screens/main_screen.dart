@@ -110,7 +110,7 @@ class _MainScreenState extends State<MainScreen> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        const MiniPlayer(),
+        if (_selectedIndex != 3) const MiniPlayer(),
         Container(
           decoration: const BoxDecoration(
             color: AppColors.navBarBackground,
