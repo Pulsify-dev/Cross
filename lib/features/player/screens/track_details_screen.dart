@@ -167,6 +167,18 @@ class _TrackDetailsScreenState extends State<TrackDetailsScreen> {
                             : 0.0,
                         height: 80,
                         progressColor: Theme.of(context).colorScheme.primary,
+                        onSeek: (percent) {
+                          if (player.currentTrack?.id == displayTrack.id) {
+                            final seekMs = (percent * player.duration.inMilliseconds).round();
+                            player.seek(Duration(milliseconds: seekMs));
+                          } else {
+                            // Optionally start playing this track at that percent if not already playing
+                            player.playTrack(displayTrack).then((_) {
+                              final seekMs = (percent * displayTrack.duration.inMilliseconds).round();
+                              player.seek(Duration(milliseconds: seekMs));
+                            });
+                          }
+                        },
                       )
                     else
                       const SizedBox(

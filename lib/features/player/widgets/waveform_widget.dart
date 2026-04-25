@@ -6,6 +6,7 @@ class WaveformWidget extends StatelessWidget {
   final double height;
   final Color color;
   final Color progressColor;
+  final ValueChanged<double>? onSeek;
 
   const WaveformWidget({
     super.key,
@@ -14,19 +15,42 @@ class WaveformWidget extends StatelessWidget {
     this.height = 60,
     this.color = Colors.white24,
     this.progressColor = Colors.white,
+    this.onSeek,
   });
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: height,
-      width: double.infinity,
-      child: CustomPaint(
-        painter: WaveformPainter(
-          waveform: waveform,
-          progress: progress,
-          color: color,
-          progressColor: progressColor,
+    return GestureDetector(
+      onTapDown: (details) {
+        if (onSeek != null) {
+          final RenderBox? box = context.findRenderObject() as RenderBox?;
+          if (box != null) {
+            final localPosition = box.globalToLocal(details.globalPosition);
+            final percent = (localPosition.dx / box.size.width).clamp(0.0, 1.0);
+            onSeek!(percent);
+          }
+        }
+      },
+      onHorizontalDragUpdate: (details) {
+        if (onSeek != null) {
+          final RenderBox? box = context.findRenderObject() as RenderBox?;
+          if (box != null) {
+            final localPosition = box.globalToLocal(details.globalPosition);
+            final percent = (localPosition.dx / box.size.width).clamp(0.0, 1.0);
+            onSeek!(percent);
+          }
+        }
+      },
+      child: SizedBox(
+        height: height,
+        width: double.infinity,
+        child: CustomPaint(
+          painter: WaveformPainter(
+            waveform: waveform,
+            progress: progress,
+            color: color,
+            progressColor: progressColor,
+          ),
         ),
       ),
     );
