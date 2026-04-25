@@ -39,7 +39,7 @@ class User {
       id: json['id'] ?? json['_id'] ?? json['user_id'] ?? '',
       username: json['username'] ?? '',
       email: json['email'],
-      displayName: json['displayName'] ?? json['display_name'] ?? 'Unknown',
+      displayName: json['displayName'] ?? json['display_name'] ?? json['username'] ?? 'Unknown',
       profileImageUrl: normalizeUrl(json['profileImageUrl'] ??
           json['profile_image_url'] ??
           json['avatar_url'] ??

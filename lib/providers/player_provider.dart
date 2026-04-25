@@ -4,10 +4,12 @@ import 'package:flutter/foundation.dart';
 import 'package:just_audio/just_audio.dart';
 import '../features/feed/models/track.dart';
 import '../features/feed/services/track_service.dart';
+import '../features/feed/services/user_service.dart';
 
 class PlayerProvider with ChangeNotifier {
   final AudioPlayer _player = AudioPlayer();
   final TrackService? _trackService;
+  final UserService? _userService;
   Track? _currentTrack;
   List<Track> _queue = [];
   int _currentIndex = -1;
@@ -19,7 +21,9 @@ class PlayerProvider with ChangeNotifier {
 
   void Function(Track track)? onTrackStarted;
 
-  PlayerProvider({TrackService? trackService}) : _trackService = trackService {
+  PlayerProvider({TrackService? trackService, UserService? userService})
+      : _trackService = trackService,
+        _userService = userService {
     _player.playerStateStream.listen((state) {
       _isPlaying = state.playing;
       notifyListeners();
@@ -110,7 +114,7 @@ class PlayerProvider with ChangeNotifier {
     // Background fetch full track details to populate missing data (counts, artwork)
     _trackService
         ?.getTrackById(track.id)
-        .then((fullTrack) {
+        .then((fullTrack) async {
           if (fullTrack != null && _currentTrack?.id == track.id) {
             // Update both the original object and the current track object
             track.artworkUrl = fullTrack.artworkUrl;
@@ -120,13 +124,28 @@ class PlayerProvider with ChangeNotifier {
             track.isLiked = fullTrack.isLiked;
             track.isReposted = fullTrack.isReposted;
 
+            if (fullTrack.artistName == 'Unknown Artist' &&
+                fullTrack.artistId != null) {
+              try {
+                final profile =
+                    await _userService?.getPublicProfile(fullTrack.artistId!);
+                if (profile != null) {
+                  fullTrack.artistName = profile.displayName;
+                  track.artistName = profile.displayName;
+                }
+              } catch (e) {
+                debugPrint('Error enriching artist in player: $e');
+              }
+            }
+
             _currentTrack = fullTrack;
             notifyListeners();
           }
         })
-        .catchError(
-          (e) => debugPrint('Error fetching track details in player: $e'),
-        );
+        .catchError((e) {
+          debugPrint('Error fetching track details in player: $e');
+          return null;
+        });
 
     onTrackStarted?.call(track);
     // Record eagerly so it shows up in history immediately

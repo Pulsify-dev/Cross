@@ -23,7 +23,7 @@ import 'features/search/services/search_service.dart';
 import 'features/search/services/api_search_service.dart';
 import 'routes/app_routes.dart';
 import 'routes/route_names.dart';
-import 'features/feed/models/feed_item.dart';
+
 
 void main() {
   runApp(const PulsifyApp());
@@ -68,8 +68,10 @@ class PulsifyApp extends StatelessWidget {
         ),
 
         ChangeNotifierProxyProvider<FeedProvider, PlayerProvider>(
-          create: (context) =>
-              PlayerProvider(trackService: context.read<TrackService>()),
+          create: (context) => PlayerProvider(
+            trackService: context.read<TrackService>(),
+            userService: context.read<UserService>(),
+          ),
           update: (context, feedProvider, playerProvider) {
             return playerProvider!;
           },

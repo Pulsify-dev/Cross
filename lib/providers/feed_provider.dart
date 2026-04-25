@@ -148,6 +148,7 @@ class FeedProvider with ChangeNotifier {
       );
       _listeningHistory = entries;
       _hasMoreHistory = entries.length >= _historyLimit;
+      _enrichHistoryArtists(entries);
     } catch (e) {
       _error = e.toString();
     } finally {
@@ -171,6 +172,7 @@ class FeedProvider with ChangeNotifier {
       );
       _listeningHistory = [..._listeningHistory, ...entries];
       _hasMoreHistory = entries.length >= _historyLimit;
+      _enrichHistoryArtists(entries);
     } catch (e) {
       _historyPage--; // rollback on error
       _error = e.toString();
@@ -278,6 +280,26 @@ class FeedProvider with ChangeNotifier {
       }
     } catch (e) {
       debugPrint('Error checking repost status: $e');
+    }
+  }
+
+  Future<void> _enrichHistoryArtists(List<HistoryEntry> entries) async {
+    for (final entry in entries) {
+      if ((entry.track.artistName == 'Unknown Artist' ||
+              entry.track.artistName.isEmpty) &&
+          entry.track.artistId != null &&
+          entry.track.artistId!.isNotEmpty) {
+        try {
+          final profile =
+              await _userService.getPublicProfile(entry.track.artistId!);
+          if (profile != null) {
+            entry.track.artistName = profile.displayName;
+            notifyListeners();
+          }
+        } catch (e) {
+          debugPrint('Error enriching artist ${entry.track.artistId}: $e');
+        }
+      }
     }
   }
 
