@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/conversations_provider.dart';
+import '../../../providers/notifications_provider.dart';
 import '../../../routes/route_names.dart';
+import '../models/notification_model.dart';
 
 class MessagesScreen extends StatefulWidget {
   const MessagesScreen({super.key});
@@ -18,17 +20,30 @@ class _MessagesScreenState extends State<MessagesScreen>
   String _selectedNotificationFilter = 'Likes';
   String _selectedMessageFilter = 'All Messages';
 
-  static const _notificationFilters = ['Likes', 'Comments', 'Reposts'];
+  static const _notificationFilters = ['Likes', 'Comments', 'Reposts', 'Followers'];
   static const _messageFilters = ['All Messages', 'Unread Messages'];
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final notificationsProvider = context.read<NotificationsProvider>();
+      if (notificationsProvider.notifications.isEmpty) {
+        notificationsProvider.refresh();
+      }
+    });
     _tabController.addListener(() {
       setState(() {});
-      if (!_tabController.indexIsChanging && _tabController.index == 1) {
-        context.read<ConversationsProvider>().loadConversations();
+      if (!_tabController.indexIsChanging) {
+        if (_tabController.index == 1) {
+          context.read<ConversationsProvider>().loadConversations();
+        } else {
+          final notificationsProvider = context.read<NotificationsProvider>();
+          if (notificationsProvider.notifications.isEmpty) {
+            notificationsProvider.refresh();
+          }
+        }
       }
     });
   }
@@ -85,6 +100,10 @@ class _MessagesScreenState extends State<MessagesScreen>
 
   @override
   Widget build(BuildContext context) {
+    final unreadCount = context.select<NotificationsProvider, int>(
+      (p) => p.unreadCount,
+    );
+
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
@@ -93,7 +112,16 @@ class _MessagesScreenState extends State<MessagesScreen>
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: const Text('Activity'),
-        actions: [_buildSettingsButton(context)],
+        actions: [
+          if (_isNotificationsTab)
+            TextButton(
+              onPressed: unreadCount > 0
+                  ? () => context.read<NotificationsProvider>().markAllAsRead()
+                  : null,
+              child: const Text('Mark all as read'),
+            ),
+          _buildSettingsButton(context),
+        ],
         bottom: TabBar(
           controller: _tabController,
           tabs: const [Tab(text: 'Notifications'), Tab(text: 'Messages')],
@@ -102,12 +130,76 @@ class _MessagesScreenState extends State<MessagesScreen>
       body: TabBarView(
         controller: _tabController,
         children: [
-          Center(
-            child: Text('Notifications – $_selectedNotificationFilter'),
-          ),
+          _buildNotificationsTab(),
           _buildMessagesTab(),
         ],
       ),
+    );
+  }
+
+  Widget _buildNotificationsTab() {
+    return Consumer<NotificationsProvider>(
+      builder: (context, provider, _) {
+        if (provider.isLoading && provider.notifications.isEmpty) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        final items = provider.filtered(_selectedNotificationFilter);
+
+        if (items.isEmpty) {
+          return RefreshIndicator(
+            onRefresh: provider.refresh,
+            child: ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              children: [
+                const SizedBox(height: 120),
+                Center(
+                  child: Text(
+                    'No $_selectedNotificationFilter notifications yet.',
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
+        return NotificationListener<ScrollNotification>(
+          onNotification: (scroll) {
+            if (scroll.metrics.pixels >=
+                scroll.metrics.maxScrollExtent - 160) {
+              provider.loadMore();
+            }
+            return false;
+          },
+          child: RefreshIndicator(
+            onRefresh: provider.refresh,
+            child: ListView.separated(
+              physics: const AlwaysScrollableScrollPhysics(),
+              itemCount: items.length + (provider.isLoadingMore ? 1 : 0),
+              separatorBuilder: (_, __) => const Divider(height: 1),
+              itemBuilder: (context, index) {
+                if (index >= items.length) {
+                  return const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 12),
+                    child: Center(child: CircularProgressIndicator()),
+                  );
+                }
+
+                final notification = items[index];
+                return _NotificationTile(
+                  notification: notification,
+                  onTap: () {
+                    context.read<NotificationsProvider>().markAsRead(
+                      notification.id,
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -214,5 +306,63 @@ class _MessagesScreenState extends State<MessagesScreen>
         );
       },
     );
+  }
+}
+
+class _NotificationTile extends StatelessWidget {
+  final AppNotification notification;
+  final VoidCallback onTap;
+
+  const _NotificationTile({
+    required this.notification,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final hasAvatar =
+        notification.actorAvatarUrl != null &&
+        notification.actorAvatarUrl!.trim().isNotEmpty;
+
+    return ListTile(
+      onTap: onTap,
+      tileColor: notification.isRead
+          ? null
+          : theme.colorScheme.primary.withValues(alpha: 0.08),
+      leading: CircleAvatar(
+        backgroundImage:
+            hasAvatar ? NetworkImage(notification.actorAvatarUrl!.trim()) : null,
+        child: !hasAvatar
+            ? Text(
+                notification.actorDisplayName.isNotEmpty
+                    ? notification.actorDisplayName[0].toUpperCase()
+                    : '?',
+              )
+            : null,
+      ),
+      title: Text(
+        '${notification.actorDisplayName} ${notification.actionType.label}',
+        style: TextStyle(
+          fontWeight: notification.isRead ? FontWeight.w500 : FontWeight.w700,
+        ),
+      ),
+      subtitle: Text(_relativeTime(notification.createdAt)),
+      trailing: notification.isRead
+          ? null
+          : CircleAvatar(
+              radius: 5,
+              backgroundColor: theme.colorScheme.primary,
+            ),
+    );
+  }
+
+  String _relativeTime(DateTime dateTime) {
+    final diff = DateTime.now().difference(dateTime);
+    if (diff.inSeconds < 60) return 'Just now';
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+    if (diff.inHours < 24) return '${diff.inHours}h ago';
+    if (diff.inDays < 7) return '${diff.inDays}d ago';
+    return '${dateTime.year}-${dateTime.month.toString().padLeft(2, '0')}-${dateTime.day.toString().padLeft(2, '0')}';
   }
 }

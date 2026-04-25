@@ -16,14 +16,15 @@ import 'providers/search_provider.dart';
 import 'providers/social_provider.dart';
 import 'providers/upload_provider.dart';
 import 'providers/conversations_provider.dart';
+import 'providers/notifications_provider.dart';
 import 'features/messages/services/messaging_service.dart';
 import 'features/messages/services/api_messaging_service.dart';
+import 'features/messages/services/api_notification_service.dart';
 import 'features/messages/services/socket_service.dart';
 import 'features/search/services/search_service.dart';
 import 'features/search/services/api_search_service.dart';
 import 'routes/app_routes.dart';
 import 'routes/route_names.dart';
-import 'features/feed/models/feed_item.dart';
 
 void main() {
   runApp(const PulsifyApp());
@@ -78,6 +79,9 @@ class PulsifyApp extends StatelessWidget {
           create: (context) =>
               ApiMessagingService(context.read<ApiService>()),
         ),
+        Provider<ApiNotificationService>(
+          create: (context) => ApiNotificationService(context.read<ApiService>()),
+        ),
         Provider<SocketService>(
           create: (_) => SocketService(),
           dispose: (_, service) => service.dispose(),
@@ -85,6 +89,16 @@ class PulsifyApp extends StatelessWidget {
         ChangeNotifierProxyProvider<AuthProvider, ConversationsProvider>(
           create: (context) => ConversationsProvider(
             context.read<MessagingService>(),
+            context.read<SocketService>(),
+          ),
+          update: (_, authProvider, provider) {
+            provider!.setCurrentUser(authProvider.currentUser?.id);
+            return provider;
+          },
+        ),
+        ChangeNotifierProxyProvider<AuthProvider, NotificationsProvider>(
+          create: (context) => NotificationsProvider(
+            context.read<ApiNotificationService>(),
             context.read<SocketService>(),
           ),
           update: (_, authProvider, provider) {

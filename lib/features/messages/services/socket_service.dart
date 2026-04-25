@@ -11,12 +11,16 @@ class SocketService {
       StreamController<Map<String, dynamic>>.broadcast();
   final _readController =
       StreamController<Map<String, dynamic>>.broadcast();
+  final _notificationController =
+      StreamController<Map<String, dynamic>>.broadcast();
 
   SocketService({SessionService? sessionService})
       : _sessionService = sessionService ?? SessionService();
 
   Stream<Map<String, dynamic>> get onMessageNew => _messageController.stream;
   Stream<Map<String, dynamic>> get onConversationRead => _readController.stream;
+  Stream<Map<String, dynamic>> get onNotificationNew =>
+      _notificationController.stream;
 
   bool get isConnected => _socket?.connected ?? false;
 
@@ -47,6 +51,12 @@ class SocketService {
       }
     });
 
+    _socket!.on('new_notification', (data) {
+      if (data is Map && !_notificationController.isClosed) {
+        _notificationController.add(Map<String, dynamic>.from(data));
+      }
+    });
+
     _socket!.connect();
   }
 
@@ -73,6 +83,14 @@ class SocketService {
     );
   }
 
+  void joinNotifications() {
+    _socket?.emitWithAck('join_notifications', null, ack: (_) {});
+  }
+
+  void leaveNotifications() {
+    _socket?.emitWithAck('leave_notifications', null, ack: (_) {});
+  }
+
   void disconnect() {
     _socket?.disconnect();
     _socket = null;
@@ -82,5 +100,6 @@ class SocketService {
     disconnect();
     _messageController.close();
     _readController.close();
+    _notificationController.close();
   }
 }
