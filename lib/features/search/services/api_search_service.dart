@@ -62,6 +62,32 @@ class ApiSearchService implements SearchService {
           }));
         }
         
+        // Enrich the playlists in parallel
+        if (searchResult.playlists.isNotEmpty) {
+          await Future.wait(searchResult.playlists.asMap().entries.map((entry) async {
+            final index = entry.key;
+            final playlist = entry.value;
+            try {
+              final response = await _apiService.get('/v1/playlists/${playlist.id}');
+              if (response != null && response['data'] != null) {
+                final fullPlaylist = Playlist.fromJson(response['data']);
+                if (fullPlaylist.creator != null) {
+                  searchResult.playlists[index] = Playlist(
+                    id: playlist.id,
+                    name: fullPlaylist.name.isNotEmpty ? fullPlaylist.name : playlist.name,
+                    description: fullPlaylist.description ?? playlist.description,
+                    artworkUrl: fullPlaylist.artworkUrl ?? playlist.artworkUrl,
+                    creator: fullPlaylist.creator,
+                    trackCount: fullPlaylist.trackCount,
+                    tracks: fullPlaylist.tracks,
+                  );
+                }
+              }
+            } catch (e) {
+              // Ignore individual fetch errors
+            }
+          }));
+        }
         return searchResult;
       }
     } catch (e) {

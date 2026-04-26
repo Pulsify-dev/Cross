@@ -416,12 +416,27 @@ class _SearchScreenState extends State<SearchScreen> {
                 : null,
           ),
           title: Text(playlist.name),
-          subtitle: Text(
-            '${playlist.trackCount} tracks • ${playlist.creator?.displayName ?? 'Unknown'}',
+          subtitle: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (playlist.creator?.profileImageUrl != null) ...[
+                CircleAvatar(
+                  radius: 8,
+                  backgroundImage: NetworkImage(playlist.creator!.profileImageUrl!),
+                ),
+                const SizedBox(width: 4),
+              ],
+              Flexible(
+                child: Text(
+                  '${playlist.trackCount} tracks • ${playlist.creator?.displayName ?? 'Unknown'}',
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
           ),
-          onTap: () {
-            // Navigate to playlist details
-          },
+          // onTap: () {
+          //   // TODO: Implement playlist navigation when team completes the function
+          // },
         );
       },
     );
@@ -456,9 +471,9 @@ class _SearchScreenState extends State<SearchScreen> {
           ),
           title: Text(album.title),
           subtitle: Text('${album.trackCount} tracks • ${album.artistName}'),
-          onTap: () {
-            // Navigate to album details
-          },
+          // onTap: () {
+          //   // TODO: Implement album navigation when team completes the function
+          // },
         );
       },
     );

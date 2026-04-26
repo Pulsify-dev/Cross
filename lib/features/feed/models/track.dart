@@ -46,12 +46,15 @@ class Track {
     // Handle nested structures if present
     final json = (rawJson['track'] is Map<String, dynamic>)
         ? rawJson['track'] as Map<String, dynamic>
+        : (rawJson['track_id'] is Map<String, dynamic>)
+        ? rawJson['track_id'] as Map<String, dynamic>
         : (rawJson['data'] is Map<String, dynamic>)
         ? rawJson['data'] as Map<String, dynamic>
         : rawJson;
 
     String normalizeUrl(String? url) {
       if (url == null || url.isEmpty) return '';
+      if (url.endsWith('Default.png') || url.endsWith('default.png')) return '';
       if (url.startsWith('http')) return url;
 
       // If it starts with // it's a protocol-relative URL
