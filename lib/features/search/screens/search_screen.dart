@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../providers/search_provider.dart';
 import '../../../providers/feed_provider.dart';
 import '../../../providers/player_provider.dart';
 import '../../../routes/route_names.dart';
 import '../../feed/widgets/track_tile.dart';
 import '../../player/screens/track_details_screen.dart';
+import '../../social/widgets/avatar_url_utils.dart';
 import '../models/search_models.dart';
 
 class SearchScreen extends StatefulWidget {
@@ -365,11 +367,12 @@ class _SearchScreenState extends State<SearchScreen> {
         final user = users[index];
         return ListTile(
           leading: CircleAvatar(
-            backgroundImage: user.profileImageUrl != null
+            backgroundColor: AppColors.surfaceElevated,
+            backgroundImage: isValidNetworkAvatarUrl(user.profileImageUrl)
                 ? NetworkImage(user.profileImageUrl!)
                 : null,
-            child: user.profileImageUrl == null
-                ? const Icon(Icons.person)
+            child: !isValidNetworkAvatarUrl(user.profileImageUrl)
+                ? const Icon(Icons.person, color: Color.fromARGB(255, 220, 218, 218))
                 : null,
           ),
           title: Text(user.displayName),

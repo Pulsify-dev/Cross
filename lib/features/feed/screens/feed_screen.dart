@@ -64,7 +64,10 @@ class _FeedScreenState extends State<FeedScreen>
                       color: Colors.black.withValues(alpha: 0.3),
                       borderRadius: BorderRadius.circular(25),
                     ),
-                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 4,
+                      vertical: 4,
+                    ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -74,20 +77,6 @@ class _FeedScreenState extends State<FeedScreen>
                     ),
                   ),
                 ],
-              ),
-            ),
-          ),
-          
-          // More options button (Top right)
-          SafeArea(
-            child: Align(
-              alignment: Alignment.topRight,
-              child: Padding(
-                padding: const EdgeInsets.only(top: 8, right: 8),
-                child: IconButton(
-                  icon: const Icon(Icons.more_vert, color: Colors.white),
-                  onPressed: () {},
-                ),
               ),
             ),
           ),
@@ -106,13 +95,17 @@ class _FeedScreenState extends State<FeedScreen>
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.grey.withValues(alpha: 0.5) : Colors.transparent,
+          color: isSelected
+              ? Colors.grey.withValues(alpha: 0.5)
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
         ),
         child: Text(
           label,
           style: TextStyle(
-            color: isSelected ? Colors.white : Colors.white.withValues(alpha: 0.6),
+            color: isSelected
+                ? Colors.white
+                : Colors.white.withValues(alpha: 0.6),
             fontWeight: FontWeight.bold,
             fontSize: 16,
           ),
@@ -166,8 +159,9 @@ class _FeedScreenState extends State<FeedScreen>
                     height: MediaQuery.of(context).size.height * 0.75,
                     decoration: BoxDecoration(
                       color: Theme.of(context).scaffoldBackgroundColor,
-                      borderRadius:
-                          const BorderRadius.vertical(top: Radius.circular(20)),
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(20),
+                      ),
                     ),
                     child: TrackCommentsScreen(track: item.track),
                   ),
@@ -231,8 +225,9 @@ class _FeedScreenState extends State<FeedScreen>
                     height: MediaQuery.of(context).size.height * 0.75,
                     decoration: BoxDecoration(
                       color: Theme.of(context).scaffoldBackgroundColor,
-                      borderRadius:
-                          const BorderRadius.vertical(top: Radius.circular(20)),
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(20),
+                      ),
                     ),
                     child: TrackCommentsScreen(track: item.track),
                   ),
