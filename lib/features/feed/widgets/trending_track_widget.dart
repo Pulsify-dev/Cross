@@ -91,7 +91,7 @@ class _TrendingTrackWidgetState extends State<TrendingTrackWidget> {
                     ),
                   ),
                   selected: isSelected,
-                  selectedColor: Colors.transparent,
+                  selectedColor: const Color(0xFFA55EFC).withValues(alpha: 0.15),
                   backgroundColor: Colors.transparent,
                   side: BorderSide(
                     color: isSelected ? const Color(0xFFA55EFC) : Colors.white.withValues(alpha: 0.8),
@@ -146,9 +146,20 @@ class _TrendingTrackWidgetState extends State<TrendingTrackWidget> {
           );
         }
 
-        return SizedBox(
-          height:
-              280, // Increased height to avoid yellow overflow bar for 3 items
+        return Container(
+          decoration: BoxDecoration(
+            gradient: RadialGradient(
+              center: Alignment.centerLeft,
+              radius: 1.8,
+              colors: [
+                const Color(0xFFA55EFC).withValues(alpha: 0.25),
+                Colors.transparent,
+              ],
+              stops: const [0.0, 0.6],
+            ),
+          ),
+          child: SizedBox(
+            height: 280, // Increased height to avoid yellow overflow bar for 3 items
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -166,6 +177,7 @@ class _TrendingTrackWidgetState extends State<TrendingTrackWidget> {
               );
             },
           ),
+        ),
         );
       },
     );
