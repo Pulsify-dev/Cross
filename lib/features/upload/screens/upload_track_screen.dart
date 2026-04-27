@@ -43,6 +43,7 @@ class _UploadTrackScreenState extends State<UploadTrackScreen> {
     'Afrobeats', 'House', 'Techno', 'Lo-Fi', 'Other',
   ];
   final TextEditingController _descriptionController = TextEditingController();
+  final TextEditingController _lyricsController = TextEditingController();
   final TextEditingController _tagsController = TextEditingController();
 
   String? _selectedAudioFile;
@@ -123,6 +124,7 @@ class _UploadTrackScreenState extends State<UploadTrackScreen> {
       _titleController,
       _collaboratorsController,
       _descriptionController,
+      _lyricsController,
       _tagsController,
     ]) {
       controller.addListener(_markDraftChanged);
@@ -134,6 +136,7 @@ class _UploadTrackScreenState extends State<UploadTrackScreen> {
       _titleController,
       _collaboratorsController,
       _descriptionController,
+      _lyricsController,
       _tagsController,
     ]) {
       controller.removeListener(_markDraftChanged);
@@ -235,6 +238,7 @@ class _UploadTrackScreenState extends State<UploadTrackScreen> {
     _titleController.dispose();
     _collaboratorsController.dispose();
     _descriptionController.dispose();
+    _lyricsController.dispose();
     _tagsController.dispose();
     super.dispose();
   }
@@ -308,6 +312,7 @@ class _UploadTrackScreenState extends State<UploadTrackScreen> {
         .toList(),
       genre: genre,
       description: _descriptionController.text.trim(),
+      lyrics: _lyricsController.text.trim().isEmpty ? null : _lyricsController.text.trim(),
       tags: tags,
       // Upload screen defaults to private; privacy can be changed in edit screen.
       privacy: UploadTrackPrivacy.private.name,
@@ -490,6 +495,14 @@ class _UploadTrackScreenState extends State<UploadTrackScreen> {
           controller: _descriptionController,
           hintText: 'Describe your track',
           maxLines: 4,
+        ),
+        const SizedBox(height: 18),
+
+        const TrackFormSectionLabel(text: 'Lyrics'),
+        TrackTextField(
+          controller: _lyricsController,
+          hintText: 'Enter track lyrics...',
+          maxLines: 8,
         ),
         const SizedBox(height: 18),
 

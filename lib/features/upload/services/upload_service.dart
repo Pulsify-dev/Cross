@@ -98,6 +98,10 @@ class UploadService {
 			body['preview_start_seconds'] = track.previewStartSeconds.toString();
 		}
 
+		if (track.lyrics != null && track.lyrics!.trim().isNotEmpty) {
+			body['lyrics'] = track.lyrics!.trim();
+		}
+
 		_logCreateTrackRequest(
 			track: track,
 			fields: body,
@@ -262,6 +266,20 @@ class UploadService {
 		return track;
 	}
 
+	Future<String?> getTrackLyrics(String trackId) async {
+		if (trackId.trim().isEmpty) {
+			throw const ApiException('Track id is required.');
+		}
+
+		final response = await _apiService.get(
+			ApiEndpoints.trackLyrics(trackId),
+			authRequired: true,
+		);
+
+		if (response is! Map<String, dynamic>) return null;
+		return response['lyrics']?.toString();
+	}
+
 	Future<UploadModel?> updateTrackMetadata({
 		required String trackId,
 		String? title,
@@ -270,6 +288,7 @@ class UploadService {
 		List<String>? tags,
 		String? privacy,
 		int? previewStartSeconds,
+		String? lyrics,
 	}) async {
 		if (trackId.trim().isEmpty) {
 			throw const ApiException('Track id is required for metadata update.');
@@ -282,6 +301,7 @@ class UploadService {
 		if (tags != null) body['tags'] = tags;
 		if (privacy != null) body['visibility'] = privacy;
 		if (previewStartSeconds != null) body['preview_start_seconds'] = previewStartSeconds;
+		if (lyrics != null) body['lyrics'] = lyrics;
 
 		if (body.isEmpty) {
 			throw const ApiException('No valid metadata fields to update.');

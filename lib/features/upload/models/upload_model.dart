@@ -33,6 +33,7 @@ class UploadModel {
 		this.isHidden = false,
 		this.artworkBytes,
 		this.previewStartSeconds,
+		this.lyrics,
 	});
 
 	final String id;
@@ -55,6 +56,7 @@ class UploadModel {
 	// Local/UI-only image bytes for previews; never sent to or read from backend JSON.
 	final Uint8List? artworkBytes;
 	final int? previewStartSeconds;
+	final String? lyrics;
 
 	UploadTrackPrivacy get privacyValue => _privacyFromJson(privacy);
 
@@ -78,6 +80,7 @@ class UploadModel {
 		bool? isHidden,
 		Uint8List? artworkBytes,
 		int? previewStartSeconds,
+		String? lyrics,
 	}) {
 		return UploadModel(
 			id: id ?? this.id,
@@ -100,6 +103,7 @@ class UploadModel {
 			isHidden: isHidden ?? this.isHidden,
 			artworkBytes: artworkBytes ?? this.artworkBytes,
 			previewStartSeconds: previewStartSeconds ?? this.previewStartSeconds,
+			lyrics: lyrics ?? this.lyrics,
 		);
 	}
 
@@ -161,6 +165,7 @@ class UploadModel {
 			previewStartSeconds: _tryParseInt(
 				json['preview_start_seconds'] ?? json['previewStartSeconds'],
 			),
+			lyrics: json['lyrics']?.toString(),
 			// Intentionally omitted from JSON (local in-memory UI state only).
 			artworkBytes: null,
 		);
@@ -186,6 +191,7 @@ class UploadModel {
 			'processingErrorMessage': processingErrorMessage,
 			'isHidden': isHidden,
 			'previewStartSeconds': previewStartSeconds,
+			'lyrics': lyrics,
 			// artworkBytes intentionally excluded from JSON serialization.
 		};
 	}
