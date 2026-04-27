@@ -127,7 +127,8 @@ class FeedProvider with ChangeNotifier {
     _setLoading(true);
     _error = null;
     try {
-      _feed = await _trackService.getFeed(authRequired: true);
+      final fetchedFeed = await _trackService.getFeed(authRequired: true);
+      _feed = fetchedFeed.where((item) => item.track != null).toList();
       _syncFeedItemStatuses(_feed);
     } catch (e) {
       _error = e.toString();
@@ -141,7 +142,8 @@ class FeedProvider with ChangeNotifier {
     notifyListeners();
     _error = null;
     try {
-      _discoveryFeed = await _trackService.getFeed(authRequired: false);
+      final fetchedDiscoveryFeed = await _trackService.getFeed(authRequired: false);
+      _discoveryFeed = fetchedDiscoveryFeed.where((item) => item.track != null).toList();
       _syncFeedItemStatuses(_discoveryFeed);
     } catch (e) {
       _error = e.toString();
@@ -411,6 +413,6 @@ class FeedProvider with ChangeNotifier {
   }
 
   void _syncFeedItemStatuses(List<FeedItem> items) {
-    _syncTrackStatuses(items.map((e) => e.track).toList());
+    _syncTrackStatuses(items.map((e) => e.track).whereType<Track>().toList());
   }
 }

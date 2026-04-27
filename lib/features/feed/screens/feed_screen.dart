@@ -136,20 +136,20 @@ class _FeedScreenState extends State<FeedScreen>
           itemBuilder: (context, index) {
             final item = provider.discoveryFeed[index];
             return VerticalFeedItem(
-              track: item.track,
+              track: item.track!,
               onPlay: () {
                 context.read<PlayerProvider>().playTrack(
-                  item.track,
-                  playlist: provider.discoveryFeed.map((e) => e.track).toList(),
+                  item.track!,
+                  playlist: provider.discoveryFeed.map((e) => e.track!).toList(),
                 );
               },
               onDetails: () {
                 Navigator.of(
                   context,
-                ).pushNamed(RouteNames.trackDetails, arguments: item.track);
+                ).pushNamed(RouteNames.trackDetails, arguments: item.track!);
               },
-              onLikeToggle: () => provider.toggleLike(item.track),
-              onRepostToggle: () => provider.toggleRepost(item.track),
+              onLikeToggle: () => provider.toggleLike(item.track!),
+              onRepostToggle: () => provider.toggleRepost(item.track!),
               onCommentTap: () {
                 showModalBottomSheet(
                   context: context,
@@ -163,12 +163,12 @@ class _FeedScreenState extends State<FeedScreen>
                         top: Radius.circular(20),
                       ),
                     ),
-                    child: TrackCommentsScreen(track: item.track),
+                    child: TrackCommentsScreen(track: item.track!),
                   ),
                 );
               },
               onFollowTap: () {
-                final targetId = item.track.uploader?.id ?? item.track.artistId;
+                final targetId = item.track!.uploader?.id ?? item.track!.artistId;
                 if (targetId != null) {
                   provider.toggleFollow(targetId);
                 }
@@ -202,20 +202,20 @@ class _FeedScreenState extends State<FeedScreen>
           itemBuilder: (context, index) {
             final item = provider.feed[index];
             return VerticalFeedItem(
-              track: item.track,
+              track: item.track!,
               onPlay: () {
                 context.read<PlayerProvider>().playTrack(
-                  item.track,
-                  playlist: provider.feed.map((e) => e.track).toList(),
+                  item.track!,
+                  playlist: provider.feed.map((e) => e.track!).toList(),
                 );
               },
               onDetails: () {
                 Navigator.of(
                   context,
-                ).pushNamed(RouteNames.trackDetails, arguments: item.track);
+                ).pushNamed(RouteNames.trackDetails, arguments: item.track!);
               },
-              onLikeToggle: () => provider.toggleLike(item.track),
-              onRepostToggle: () => provider.toggleRepost(item.track),
+              onLikeToggle: () => provider.toggleLike(item.track!),
+              onRepostToggle: () => provider.toggleRepost(item.track!),
               onCommentTap: () {
                 showModalBottomSheet(
                   context: context,
@@ -229,12 +229,12 @@ class _FeedScreenState extends State<FeedScreen>
                         top: Radius.circular(20),
                       ),
                     ),
-                    child: TrackCommentsScreen(track: item.track),
+                    child: TrackCommentsScreen(track: item.track!),
                   ),
                 );
               },
               onFollowTap: () {
-                final targetId = item.track.uploader?.id ?? item.track.artistId;
+                final targetId = item.track!.uploader?.id ?? item.track!.artistId;
                 if (targetId != null) {
                   provider.toggleFollow(targetId);
                 }
