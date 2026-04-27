@@ -8,6 +8,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../../utils/number_formatter.dart';
 import '../widgets/scrolling_waveform_widget.dart';
 import '../../../providers/engagement_provider.dart';
+import '../../feed/services/track_service.dart';
 
 class TrackDetailsScreen extends StatefulWidget {
   final Track track;
@@ -22,7 +23,10 @@ class _TrackDetailsScreenState extends State<TrackDetailsScreen>
     with TickerProviderStateMixin {
   bool _followingPlayer = false;
   bool _controlsVisible = false;
+  bool _showLyrics = false;
   Timer? _hideTimer;
+  String? _lyrics;
+  bool _isLoadingLyrics = false;
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
 
@@ -98,6 +102,30 @@ class _TrackDetailsScreenState extends State<TrackDetailsScreen>
         }
       }
     });
+  }
+
+  Future<void> _fetchLyrics() async {
+    if (_lyrics != null || _isLoadingLyrics) return;
+    setState(() => _isLoadingLyrics = true);
+    try {
+      final service = Provider.of<TrackService>(context, listen: false);
+      final fetched = await service.getTrackLyrics(widget.track.id);
+      if (mounted) {
+        setState(() {
+          _lyrics = fetched ?? 'No lyrics available for this track.';
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _lyrics = 'Failed to load lyrics.';
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoadingLyrics = false);
+      }
+    }
   }
 
   @override
@@ -178,6 +206,37 @@ class _TrackDetailsScreenState extends State<TrackDetailsScreen>
                     ),
                   ),
                 ),
+
+                // Lyrics View
+                if (_showLyrics)
+                  Positioned.fill(
+                    child: GestureDetector(
+                      onTap: _toggleControls,
+                      child: Container(
+                        color: Colors.black.withValues(alpha: 0.85),
+                        padding: EdgeInsets.only(
+                          top: 160,
+                          bottom: screenHeight * 0.4,
+                          left: 24,
+                          right: 24,
+                        ),
+                        child: _isLoadingLyrics 
+                          ? const Center(child: CircularProgressIndicator())
+                          : SingleChildScrollView(
+                          child: Text(
+                            _lyrics ?? 'No lyrics available for this track.',
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.9),
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              height: 1.5,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
 
                 // Controls overlay (centered on artwork)
                 Positioned.fill(
@@ -349,35 +408,81 @@ class _TrackDetailsScreenState extends State<TrackDetailsScreen>
                   ),
                 ),
                 const SizedBox(height: 12),
-                // "Behind this track" button
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.5),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.bar_chart_rounded,
-                        color: Colors.white.withValues(alpha: 0.7),
-                        size: 14,
+                // "Behind this track" and "Lyrics" buttons
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
                       ),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Behind this track',
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.9),
-                          fontSize: 11,
-                          fontWeight: FontWeight.w500,
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.5),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.bar_chart_rounded,
+                            color: Colors.white.withValues(alpha: 0.7),
+                            size: 14,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Behind this track',
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.9),
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _showLyrics = !_showLyrics;
+                        });
+                        if (_showLyrics) {
+                          _fetchLyrics();
+                        }
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: _showLyrics 
+                              ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.8)
+                              : Colors.black.withValues(alpha: 0.5),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.lyrics_rounded,
+                              color: Colors.white.withValues(alpha: 0.7),
+                              size: 14,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Lyrics',
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.9),
+                                fontSize: 11,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ],
             ),

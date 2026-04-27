@@ -549,4 +549,20 @@ class ApiTrackService implements TrackService {
     }
     return [];
   }
+
+  @override
+  Future<String?> getTrackLyrics(String trackId) async {
+    try {
+      final response = await _apiService.get(
+        ApiEndpoints.trackLyrics(trackId),
+        authRequired: true,
+      );
+      if (response != null && response is Map<String, dynamic>) {
+        return response['lyrics']?.toString();
+      }
+    } catch (e) {
+      debugPrint('Error fetching track lyrics: $e');
+    }
+    return null;
+  }
 }

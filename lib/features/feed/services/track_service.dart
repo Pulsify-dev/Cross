@@ -63,4 +63,5 @@ abstract class TrackService {
   Future<List<double>?> getTrackWaveform(String trackId);
   Future<String?> getStreamUrl(String trackId);
   Future<Map<String, dynamic>> getTrackStatus(String trackId);
+  Future<String?> getTrackLyrics(String trackId);
 }
