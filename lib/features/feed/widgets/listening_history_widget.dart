@@ -16,11 +16,10 @@ class _ListeningHistoryWidgetState extends State<ListeningHistoryWidget> {
   @override
   void initState() {
     super.initState();
-    // Fetch history if empty whenever this widget is mounted
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final feed = context.read<FeedProvider>();
-      if (feed.listeningHistory.isEmpty) {
-        feed.fetchListeningHistory();
+      if (feed.recentlyPlayed.isEmpty) {
+        feed.fetchRecentlyPlayed();
       }
     });
   }
@@ -29,15 +28,15 @@ class _ListeningHistoryWidgetState extends State<ListeningHistoryWidget> {
   Widget build(BuildContext context) {
     return Consumer<FeedProvider>(
       builder: (context, feedProvider, child) {
-        if (feedProvider.isHistoryLoading && feedProvider.listeningHistory.isEmpty) {
+        if (feedProvider.isHistoryLoading && feedProvider.recentlyPlayed.isEmpty) {
           return const Center(child: CircularProgressIndicator());
         }
 
-        if (feedProvider.listeningHistory.isEmpty) {
-          return const SizedBox.shrink(); // Don't show anything if history is empty
+        if (feedProvider.recentlyPlayed.isEmpty) {
+          return const SizedBox.shrink();
         }
 
-        final recentTracks = feedProvider.listeningHistory.take(3).toList();
+        final recentTracks = feedProvider.recentlyPlayed.take(4).toList();
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -48,7 +47,7 @@ class _ListeningHistoryWidgetState extends State<ListeningHistoryWidget> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Listening History',
+                    'Recently Played',
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
@@ -72,14 +71,13 @@ class _ListeningHistoryWidgetState extends State<ListeningHistoryWidget> {
               physics: const NeverScrollableScrollPhysics(),
               itemCount: recentTracks.length,
               itemBuilder: (context, index) {
-                final historyEntry = recentTracks[index];
-                final track = historyEntry.track;
+                final track = recentTracks[index];
                 return TrackTile(
                   track: track,
                   onPlay: () {
                     context.read<PlayerProvider>().playTrack(
                           track,
-                          playlist: feedProvider.listeningHistory.map((e) => e.track).toList(),
+                          playlist: feedProvider.recentlyPlayed,
                         );
                   },
                   onDetails: () {

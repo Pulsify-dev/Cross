@@ -15,6 +15,7 @@ class FeedProvider with ChangeNotifier {
   List<FeedItem> _feed = [];
   List<FeedItem> _discoveryFeed = [];
   List<HistoryEntry> _listeningHistory = [];
+  List<Track> _recentlyPlayed = [];
   List<Track> _likedTracks = [];
   List<Track> _userTracks = [];
   bool _isLoading = false;
@@ -37,6 +38,7 @@ class FeedProvider with ChangeNotifier {
   List<FeedItem> get feed => _feed;
   List<FeedItem> get discoveryFeed => _discoveryFeed;
   List<HistoryEntry> get listeningHistory => _listeningHistory;
+  List<Track> get recentlyPlayed => _recentlyPlayed;
   List<Track> get likedTracks => _likedTracks;
   List<Track> get userTracks => _userTracks;
   bool get isLoading => _isLoading;
@@ -166,6 +168,21 @@ class FeedProvider with ChangeNotifier {
       _listeningHistory = entries;
       _hasMoreHistory = entries.length >= _historyLimit;
       _enrichHistoryArtists(entries);
+    } catch (e) {
+      _error = e.toString();
+    } finally {
+      _isHistoryLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> fetchRecentlyPlayed() async {
+    _isHistoryLoading = true;
+    _error = null;
+    notifyListeners();
+    try {
+      _recentlyPlayed = await _trackService.getRecentlyPlayed();
+      _syncTrackStatuses(_recentlyPlayed);
     } catch (e) {
       _error = e.toString();
     } finally {

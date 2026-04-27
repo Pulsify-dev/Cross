@@ -249,6 +249,48 @@ class ApiTrackService implements TrackService {
   }
 
   @override
+  Future<List<Track>> getRecentlyPlayed({
+    int page = 1,
+    int limit = 20,
+  }) async {
+    try {
+      final response = await _apiService.get(
+        '${ApiEndpoints.recentlyPlayed}?page=$page&limit=$limit',
+        authRequired: true,
+      );
+
+      if (response != null && response is Map<String, dynamic>) {
+        final List<dynamic> tracksData =
+            (response['tracks'] ?? response['data'] ?? response['items'] ?? [])
+                as List;
+
+        final tracks = <Track>[];
+        for (final item in tracksData) {
+          try {
+            if (item is Map<String, dynamic>) {
+              // The API returns nested track objects: { "track": { ... } }
+              final trackJson = item['track'];
+              if (trackJson != null && trackJson is Map<String, dynamic>) {
+                // Also preserve the track_id if it's outside the nested object
+                if (trackJson['id'] == null && item['track_id'] != null) {
+                  trackJson['id'] = item['track_id'];
+                }
+                tracks.add(Track.fromJson(trackJson));
+              }
+            }
+          } catch (e) {
+            debugPrint('Error parsing individual recently played track: $e');
+          }
+        }
+        return tracks;
+      }
+    } catch (e) {
+      debugPrint('Error fetching recently played tracks: $e');
+    }
+    return [];
+  }
+
+  @override
   Future<List<HistoryEntry>> getListeningHistory({
     int page = 1,
     int limit = 20,

@@ -25,6 +25,10 @@ abstract class TrackService {
     int page = 1,
     int limit = 20,
   });
+  Future<List<Track>> getRecentlyPlayed({
+    int page = 1,
+    int limit = 20,
+  });
   Future<void> clearListeningHistory();
 
   Future<void> repostTrack(String trackId);
