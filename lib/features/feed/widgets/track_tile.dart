@@ -162,7 +162,7 @@ class _TrackTileState extends State<TrackTile> {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
-          if (currentTrack.status != null && currentTrack.status != 'Finished')
+          if (currentTrack.status != null && currentTrack.status!.toLowerCase() != 'finished')
             Container(
               margin: const EdgeInsets.only(top: 4),
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),

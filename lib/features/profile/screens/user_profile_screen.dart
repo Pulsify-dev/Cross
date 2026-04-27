@@ -585,7 +585,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
             return _buildTrackItem(
               imageUrl: track.artworkPathOrUrl,
               title: track.title,
-              subtitle: '${track.genre} • ${track.status.name}',
+              subtitle: track.genre,
               plays: '0 plays',
               imageBytes: track.artworkBytes,
               onMorePressed: () => _showUploadedTrackActions(track),
