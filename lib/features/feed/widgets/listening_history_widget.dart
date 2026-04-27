@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:just_audio/just_audio.dart';
 import '../../../providers/feed_provider.dart';
 import '../../../providers/player_provider.dart';
 import '../../../routes/route_names.dart';
@@ -11,8 +12,9 @@ class ListeningHistoryWidget extends StatefulWidget {
   @override
   State<ListeningHistoryWidget> createState() => _ListeningHistoryWidgetState();
 }
-
 class _ListeningHistoryWidgetState extends State<ListeningHistoryWidget> {
+  String? _lastTrackId;
+
   @override
   void initState() {
     super.initState();
@@ -21,7 +23,37 @@ class _ListeningHistoryWidgetState extends State<ListeningHistoryWidget> {
       if (feed.recentlyPlayed.isEmpty) {
         feed.fetchRecentlyPlayed();
       }
+      
+      // Listen to player changes to refresh recently played
+      final player = context.read<PlayerProvider>();
+      _lastTrackId = player.currentTrack?.id;
+      player.addListener(_onPlayerChanged);
     });
+  }
+
+  @override
+  void dispose() {
+    // Note: We need a reference to player that doesn't depend on context if we want to dispose safely,
+    // but in this case, the provider is likely still alive. 
+    // However, it's safer to get the provider in initState and store it.
+    super.dispose();
+  }
+
+  void _onPlayerChanged() {
+    if (!mounted) return;
+    final player = context.read<PlayerProvider>();
+    final currentId = player.currentTrack?.id;
+    final isCompleted = player.processingState == ProcessingState.completed;
+    
+    if ((currentId != _lastTrackId && currentId != null) || isCompleted) {
+      _lastTrackId = currentId;
+      // Delay slightly to give backend time to process the recordPlay call
+      Future.delayed(const Duration(seconds: 1), () {
+        if (mounted) {
+          context.read<FeedProvider>().fetchRecentlyPlayed();
+        }
+      });
+    }
   }
 
   @override

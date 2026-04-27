@@ -18,6 +18,7 @@ class PlayerProvider with ChangeNotifier {
   Duration _position = Duration.zero;
   final Map<String, List<double>> _waveformCache = {};
   Map<String, dynamic>? _currentStatus;
+  ProcessingState _processingState = ProcessingState.idle;
 
   void Function(Track track)? onTrackStarted;
 
@@ -40,11 +41,15 @@ class PlayerProvider with ChangeNotifier {
     });
 
     _player.processingStateStream.listen((state) {
+      _processingState = state;
       if (state == ProcessingState.completed) {
         _onTrackCompleted();
       }
+      notifyListeners();
     });
   }
+
+  ProcessingState get processingState => _processingState;
 
   Future<void> _onTrackCompleted() async {
     final completedTrackId = _currentTrack?.id;

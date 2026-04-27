@@ -183,6 +183,7 @@ class FeedProvider with ChangeNotifier {
     try {
       _recentlyPlayed = await _trackService.getRecentlyPlayed();
       _syncTrackStatuses(_recentlyPlayed);
+      _enrichTracks(_recentlyPlayed);
     } catch (e) {
       _error = e.toString();
     } finally {
@@ -357,24 +358,28 @@ class FeedProvider with ChangeNotifier {
     }
   }
 
-  Future<void> _enrichHistoryArtists(List<HistoryEntry> entries) async {
-    for (final entry in entries) {
-      if ((entry.track.artistName == 'Unknown Artist' ||
-              entry.track.artistName.isEmpty) &&
-          entry.track.artistId != null &&
-          entry.track.artistId!.isNotEmpty) {
+  Future<void> _enrichTracks(List<Track> tracks) async {
+    for (final track in tracks) {
+      if ((track.artistName == 'Unknown Artist' ||
+              track.artistName.isEmpty) &&
+          track.artistId != null &&
+          track.artistId!.isNotEmpty) {
         try {
           final profile =
-              await _userService.getPublicProfile(entry.track.artistId!);
+              await _userService.getPublicProfile(track.artistId!);
           if (profile != null) {
-            entry.track.artistName = profile.displayName;
+            track.artistName = profile.displayName;
             notifyListeners();
           }
         } catch (e) {
-          debugPrint('Error enriching artist ${entry.track.artistId}: $e');
+          debugPrint('Error enriching artist ${track.artistId}: $e');
         }
       }
     }
+  }
+
+  Future<void> _enrichHistoryArtists(List<HistoryEntry> entries) async {
+    await _enrichTracks(entries.map((e) => e.track).toList());
   }
 
   void cleanupUnlikedTracks() {
