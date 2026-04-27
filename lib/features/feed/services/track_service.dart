@@ -3,6 +3,7 @@ import '../models/track.dart';
 import '../models/history_entry.dart';
 import '../models/comment.dart';
 import '../models/user.dart';
+import '../models/discover_section.dart';
 
 abstract class TrackService {
   Future<List<Track>> getTrendingTracks({
@@ -21,6 +22,11 @@ abstract class TrackService {
     int limit = 20,
     bool authRequired = true,
   });
+  Future<List<Track>> getDiscoverFeed({
+    int page = 1,
+    int limit = 15,
+  });
+  Future<List<DiscoverSection>> getDiscoverHome();
   Future<List<HistoryEntry>> getListeningHistory({
     int page = 1,
     int limit = 20,

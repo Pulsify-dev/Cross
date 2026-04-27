@@ -5,6 +5,7 @@ import '../features/feed/models/feed_item.dart';
 import '../features/feed/models/track.dart';
 import '../features/feed/models/history_entry.dart';
 import '../features/feed/models/user.dart';
+import '../features/feed/models/discover_section.dart';
 import '../features/feed/services/track_service.dart';
 import '../features/feed/services/user_service.dart';
 
@@ -13,17 +14,18 @@ class FeedProvider with ChangeNotifier {
   final UserService _userService;
   List<Track> _trendingTracks = [];
   List<FeedItem> _feed = [];
-  List<FeedItem> _discoveryFeed = [];
+  List<Track> _discoveryFeed = [];
+  List<DiscoverSection> _discoverHomeSections = [];
   List<HistoryEntry> _listeningHistory = [];
   List<Track> _recentlyPlayed = [];
   List<Track> _likedTracks = [];
   List<Track> _userTracks = [];
   bool _isLoading = false;
   bool _isDiscoveryLoading = false;
+  bool _isDiscoverHomeLoading = false;
   bool _isTrendingLoading = false;
   String? _error;
   String? _selectedGenre;
-  List<User> _suggestedUsers = [];
 
   // History pagination
   int _historyPage = 1;
@@ -36,19 +38,20 @@ class FeedProvider with ChangeNotifier {
 
   List<Track> get trendingTracks => _trendingTracks;
   List<FeedItem> get feed => _feed;
-  List<FeedItem> get discoveryFeed => _discoveryFeed;
+  List<Track> get discoveryFeed => _discoveryFeed;
+  List<DiscoverSection> get discoverHomeSections => _discoverHomeSections;
   List<HistoryEntry> get listeningHistory => _listeningHistory;
   List<Track> get recentlyPlayed => _recentlyPlayed;
   List<Track> get likedTracks => _likedTracks;
   List<Track> get userTracks => _userTracks;
   bool get isLoading => _isLoading;
   bool get isDiscoveryLoading => _isDiscoveryLoading;
+  bool get isDiscoverHomeLoading => _isDiscoverHomeLoading;
   bool get isTrendingLoading => _isTrendingLoading;
   bool get isHistoryLoading => _isHistoryLoading;
   bool get hasMoreHistory => _hasMoreHistory;
   String? get error => _error;
   String? get selectedGenre => _selectedGenre;
-  List<User> get suggestedUsers => _suggestedUsers;
 
   final Map<String, int> _trackLikeCounts = {};
   final Set<String> _repostedTrackIds = {};
@@ -111,18 +114,6 @@ class FeedProvider with ChangeNotifier {
     }
   }
 
-  Future<void> fetchSuggestedUsers() async {
-    _setLoading(true);
-    _error = null;
-    try {
-      _suggestedUsers = await _userService.getSuggestedUsers();
-    } catch (e) {
-      _error = e.toString();
-    } finally {
-      _setLoading(false);
-    }
-  }
-
   Future<void> fetchFeed() async {
     _setLoading(true);
     _error = null;
@@ -142,13 +133,30 @@ class FeedProvider with ChangeNotifier {
     notifyListeners();
     _error = null;
     try {
-      final fetchedDiscoveryFeed = await _trackService.getFeed(authRequired: false);
-      _discoveryFeed = fetchedDiscoveryFeed.where((item) => item.track != null).toList();
-      _syncFeedItemStatuses(_discoveryFeed);
+      _discoveryFeed = await _trackService.getDiscoverFeed();
+      _syncTrackStatuses(_discoveryFeed);
     } catch (e) {
       _error = e.toString();
     } finally {
       _isDiscoveryLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> fetchDiscoverHome() async {
+    _isDiscoverHomeLoading = true;
+    notifyListeners();
+    _error = null;
+    try {
+      _discoverHomeSections = await _trackService.getDiscoverHome();
+      // Sync track statuses for all tracks across all sections
+      for (final section in _discoverHomeSections) {
+        _syncTrackStatuses(section.items);
+      }
+    } catch (e) {
+      _error = e.toString();
+    } finally {
+      _isDiscoverHomeLoading = false;
       notifyListeners();
     }
   }

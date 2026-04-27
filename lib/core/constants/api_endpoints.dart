@@ -86,6 +86,8 @@ class ApiEndpoints {
   static const String trendingTracks = '/trending';
   static const String charts = '/charts';
   static const String feed = '/feed';
+  static const String discoverFeed = '/feed/discover';
+  static const String discoverHome = '/discover';
 
   static String conversations({int page = 1, int limit = 20}) =>
       _withPagination('/conversations', page: page, limit: limit);
