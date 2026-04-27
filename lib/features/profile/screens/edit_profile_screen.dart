@@ -384,14 +384,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       .toList();
 
                   final socialLinks = {
-                    if (_instagramController.text.trim().isNotEmpty)
-                      'instagram': _instagramController.text.trim(),
-                    if (_xController.text.trim().isNotEmpty)
-                      'x': _xController.text.trim(),
-                    if (_facebookController.text.trim().isNotEmpty)
-                      'facebook': _facebookController.text.trim(),
-                    if (_websiteController.text.trim().isNotEmpty)
-                      'website': _websiteController.text.trim(),
+                    'instagram': _instagramController.text.trim(),
+                    'x': _xController.text.trim(),
+                    'facebook': _facebookController.text.trim(),
+                    'website': _websiteController.text.trim(),
                   };
 
                   try {
@@ -404,8 +400,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       favoriteGenres: favoriteGenres.isNotEmpty
                           ? favoriteGenres
                           : null,
-                      socialLinks:
-                          socialLinks.isNotEmpty ? socialLinks : null,
+                      socialLinks: socialLinks,
                       isPrivate: _isPrivate,
                     );
 

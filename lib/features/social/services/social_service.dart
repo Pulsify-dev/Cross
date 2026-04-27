@@ -563,6 +563,7 @@ class MockSocialService implements SocialService {
 				raw['uploadedTracks'] ?? raw['uploaded_tracks'] ?? raw['tracks'],
 			),
 			'playlists': _toStringList(raw['playlists']),
+			'social_links': raw['social_links'] ?? raw['socialLinks'] ?? const <String, String>{},
 		};
 	}
 
