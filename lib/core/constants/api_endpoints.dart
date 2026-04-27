@@ -105,6 +105,7 @@ class ApiEndpoints {
       '/conversations/$conversationId/read';
 
   static const String listeningHistory = '/users/me/history';
+  static const String recentlyPlayed = '/users/me/recently-played';
   static const String clearListeningHistory = '/users/me/history';
   static const String likedTracks = '/users/me/likes';
   static String trackRecordPlay(String trackId) => '/tracks/$trackId/play';

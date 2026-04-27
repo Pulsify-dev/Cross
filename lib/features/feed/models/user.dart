@@ -1,3 +1,5 @@
+import '../../../../core/constants/api_constants.dart';
+
 class User {
   final String id;
   final String username;
@@ -8,6 +10,7 @@ class User {
   final int followingCount;
   final int tracksCount;
   final String? bio;
+  final bool isFollowing;
 
   User({
     required this.id,
@@ -19,19 +22,37 @@ class User {
     this.followingCount = 0,
     this.tracksCount = 0,
     this.bio,
+    this.isFollowing = false,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
+    String? normalizeUrl(String? url) {
+      if (url == null || url.isEmpty) return null;
+      if (url.startsWith('http')) return url;
+      if (url.startsWith('//')) return 'https:$url';
+      final rootBase = ApiConstants.socketUrl.endsWith('/')
+          ? ApiConstants.socketUrl.substring(0, ApiConstants.socketUrl.length - 1)
+          : ApiConstants.socketUrl;
+      final path = url.startsWith('/') ? url : '/$url';
+      return '$rootBase$path';
+    }
+
     return User(
       id: json['id'] ?? json['_id'] ?? json['user_id'] ?? '',
       username: json['username'] ?? '',
       email: json['email'],
-      displayName: json['displayName'] ?? json['display_name'] ?? 'Unknown',
-      profileImageUrl: json['profileImageUrl'] ?? json['avatar_url'],
+      displayName: json['displayName'] ?? json['display_name'] ?? json['username'] ?? 'Unknown',
+      profileImageUrl: normalizeUrl(json['profileImageUrl'] ??
+          json['profile_image_url'] ??
+          json['avatar_url'] ??
+          json['avatarUrl'] ??
+          json['avatar'] ??
+          json['image_url']),
       followersCount: json['followersCount'] ?? 0,
       followingCount: json['followingCount'] ?? 0,
       tracksCount: json['tracksCount'] ?? 0,
       bio: json['bio'],
+      isFollowing: json['isFollowing'] ?? json['is_following'] ?? false,
     );
   }
 
@@ -45,6 +66,7 @@ class User {
     int? followingCount,
     int? tracksCount,
     String? bio,
+    bool? isFollowing,
   }) {
     return User(
       id: id ?? this.id,
@@ -56,6 +78,7 @@ class User {
       followingCount: followingCount ?? this.followingCount,
       tracksCount: tracksCount ?? this.tracksCount,
       bio: bio ?? this.bio,
+      isFollowing: isFollowing ?? this.isFollowing,
     );
   }
 }

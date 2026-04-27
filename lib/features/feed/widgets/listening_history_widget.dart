@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:just_audio/just_audio.dart';
 import '../../../providers/feed_provider.dart';
 import '../../../providers/player_provider.dart';
 import '../../../routes/route_names.dart';
@@ -11,33 +12,63 @@ class ListeningHistoryWidget extends StatefulWidget {
   @override
   State<ListeningHistoryWidget> createState() => _ListeningHistoryWidgetState();
 }
-
 class _ListeningHistoryWidgetState extends State<ListeningHistoryWidget> {
+  String? _lastTrackId;
+
   @override
   void initState() {
     super.initState();
-    // Fetch history if empty whenever this widget is mounted
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final feed = context.read<FeedProvider>();
-      if (feed.listeningHistory.isEmpty) {
-        feed.fetchListeningHistory();
+      if (feed.recentlyPlayed.isEmpty) {
+        feed.fetchRecentlyPlayed();
       }
+      
+      // Listen to player changes to refresh recently played
+      final player = context.read<PlayerProvider>();
+      _lastTrackId = player.currentTrack?.id;
+      player.addListener(_onPlayerChanged);
     });
+  }
+
+  @override
+  void dispose() {
+    // Note: We need a reference to player that doesn't depend on context if we want to dispose safely,
+    // but in this case, the provider is likely still alive. 
+    // However, it's safer to get the provider in initState and store it.
+    super.dispose();
+  }
+
+  void _onPlayerChanged() {
+    if (!mounted) return;
+    final player = context.read<PlayerProvider>();
+    final currentId = player.currentTrack?.id;
+    final isCompleted = player.processingState == ProcessingState.completed;
+    
+    if ((currentId != _lastTrackId && currentId != null) || isCompleted) {
+      _lastTrackId = currentId;
+      // Delay slightly to give backend time to process the recordPlay call
+      Future.delayed(const Duration(seconds: 1), () {
+        if (mounted) {
+          context.read<FeedProvider>().fetchRecentlyPlayed();
+        }
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Consumer<FeedProvider>(
       builder: (context, feedProvider, child) {
-        if (feedProvider.isHistoryLoading && feedProvider.listeningHistory.isEmpty) {
+        if (feedProvider.isHistoryLoading && feedProvider.recentlyPlayed.isEmpty) {
           return const Center(child: CircularProgressIndicator());
         }
 
-        if (feedProvider.listeningHistory.isEmpty) {
-          return const SizedBox.shrink(); // Don't show anything if history is empty
+        if (feedProvider.recentlyPlayed.isEmpty) {
+          return const SizedBox.shrink();
         }
 
-        final recentTracks = feedProvider.listeningHistory.take(3).toList();
+        final recentTracks = feedProvider.recentlyPlayed.take(4).toList();
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -48,7 +79,7 @@ class _ListeningHistoryWidgetState extends State<ListeningHistoryWidget> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Listening History',
+                    'Recently Played',
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
@@ -72,15 +103,13 @@ class _ListeningHistoryWidgetState extends State<ListeningHistoryWidget> {
               physics: const NeverScrollableScrollPhysics(),
               itemCount: recentTracks.length,
               itemBuilder: (context, index) {
-                final historyEntry = recentTracks[index];
-                final track = historyEntry.track;
+                final track = recentTracks[index];
                 return TrackTile(
                   track: track,
-                  showLike: true,
                   onPlay: () {
                     context.read<PlayerProvider>().playTrack(
                           track,
-                          playlist: feedProvider.listeningHistory.map((e) => e.track).toList(),
+                          playlist: feedProvider.recentlyPlayed,
                         );
                   },
                   onDetails: () {

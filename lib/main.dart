@@ -26,6 +26,7 @@ import 'features/search/services/api_search_service.dart';
 import 'routes/app_routes.dart';
 import 'routes/route_names.dart';
 
+
 void main() {
   runApp(const PulsifyApp());
 }
@@ -48,7 +49,11 @@ class PulsifyApp extends StatelessWidget {
           create: (context) => ApiUserService(context.read<ApiService>()),
         ),
         Provider<SearchService>(
-          create: (context) => ApiSearchService(context.read<ApiService>()),
+          create: (context) => ApiSearchService(
+            context.read<ApiService>(),
+            context.read<TrackService>(),
+            context.read<UserService>(),
+          ),
         ),
         ChangeNotifierProvider(
           create: (context) => FeedProvider(
@@ -65,8 +70,10 @@ class PulsifyApp extends StatelessWidget {
         ),
 
         ChangeNotifierProxyProvider<FeedProvider, PlayerProvider>(
-          create: (context) =>
-              PlayerProvider(trackService: context.read<TrackService>()),
+          create: (context) => PlayerProvider(
+            trackService: context.read<TrackService>(),
+            userService: context.read<UserService>(),
+          ),
           update: (context, feedProvider, playerProvider) {
             return playerProvider!;
           },

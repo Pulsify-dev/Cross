@@ -4,10 +4,12 @@ import 'package:flutter/foundation.dart';
 import 'package:just_audio/just_audio.dart';
 import '../features/feed/models/track.dart';
 import '../features/feed/services/track_service.dart';
+import '../features/feed/services/user_service.dart';
 
 class PlayerProvider with ChangeNotifier {
   final AudioPlayer _player = AudioPlayer();
   final TrackService? _trackService;
+  final UserService? _userService;
   Track? _currentTrack;
   List<Track> _queue = [];
   int _currentIndex = -1;
@@ -15,12 +17,14 @@ class PlayerProvider with ChangeNotifier {
   Duration _duration = Duration.zero;
   Duration _position = Duration.zero;
   final Map<String, List<double>> _waveformCache = {};
-  List<double>? _currentWaveform;
   Map<String, dynamic>? _currentStatus;
+  ProcessingState _processingState = ProcessingState.idle;
 
   void Function(Track track)? onTrackStarted;
 
-  PlayerProvider({TrackService? trackService}) : _trackService = trackService {
+  PlayerProvider({TrackService? trackService, UserService? userService})
+      : _trackService = trackService,
+        _userService = userService {
     _player.playerStateStream.listen((state) {
       _isPlaying = state.playing;
       notifyListeners();
@@ -37,11 +41,15 @@ class PlayerProvider with ChangeNotifier {
     });
 
     _player.processingStateStream.listen((state) {
+      _processingState = state;
       if (state == ProcessingState.completed) {
         _onTrackCompleted();
       }
+      notifyListeners();
     });
   }
+
+  ProcessingState get processingState => _processingState;
 
   Future<void> _onTrackCompleted() async {
     final completedTrackId = _currentTrack?.id;
@@ -65,15 +73,16 @@ class PlayerProvider with ChangeNotifier {
   Duration get position => _position;
   List<Track> get queue => _queue;
   int get currentIndex => _currentIndex;
-  
-  List<double>? get currentWaveform => _currentTrack != null ? _waveformCache[_currentTrack!.id] : null;
+
+  List<double>? get currentWaveform =>
+      _currentTrack != null ? _waveformCache[_currentTrack!.id] : null;
   List<double>? getWaveform(String trackId) => _waveformCache[trackId];
-  
+
   Map<String, dynamic>? get currentStatus => _currentStatus;
 
   Future<void> loadWaveform(String trackId) async {
     if (_waveformCache.containsKey(trackId)) return;
-    
+
     try {
       final wf = await _trackService?.getTrackWaveform(trackId);
       if (wf != null) {
@@ -84,6 +93,7 @@ class PlayerProvider with ChangeNotifier {
       debugPrint('Error loading waveform: $e');
     }
   }
+
   Future<void> playTrack(Track track, {List<Track>? playlist}) async {
     if (playlist != null) {
       _queue = playlist;
@@ -107,25 +117,45 @@ class PlayerProvider with ChangeNotifier {
     notifyListeners();
 
     // Background fetch full track details to populate missing data (counts, artwork)
-    _trackService?.getTrackById(track.id).then((fullTrack) {
-      if (fullTrack != null && _currentTrack?.id == track.id) {
-        // Update both the original object and the current track object
-        track.artworkUrl = fullTrack.artworkUrl;
-        track.likeCount = fullTrack.likeCount;
-        track.commentCount = fullTrack.commentCount;
-        track.repostCount = fullTrack.repostCount;
-        track.isLiked = fullTrack.isLiked;
-        track.isReposted = fullTrack.isReposted;
-        
-        _currentTrack = fullTrack;
-        notifyListeners();
-      }
-    }).catchError((e) => debugPrint('Error fetching track details in player: $e'));
+    _trackService
+        ?.getTrackById(track.id)
+        .then((fullTrack) async {
+          if (fullTrack != null && _currentTrack?.id == track.id) {
+            // Update both the original object and the current track object
+            track.artworkUrl = fullTrack.artworkUrl;
+            track.likeCount = fullTrack.likeCount;
+            track.commentCount = fullTrack.commentCount;
+            track.repostCount = fullTrack.repostCount;
+            track.isLiked = fullTrack.isLiked;
+            track.isReposted = fullTrack.isReposted;
+
+            if (fullTrack.artistName == 'Unknown Artist' &&
+                fullTrack.artistId != null) {
+              try {
+                final profile =
+                    await _userService?.getPublicProfile(fullTrack.artistId!);
+                if (profile != null) {
+                  fullTrack.artistName = profile.displayName;
+                  track.artistName = profile.displayName;
+                }
+              } catch (e) {
+                debugPrint('Error enriching artist in player: $e');
+              }
+            }
+
+            _currentTrack = fullTrack;
+            notifyListeners();
+          }
+        })
+        .catchError((e) {
+          debugPrint('Error fetching track details in player: $e');
+          return null;
+        });
 
     onTrackStarted?.call(track);
     // Record eagerly so it shows up in history immediately
     _trackService?.recordPlay(track.id, durationPlayedMs: 0);
-    
+
     // Use the cache-based load method
     loadWaveform(track.id);
 
@@ -139,23 +169,25 @@ class PlayerProvider with ChangeNotifier {
     try {
       // Fetch the real stream URL from the API, fall back to track's audio_url
       String playUrl = track.streamUrl;
-      
+
       if (_trackService != null) {
         final streamUrl = await _trackService.getStreamUrl(track.id);
         if (streamUrl != null && streamUrl.isNotEmpty) {
           playUrl = streamUrl;
         }
       }
-      
+
       debugPrint('Playing track: ${track.title} (URL: $playUrl)');
-      
+
       await _player.stop();
-      
-      await _player.setUrl(playUrl).timeout(
-        const Duration(seconds: 15),
-        onTimeout: () => throw TimeoutException('Track load timed out'),
-      );
-      
+
+      await _player
+          .setUrl(playUrl)
+          .timeout(
+            const Duration(seconds: 15),
+            onTimeout: () => throw TimeoutException('Track load timed out'),
+          );
+
       await _player.play();
     } catch (e) {
       debugPrint('Error playing track: $e');

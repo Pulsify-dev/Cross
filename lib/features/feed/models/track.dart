@@ -5,6 +5,7 @@ class Track {
   final String id;
   final String title;
   String artistName;
+  String? artistId;
   String? artworkUrl;
   final String streamUrl;
   final Duration duration;
@@ -24,6 +25,7 @@ class Track {
     required this.id,
     required this.title,
     required this.artistName,
+    this.artistId,
     this.artworkUrl,
     required this.streamUrl,
     required this.duration,
@@ -44,12 +46,15 @@ class Track {
     // Handle nested structures if present
     final json = (rawJson['track'] is Map<String, dynamic>)
         ? rawJson['track'] as Map<String, dynamic>
+        : (rawJson['track_id'] is Map<String, dynamic>)
+        ? rawJson['track_id'] as Map<String, dynamic>
         : (rawJson['data'] is Map<String, dynamic>)
         ? rawJson['data'] as Map<String, dynamic>
         : rawJson;
 
     String normalizeUrl(String? url) {
       if (url == null || url.isEmpty) return '';
+      if (url.endsWith('Default.png') || url.endsWith('default.png')) return '';
       if (url.startsWith('http')) return url;
 
       // If it starts with // it's a protocol-relative URL
@@ -66,25 +71,64 @@ class Track {
       return '$rootBase$path';
     }
 
+
+    final artistName = () {
+      if (json['artist_name'] != null) return json['artist_name'].toString();
+      if (json['artistName'] != null) return json['artistName'].toString();
+
+      final artist = json['artist_id'] ?? 
+                    json['artist'] ?? 
+                    json['uploader'] ?? 
+                    json['user'] ?? 
+                    json['author'] ?? 
+                    json['owner'];
+                    
+      if (artist is Map<String, dynamic>) {
+        return artist['display_name']?.toString() ??
+            artist['displayName']?.toString() ??
+            artist['username']?.toString() ??
+            artist['name']?.toString() ??
+            artist['displayname']?.toString() ??
+            'Unknown Artist';
+      }
+      
+      // If it's just an ID string or null, check if there's a name field at root
+      final rootName = json['artist_name'] ?? 
+                      json['artistName'] ?? 
+                      json['username'] ?? 
+                      json['displayName'] ?? 
+                      json['display_name'] ??
+                      json['uploader_name'] ??
+                      json['user_name'] ??
+                      json['author_name'] ??
+                      json['owner_name'];
+
+      if (rootName != null) return rootName.toString();
+
+      return 'Unknown Artist';
+    }();
+
+    final artistId = () {
+      final artist = json['artist_id'] ?? 
+                    json['artist'] ?? 
+                    json['uploader'] ?? 
+                    json['user'] ??
+                    json['author'] ??
+                    json['owner'];
+      if (artist is String) return artist;
+      if (artist is Map<String, dynamic>) {
+         return artist['id']?.toString() ?? 
+                artist['_id']?.toString() ?? 
+                artist['user_id']?.toString();
+      }
+      return json['user_id']?.toString() ?? json['userId']?.toString();
+    }();
+
     return Track(
       id: json['id']?.toString() ?? json['_id']?.toString() ?? '',
       title: json['title']?.toString() ?? 'Untitled Track',
-      artistName: () {
-        if (json['artist_name'] != null) return json['artist_name'].toString();
-        if (json['artistName'] != null) return json['artistName'].toString();
-
-        final artist = json['artist_id'] ?? json['artist'] ?? json['uploader'];
-        if (artist is Map<String, dynamic>) {
-          return artist['display_name']?.toString() ??
-              artist['displayName']?.toString() ??
-              artist['username']?.toString() ??
-              'Unknown Artist';
-        }
-        
-        // If it's just an ID string, we return 'Unknown Artist' 
-        // but the caller can choose to ignore it if they already have a name.
-        return 'Unknown Artist';
-      }(),
+      artistName: artistName,
+      artistId: artistId,
       artworkUrl: normalizeUrl(() {
         final artwork =
             json['artwork_url'] ??

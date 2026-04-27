@@ -37,14 +37,24 @@ class FeedItem {
                       trackData['artist'] as Map<String, dynamic>?;
 
     final track = Track.fromJson(trackData);
-    final artist = artistData != null ? User.fromJson(artistData) : User(id: '', username: 'unknown', displayName: 'Unknown');
+    final artist = artistData != null
+        ? User.fromJson(artistData)
+        : User(id: '', username: 'unknown', displayName: 'Unknown');
+
+    // Update track.artistName if it's unknown but we have artist info
+    if (track.artistName == 'Unknown Artist' &&
+        artist.displayName != 'Unknown') {
+      track.artistName = artist.displayName;
+    }
 
     return FeedItem(
       type: json['type'] ?? 'track',
       createdAt: DateTime.tryParse(json['created_at'] ?? '') ?? DateTime.now(),
       track: track,
       artist: artist,
-      repostedBy: json['reposted_by'] != null ? User.fromJson(json['reposted_by']) : null,
+      repostedBy: json['reposted_by'] != null
+          ? User.fromJson(json['reposted_by'])
+          : null,
     );
   }
 }

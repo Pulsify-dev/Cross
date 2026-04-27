@@ -4,7 +4,6 @@ import '../../../providers/feed_provider.dart';
 import '../../../providers/player_provider.dart';
 import '../../../routes/route_names.dart';
 import '../../feed/widgets/track_tile.dart';
-import '../../player/widgets/mini_player.dart';
 
 class LikedTracksScreen extends StatefulWidget {
   const LikedTracksScreen({super.key});
@@ -59,6 +58,7 @@ class _LikedTracksScreenState extends State<LikedTracksScreen> {
                         final track = provider.likedTracks[index];
                         return TrackTile(
                           track: track,
+                          showLike: true,
                           onPlay: () {
                             context.read<FeedProvider>().cleanupUnlikedTracks();
                             context.read<PlayerProvider>().playTrack(
