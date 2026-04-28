@@ -4,14 +4,16 @@ import 'package:flutter/material.dart';
 import '../features/feed/models/feed_item.dart';
 import '../features/feed/models/track.dart';
 import '../features/feed/models/history_entry.dart';
-import '../features/feed/models/user.dart';
 import '../features/feed/models/discover_section.dart';
 import '../features/feed/services/track_service.dart';
 import '../features/feed/services/user_service.dart';
+import '../features/feed/models/user.dart';
+import '../features/social/services/social_service.dart';
 
 class FeedProvider with ChangeNotifier {
   final TrackService _trackService;
   final UserService _userService;
+  SocialService? _socialService;
   List<Track> _trendingTracks = [];
   List<FeedItem> _feed = [];
   List<Track> _discoveryFeed = [];
@@ -33,8 +35,17 @@ class FeedProvider with ChangeNotifier {
   bool _hasMoreHistory = true;
   bool _isHistoryLoading = false;
   final Set<String> _followingUserIds = {};
+  final Set<String> _blockedByMeUserIds = {};
+  final Set<String> _blockedByThemUserIds = {};
+  final Set<String> _mutualUserIds = {};
+  final Set<String> _relationshipFetchedIds = {};
 
-  FeedProvider(this._trackService, this._userService);
+  FeedProvider(this._trackService, this._userService, {SocialService? socialService})
+      : _socialService = socialService;
+
+  void setSocialService(SocialService service) {
+    _socialService = service;
+  }
 
   List<Track> get trendingTracks => _trendingTracks;
   List<FeedItem> get feed => _feed;
@@ -67,6 +78,15 @@ class FeedProvider with ChangeNotifier {
 
   bool isFollowingUser(String userId) {
     return _followingUserIds.contains(userId);
+  }
+
+  bool isUserBlocked(String userId) {
+    return _blockedByMeUserIds.contains(userId) ||
+        _blockedByThemUserIds.contains(userId);
+  }
+
+  bool isUserMutual(String userId) {
+    return _mutualUserIds.contains(userId);
   }
 
   bool isTrackReposted(String trackId) {
@@ -121,6 +141,11 @@ class FeedProvider with ChangeNotifier {
       final fetchedFeed = await _trackService.getFeed(authRequired: true);
       _feed = fetchedFeed.where((item) => item.track != null).toList();
       _syncFeedItemStatuses(_feed);
+      // Fetch relationship statuses for all uploaders
+      final tracks = _feed.map((e) => e.track).whereType<Track>().toList();
+      _fetchRelationshipStatuses(tracks);
+      // Enrich uploader avatars in background
+      _enrichUploaderProfiles(tracks);
     } catch (e) {
       _error = e.toString();
     } finally {
@@ -135,6 +160,10 @@ class FeedProvider with ChangeNotifier {
     try {
       _discoveryFeed = await _trackService.getDiscoverFeed();
       _syncTrackStatuses(_discoveryFeed);
+      // Fetch relationship statuses for all uploaders
+      _fetchRelationshipStatuses(_discoveryFeed);
+      // Enrich uploader avatars in background
+      _enrichUploaderProfiles(_discoveryFeed);
     } catch (e) {
       _error = e.toString();
     } finally {
@@ -329,27 +358,66 @@ class FeedProvider with ChangeNotifier {
     if (userId.isEmpty) return;
     
     final wasFollowing = isFollowingUser(userId);
+    final nowFollowing = !wasFollowing;
     
     // Optimistic update
-    if (wasFollowing) {
-      _followingUserIds.remove(userId);
-    } else {
+    if (nowFollowing) {
       _followingUserIds.add(userId);
+    } else {
+      _followingUserIds.remove(userId);
+      _mutualUserIds.remove(userId);
     }
     notifyListeners();
 
     try {
-      if (wasFollowing) {
-        await _userService.unfollowUser(userId);
+      if (_socialService != null) {
+        // Use SocialService for full relationship response
+        final status = wasFollowing
+            ? await _socialService!.unfollowUser(userId)
+            : await _socialService!.followUser(userId);
+
+        // Trust the intended action for follow state — the API call
+        // succeeded, so the action was applied. The response might
+        // contain stale isFollowing data due to caching/race conditions.
+        if (nowFollowing) {
+          _followingUserIds.add(userId);
+        } else {
+          _followingUserIds.remove(userId);
+        }
+
+        // Use response for mutual/blocked state (these are server-authoritative)
+        if (nowFollowing && status.isFollowedBy) {
+          _mutualUserIds.add(userId);
+        } else {
+          _mutualUserIds.remove(userId);
+        }
+        if (status.isBlockedByMe) {
+          _blockedByMeUserIds.add(userId);
+        } else {
+          _blockedByMeUserIds.remove(userId);
+        }
+        if (status.isBlockedByThem) {
+          _blockedByThemUserIds.add(userId);
+        } else {
+          _blockedByThemUserIds.remove(userId);
+        }
+        _relationshipFetchedIds.add(userId);
       } else {
-        await _userService.followUser(userId);
+        // Fallback to UserService
+        if (wasFollowing) {
+          await _userService.unfollowUser(userId);
+        } else {
+          await _userService.followUser(userId);
+        }
       }
+      notifyListeners();
     } catch (e) {
       // Rollback on error
       if (wasFollowing) {
         _followingUserIds.add(userId);
       } else {
         _followingUserIds.remove(userId);
+        _mutualUserIds.remove(userId);
       }
       _error = e.toString();
       notifyListeners();
@@ -392,6 +460,62 @@ class FeedProvider with ChangeNotifier {
     await _enrichTracks(entries.map((e) => e.track).toList());
   }
 
+  /// Fetches public profiles for tracks missing uploader data or avatar.
+  /// Creates/updates the track's uploader User with profileImageUrl.
+  Future<void> _enrichUploaderProfiles(List<Track> tracks) async {
+    final enriched = <String>{};
+
+    for (final track in tracks) {
+      final uid = track.uploader?.id ?? track.artistId;
+      if (uid == null || uid.isEmpty || enriched.contains(uid)) continue;
+
+      // Skip if uploader already has a valid avatar
+      if (track.uploader?.profileImageUrl != null &&
+          track.uploader!.profileImageUrl!.isNotEmpty) {
+        continue;
+      }
+
+      enriched.add(uid);
+
+      try {
+        final profile = await _userService.getPublicProfile(uid);
+        if (profile == null) continue;
+
+        // Update all tracks with the same uploader
+        for (final t in tracks) {
+          final tUid = t.uploader?.id ?? t.artistId;
+          if (tUid != uid) continue;
+
+          if (t.uploader != null) {
+            // Update existing uploader with avatar from profile
+            t.uploader = t.uploader!.copyWith(
+              profileImageUrl: profile.profileImageUrl,
+            );
+          } else {
+            // Create uploader from profile data
+            t.uploader = User(
+              id: profile.id,
+              username: profile.username,
+              displayName: profile.displayName,
+              profileImageUrl: profile.profileImageUrl,
+            );
+          }
+
+          if (t.artistName == 'Unknown Artist' || t.artistName.isEmpty) {
+            t.artistName = profile.displayName;
+          }
+          if (t.artistId == null || t.artistId!.isEmpty) {
+            t.artistId = profile.id;
+          }
+        }
+
+        notifyListeners();
+      } catch (e) {
+        debugPrint('Error enriching uploader profile $uid: $e');
+      }
+    }
+  }
+
   void cleanupUnlikedTracks() {
     _likedTracks.removeWhere((t) => !t.isLiked);
     notifyListeners();
@@ -417,10 +541,69 @@ class FeedProvider with ChangeNotifier {
       if (track.uploader != null && track.uploader!.isFollowing) {
         _followingUserIds.add(track.uploader!.id);
       }
+      // Note: blocked/mutual data comes from relationship API;
+      // the uploader object doesn't carry these fields.
     }
   }
 
   void _syncFeedItemStatuses(List<FeedItem> items) {
     _syncTrackStatuses(items.map((e) => e.track).whereType<Track>().toList());
+  }
+
+  /// Fetches relationship status for each unique uploader in the tracks
+  /// using the SocialService.getRelationshipStatus API.
+  /// Updates _followingUserIds, _blockedByMeUserIds, _blockedByThemUserIds,
+  /// and _mutualUserIds based on the response.
+  Future<void> _fetchRelationshipStatuses(List<Track> tracks) async {
+    if (_socialService == null) return;
+
+    // Collect unique uploader IDs that haven't been fetched yet
+    final uploaderIds = <String>{};
+    for (final track in tracks) {
+      final uid = track.uploader?.id ?? track.artistId;
+      if (uid != null && uid.isNotEmpty && !_relationshipFetchedIds.contains(uid)) {
+        uploaderIds.add(uid);
+      }
+    }
+
+    if (uploaderIds.isEmpty) return;
+
+    // Fetch in parallel for performance
+    for (final userId in uploaderIds) {
+      try {
+        final status = await _socialService!.getRelationshipStatus(userId);
+        _relationshipFetchedIds.add(userId);
+
+        // Update follow state
+        if (status.isFollowing) {
+          _followingUserIds.add(userId);
+        } else {
+          _followingUserIds.remove(userId);
+        }
+
+        // Update blocked state
+        if (status.isBlockedByMe) {
+          _blockedByMeUserIds.add(userId);
+        } else {
+          _blockedByMeUserIds.remove(userId);
+        }
+        if (status.isBlockedByThem) {
+          _blockedByThemUserIds.add(userId);
+        } else {
+          _blockedByThemUserIds.remove(userId);
+        }
+
+        // Update mutual state
+        if (status.isMutual) {
+          _mutualUserIds.add(userId);
+        } else {
+          _mutualUserIds.remove(userId);
+        }
+      } catch (e) {
+        debugPrint('Error fetching relationship for $userId: $e');
+      }
+    }
+
+    notifyListeners();
   }
 }

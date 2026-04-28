@@ -65,6 +65,14 @@ class FeedItem {
         artist.displayName != 'Unknown') {
       track.artistName = artist.displayName;
     }
+
+    // Ensure track has uploader/artistId for follow button support
+    if (track != null && track.uploader == null && artist.id.isNotEmpty) {
+      track.uploader = artist;
+    }
+    if (track != null && (track.artistId == null || track.artistId!.isEmpty) && artist.id.isNotEmpty) {
+      track.artistId = artist.id;
+    }
     
     if (album != null && (album.artistName == 'Unknown Artist' || album.artistName.isEmpty) &&
         artist.displayName != 'Unknown') {

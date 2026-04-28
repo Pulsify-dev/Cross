@@ -18,6 +18,13 @@ class FeedScreen extends StatefulWidget {
 class _FeedScreenState extends State<FeedScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  final PageController _discoverPageController = PageController();
+  final PageController _followingPageController = PageController();
+  PlayerProvider? _playerProvider;
+
+  // Track the currently active page index per tab
+  int _discoverActiveIndex = 0;
+  int _followingActiveIndex = 0;
 
   @override
   void initState() {
@@ -26,18 +33,106 @@ class _FeedScreenState extends State<FeedScreen>
     _tabController.addListener(() {
       if (_tabController.indexIsChanging) {
         setState(() {});
+        // When switching tabs, play the active track from the new tab
+        _onTabChanged(_tabController.index);
       }
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<FeedProvider>().fetchFeed();
       context.read<FeedProvider>().fetchDiscoveryFeed();
+      _playerProvider = context.read<PlayerProvider>();
+      _playerProvider?.addListener(_onPlayerStateChanged);
     });
   }
 
   @override
   void dispose() {
+    _playerProvider?.removeListener(_onPlayerStateChanged);
     _tabController.dispose();
+    _discoverPageController.dispose();
+    _followingPageController.dispose();
     super.dispose();
+  }
+
+  void _onPlayerStateChanged() {
+    if (!mounted) return;
+    final player = _playerProvider;
+    if (player == null) return;
+    final track = player.currentTrack;
+    if (track == null) return;
+
+    if (_tabController.index == 0) {
+      final provider = context.read<FeedProvider>();
+      final newIndex = provider.discoveryFeed.indexWhere((t) => t.id == track.id);
+      if (newIndex != -1 && newIndex != _discoverActiveIndex) {
+        if (_discoverPageController.hasClients) {
+          _discoverPageController.animateToPage(
+            newIndex,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+          );
+        }
+      }
+    } else {
+      final provider = context.read<FeedProvider>();
+      final newIndex = provider.feed.indexWhere((item) => item.track?.id == track.id);
+      if (newIndex != -1 && newIndex != _followingActiveIndex) {
+        if (_followingPageController.hasClients) {
+          _followingPageController.animateToPage(
+            newIndex,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+          );
+        }
+      }
+    }
+  }
+
+  void _onTabChanged(int tabIndex) {
+    if (tabIndex == 0) {
+      // Switched to Discover → play active discover track
+      _autoPlayDiscoverTrack(_discoverActiveIndex);
+    } else {
+      // Switched to Following → play active following track
+      _autoPlayFollowingTrack(_followingActiveIndex);
+    }
+  }
+
+  void _autoPlayDiscoverTrack(int index) {
+    setState(() => _discoverActiveIndex = index);
+    final provider = context.read<FeedProvider>();
+    if (provider.discoveryFeed.isEmpty) return;
+    if (index < 0 || index >= provider.discoveryFeed.length) return;
+
+    final track = provider.discoveryFeed[index];
+    final player = context.read<PlayerProvider>();
+
+    // Don't re-trigger if already playing this track
+    if (player.currentTrack?.id == track.id && player.isPlaying) return;
+
+    player.playTrack(track, playlist: provider.discoveryFeed.toList());
+    player.setRepeatOne(true);
+  }
+
+  void _autoPlayFollowingTrack(int index) {
+    setState(() => _followingActiveIndex = index);
+    final provider = context.read<FeedProvider>();
+    if (provider.feed.isEmpty) return;
+    if (index < 0 || index >= provider.feed.length) return;
+
+    final item = provider.feed[index];
+    if (item.track == null) return;
+
+    final player = context.read<PlayerProvider>();
+
+    // Don't re-trigger if already playing this track
+    if (player.currentTrack?.id == item.track!.id && player.isPlaying) return;
+
+    player.playTrack(
+      item.track!,
+      playlist: provider.feed.map((e) => e.track!).toList(),
+    );
+    player.setRepeatOne(true);
   }
 
   @override
@@ -131,17 +226,22 @@ class _FeedScreenState extends State<FeedScreen>
         }
 
         return PageView.builder(
+          controller: _discoverPageController,
           scrollDirection: Axis.vertical,
           itemCount: provider.discoveryFeed.length,
+          onPageChanged: _autoPlayDiscoverTrack,
           itemBuilder: (context, index) {
             final track = provider.discoveryFeed[index];
             return VerticalFeedItem(
               track: track,
+              isActive: index == _discoverActiveIndex,
               onPlay: () {
-                context.read<PlayerProvider>().playTrack(
+                final player = context.read<PlayerProvider>();
+                player.playTrack(
                   track,
                   playlist: provider.discoveryFeed.toList(),
                 );
+                player.setRepeatOne(true);
               },
               onDetails: () {
                 Navigator.of(
@@ -197,17 +297,22 @@ class _FeedScreenState extends State<FeedScreen>
         }
 
         return PageView.builder(
+          controller: _followingPageController,
           scrollDirection: Axis.vertical,
           itemCount: provider.feed.length,
+          onPageChanged: _autoPlayFollowingTrack,
           itemBuilder: (context, index) {
             final item = provider.feed[index];
             return VerticalFeedItem(
               track: item.track!,
+              isActive: index == _followingActiveIndex,
               onPlay: () {
-                context.read<PlayerProvider>().playTrack(
+                final player = context.read<PlayerProvider>();
+                player.playTrack(
                   item.track!,
                   playlist: provider.feed.map((e) => e.track!).toList(),
                 );
+                player.setRepeatOne(true);
               },
               onDetails: () {
                 Navigator.of(

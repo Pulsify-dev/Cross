@@ -15,7 +15,7 @@ class Track {
   int repostCount;
   final List<String> genres;
   final DateTime createdAt;
-  final User? uploader;
+  User? uploader;
   bool isLiked;
   bool isReposted;
   final String? status;

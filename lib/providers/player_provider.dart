@@ -55,8 +55,10 @@ class PlayerProvider with ChangeNotifier {
     final completedTrackId = _currentTrack?.id;
     final finalPosition = _position.inMilliseconds;
 
-    // Immediately move to next track
-    await nextTrack();
+    // Immediately move to next track if not repeating
+    if (!_isRepeatOne) {
+      await nextTrack();
+    }
 
     // Record the play in the background
     if (completedTrackId != null) {
@@ -106,6 +108,12 @@ class PlayerProvider with ChangeNotifier {
     } else {
       // Track already in queue – just update the index to point to it
       _currentIndex = _queue.indexWhere((t) => t.id == track.id);
+    }
+
+    // Default to turning off repeat mode when a new track is played
+    // The feed screen explicitly turns it back on.
+    if (_isRepeatOne) {
+      setRepeatOne(false);
     }
 
     if (_currentTrack?.id == track.id) {
@@ -227,6 +235,15 @@ class PlayerProvider with ChangeNotifier {
   Future<void> resume() async => await _player.play();
   Future<void> pause() async => await _player.pause();
   Future<void> seek(Duration position) async => await _player.seek(position);
+
+  bool _isRepeatOne = false;
+  bool get isRepeatOne => _isRepeatOne;
+
+  Future<void> setRepeatOne(bool repeat) async {
+    _isRepeatOne = repeat;
+    await _player.setLoopMode(repeat ? LoopMode.one : LoopMode.off);
+    notifyListeners();
+  }
 
   @override
   void dispose() {

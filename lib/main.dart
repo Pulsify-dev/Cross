@@ -25,6 +25,7 @@ import 'features/search/services/search_service.dart';
 import 'features/search/services/api_search_service.dart';
 import 'routes/app_routes.dart';
 import 'routes/route_names.dart';
+import 'features/social/services/social_service.dart';
 
 
 void main() {
@@ -59,6 +60,7 @@ class PulsifyApp extends StatelessWidget {
           create: (context) => FeedProvider(
             context.read<TrackService>(),
             context.read<UserService>(),
+            socialService: MockSocialService(apiService: context.read<ApiService>()),
           ),
         ),
 
