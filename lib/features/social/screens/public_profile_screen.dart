@@ -272,6 +272,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                 RouteNames.chat,
                 arguments: {
                   'userId': widget.userId,
+                  'username': profile?.username ?? '',
                   'displayName': profile?.displayName ?? '',
                   'avatarUrl': profile?.avatarUrl,
                 },

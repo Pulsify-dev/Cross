@@ -92,6 +92,7 @@ class AppRoutes {
         return MaterialPageRoute(
           builder: (_) => ChatScreen(
             userId: convArg.otherUser.id,
+            username: convArg.otherUser.username,
             displayName: convArg.otherUser.displayName,
             avatarUrl: convArg.otherUser.profileImageUrl,
           ),
@@ -149,6 +150,7 @@ class AppRoutes {
         return MaterialPageRoute(
           builder: (_) => ChatScreen(
             userId: args['userId'] as String,
+            username: args['username'] as String? ?? args['userId'] as String,
             displayName: args['displayName'] as String,
             avatarUrl: args['avatarUrl'] as String?,
           ),

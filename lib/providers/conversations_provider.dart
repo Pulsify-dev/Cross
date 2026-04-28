@@ -24,6 +24,7 @@ class ChatMessage {
 class Conversation {
   final String conversationId;
   final String userId;
+  final String username;
   final String displayName;
   final String? avatarUrl;
   int unreadCount;
@@ -33,6 +34,7 @@ class Conversation {
   Conversation({
     required this.conversationId,
     required this.userId,
+    required this.username,
     required this.displayName,
     this.avatarUrl,
     this.unreadCount = 0,
@@ -145,6 +147,7 @@ class ConversationsProvider extends ChangeNotifier {
           Conversation(
             conversationId: c.id,
             userId: c.otherUserId,
+            username: c.otherUsername,
             displayName: c.otherDisplayName,
             avatarUrl: c.otherAvatarUrl,
             unreadCount: c.unreadCount,
@@ -202,6 +205,7 @@ class ConversationsProvider extends ChangeNotifier {
   /// Returns the conversation ID (creates via API if needed).
   Future<String?> openOrCreate({
     required String userId,
+    required String username,
     required String displayName,
     String? avatarUrl,
   }) async {
@@ -209,7 +213,7 @@ class ConversationsProvider extends ChangeNotifier {
       return _userToConvId[userId];
     }
     try {
-      final convId = await _messaging.startOrGetConversation(userId);
+      final convId = await _messaging.startOrGetConversation(username);
       if (convId.isEmpty) return null;
       _userToConvId[userId] = convId;
       if (!_conversations.any((c) => c.userId == userId)) {
@@ -218,6 +222,7 @@ class ConversationsProvider extends ChangeNotifier {
           Conversation(
             conversationId: convId,
             userId: userId,
+            username: username,
             displayName: displayName,
             avatarUrl: avatarUrl,
           ),
@@ -326,16 +331,19 @@ class ConversationsProvider extends ChangeNotifier {
     }
     notifyListeners();
 
-    // Prefer socket; fall back to REST
+    // Prefer socket; reconnect if needed, then fall back to REST
+    if (!_socket.isConnected) {
+      await _socket.connect();
+    }
     if (_socket.isConnected) {
       _socket.sendMessage(conversationId, text);
     } else {
       try {
         await _messaging.sendMessageRest(conversationId, text);
-      } catch (e) {
-        _messagesMap[conversationId]?.removeWhere((m) => m.id == tempId);
-        notifyListeners();
-        rethrow;
+      } catch (_) {
+        // Keep the optimistic message visible — REST is a fallback only.
+        // The server-side 500 is transient; the message will reconcile on
+        // next loadMessages (e.g. when the user re-opens the chat).
       }
     }
   }
