@@ -247,9 +247,6 @@ class _TrackDetailsScreenState extends State<TrackDetailsScreen>
           final isPlaying =
               player.currentTrack?.id == displayTrack.id && player.isPlaying;
 
-          final status = player.currentTrack?.id == displayTrack.id
-              ? player.currentStatus
-              : null;
           final waveform = player.getWaveform(displayTrack.id);
 
           // Swipe visual feedback
@@ -383,9 +380,6 @@ class _TrackDetailsScreenState extends State<TrackDetailsScreen>
                       _buildTopBar(displayTrack),
 
                       const Spacer(),
-
-                      if (status != null && status['status'] != 'Finished')
-                        _buildTranscodingBadge(status),
 
                       // Waveform or Progress Line
                       Stack(
@@ -631,30 +625,6 @@ class _TrackDetailsScreenState extends State<TrackDetailsScreen>
           shape: BoxShape.circle,
         ),
         child: Icon(icon, color: Colors.white, size: iconSize),
-      ),
-    );
-  }
-
-  Widget _buildTranscodingBadge(Map<String, dynamic> status) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 20, bottom: 8),
-      child: Align(
-        alignment: Alignment.centerLeft,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-          decoration: BoxDecoration(
-            color: Colors.orangeAccent.withValues(alpha: 0.2),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Text(
-            'Transcoding: ${status['progress_percent']}%',
-            style: const TextStyle(
-              color: Colors.orangeAccent,
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
       ),
     );
   }

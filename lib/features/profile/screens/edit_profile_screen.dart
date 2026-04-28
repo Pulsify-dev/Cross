@@ -18,7 +18,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   late TextEditingController _bioController;
   late TextEditingController _locationController;
   late TextEditingController _emailController;
-  late TextEditingController _favoriteGenresController;
+  Set<String> _selectedGenres = {};
   late TextEditingController _instagramController;
   late TextEditingController _xController;
   late TextEditingController _facebookController;
@@ -50,9 +50,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       _bioController = TextEditingController(text: profile.bio);
       _locationController = TextEditingController(text: profile.location ?? '');
       _emailController = TextEditingController(text: profile.email);
-      _favoriteGenresController = TextEditingController(
-        text: profile.favoriteGenres?.join(', ') ?? '',
-      );
+      _selectedGenres = Set<String>.from(profile.favoriteGenres ?? []);
       _instagramController = TextEditingController(
         text: profile.socialLinks?['instagram'] ?? '',
       );
@@ -76,7 +74,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       _bioController = TextEditingController();
       _locationController = TextEditingController();
       _emailController = TextEditingController();
-      _favoriteGenresController = TextEditingController();
       _instagramController = TextEditingController();
       _xController = TextEditingController();
       _facebookController = TextEditingController();
@@ -151,7 +148,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _bioController.dispose();
     _locationController.dispose();
     _emailController.dispose();
-    _favoriteGenresController.dispose();
     _instagramController.dispose();
     _xController.dispose();
     _facebookController.dispose();
@@ -303,13 +299,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               ),
               const SizedBox(height: 20),
 
-              _buildFormField(
-                context,
-                label: 'Favorite Genres',
-                controller: _favoriteGenresController,
-                icon: Icons.music_note,
-                keyboardType: TextInputType.text,
-              ),
+              _buildGenrePicker(context),
               const SizedBox(height: 20),
 
               Text(
@@ -377,21 +367,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
                   final messenger = ScaffoldMessenger.of(context);
 
-                  final favoriteGenres = _favoriteGenresController.text
-                      .split(',')
-                      .map((genre) => genre.trim())
-                      .where((genre) => genre.isNotEmpty)
-                      .toList();
+                  final favoriteGenres = _selectedGenres.toList();
 
                   final socialLinks = {
-                    if (_instagramController.text.trim().isNotEmpty)
-                      'instagram': _instagramController.text.trim(),
-                    if (_xController.text.trim().isNotEmpty)
-                      'x': _xController.text.trim(),
-                    if (_facebookController.text.trim().isNotEmpty)
-                      'facebook': _facebookController.text.trim(),
-                    if (_websiteController.text.trim().isNotEmpty)
-                      'website': _websiteController.text.trim(),
+                    'instagram': _instagramController.text.trim(),
+                    'x': _xController.text.trim(),
+                    'facebook': _facebookController.text.trim(),
+                    'website': _websiteController.text.trim(),
                   };
 
                   try {
@@ -401,11 +383,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       location: _locationController.text.isNotEmpty
                           ? _locationController.text
                           : null,
-                      favoriteGenres: favoriteGenres.isNotEmpty
-                          ? favoriteGenres
-                          : null,
-                      socialLinks:
-                          socialLinks.isNotEmpty ? socialLinks : null,
+                      favoriteGenres: favoriteGenres,
+                      socialLinks: socialLinks,
                       isPrivate: _isPrivate,
                     );
 
@@ -522,6 +501,170 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  static const List<String> _allGenres = [
+    'Electronic', 'Hip-Hop', 'Rock', 'Pop', 'Jazz', 'Classical', 'R&B',
+    'Soul', 'Reggae', 'Country', 'Metal', 'Folk', 'Latin', 'Blues',
+    'Ambient', 'Acoustic', 'Soundtrack', 'Spoken Word', 'K-Pop',
+    'Afrobeats', 'House', 'Techno', 'Lo-Fi', 'Other',
+  ];
+
+  Widget _buildGenrePicker(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Favorite Genres',
+          style: theme.textTheme.labelMedium?.copyWith(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textSecondary,
+          ),
+        ),
+        const SizedBox(height: 8),
+        InkWell(
+          onTap: () => _showGenreSheet(context),
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            decoration: BoxDecoration(
+              color: AppColors.inputBackground,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppColors.border),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.music_note, color: AppColors.iconSecondary, size: 20),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _selectedGenres.isEmpty
+                      ? Text(
+                          'Select genres…',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: AppColors.textHint,
+                          ),
+                        )
+                      : Wrap(
+                          spacing: 6,
+                          runSpacing: 6,
+                          children: _selectedGenres.map((g) => Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: AppColors.primary.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(color: AppColors.primary.withValues(alpha: 0.5)),
+                            ),
+                            child: Text(
+                              g,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          )).toList(),
+                        ),
+                ),
+                const Icon(Icons.expand_more, color: AppColors.iconSecondary, size: 20),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _showGenreSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      isScrollControlled: true,
+      builder: (_) {
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            return DraggableScrollableSheet(
+              expand: false,
+              initialChildSize: 0.6,
+              maxChildSize: 0.85,
+              minChildSize: 0.4,
+              builder: (_, scrollController) {
+                return Column(
+                  children: [
+                    const SizedBox(height: 12),
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: AppColors.textSecondary.withValues(alpha: 0.3),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Favorite Genres',
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: const Text('Done', style: TextStyle(color: AppColors.primary)),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Expanded(
+                      child: ListView.builder(
+                        controller: scrollController,
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        itemCount: _allGenres.length,
+                        itemBuilder: (context, index) {
+                          final genre = _allGenres[index];
+                          final selected = _selectedGenres.contains(genre);
+                          return CheckboxListTile(
+                            value: selected,
+                            onChanged: (checked) {
+                              setSheetState(() {
+                                if (checked == true) {
+                                  _selectedGenres.add(genre);
+                                } else {
+                                  _selectedGenres.remove(genre);
+                                }
+                              });
+                              setState(() {});
+                            },
+                            title: Text(genre),
+                            activeColor: AppColors.primary,
+                            checkColor: Colors.white,
+                            controlAffinity: ListTileControlAffinity.trailing,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                );
+              },
+            );
+          },
+        );
+      },
     );
   }
 

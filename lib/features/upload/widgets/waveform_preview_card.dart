@@ -109,16 +109,7 @@ class WaveformPreviewCard extends StatelessWidget {
                           ),
                         )
                       : !_hasPeaks
-                          ? Align(
-                              alignment: Alignment.centerLeft,
-                              child: Text(
-                              emptyText,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodySmall
-                                    ?.copyWith(color: AppColors.textMuted),
-                              ),
-                            )
+                          ? const SizedBox.shrink()
                           : Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               crossAxisAlignment: CrossAxisAlignment.end,

@@ -1,4 +1,5 @@
 import 'package:cross/core/theme/app_colors.dart';
+import 'package:cross/features/social/models/public_profile_model.dart';
 import 'package:cross/features/social/models/relationship_status_model.dart';
 import 'package:cross/features/social/widgets/avatar_url_utils.dart';
 import 'package:cross/features/social/widgets/follow_action_button.dart';
@@ -8,6 +9,7 @@ import 'package:cross/providers/upload_provider.dart';
 import 'package:cross/providers/social_provider.dart';
 import 'package:cross/routes/route_names.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:provider/provider.dart';
 
 class PublicProfileScreen extends StatefulWidget {
@@ -56,6 +58,13 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
             elevation: 0,
             centerTitle: true,
             title: const Text('Profile'),
+            actions: [
+              if (profile != null)
+                IconButton(
+                  icon: const Icon(Icons.more_vert),
+                  onPressed: () => _showInfoSheet(context, profile),
+                ),
+            ],
           ),
           body: provider.isLoadingProfile && profile == null
               ? const Center(child: CircularProgressIndicator())
@@ -75,9 +84,9 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                             SliverToBoxAdapter(
                               child: Column(
                                 children: [
-                                  const SizedBox(height: 20),
+                                  const SizedBox(height: 8),
                                   Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
                                     child: Column(
                                       children: [
                                         CircleAvatar(
@@ -120,7 +129,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                                       ],
                                     ),
                                   ),
-                                  const SizedBox(height: 8),
+                                  const SizedBox(height: 4),
                                   Consumer<UploadProvider>(
                                     builder: (context, uploadProvider, _) {
                                       final loadedCount = uploadProvider
@@ -139,7 +148,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                                       );
                                     },
                                   ),
-                                  const SizedBox(height: 16),
+                                  const SizedBox(height: 8),
                                 ],
                               ),
                             ),
@@ -180,6 +189,17 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                     ),
         );
       },
+    );
+  }
+
+  void _showInfoSheet(BuildContext context, PublicProfileModel profile) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => _InfoSheet(profile: profile),
     );
   }
 
@@ -566,5 +586,167 @@ class _TabBarHeader extends SliverPersistentHeaderDelegate {
   bool shouldRebuild(covariant _TabBarHeader oldDelegate) {
     return oldDelegate.tabBar != tabBar ||
         oldDelegate.backgroundColor != backgroundColor;
+  }
+}
+
+class _InfoSheet extends StatelessWidget {
+  const _InfoSheet({required this.profile});
+
+  final PublicProfileModel profile;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final links = profile.socialLinks;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(
+            child: Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.textSecondary.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            'Links',
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 12),
+          if (links.values.every((v) => v.isEmpty))
+            Text(
+              'No links yet.',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: AppColors.textSecondary,
+              ),
+            )
+          else
+            ...links.entries
+                .where((e) => e.value.isNotEmpty)
+                .map((e) => _SocialLinkRow(platform: e.key, url: e.value)),
+        ],
+      ),
+    );
+  }
+}
+
+class _SocialLinkRow extends StatelessWidget {
+  const _SocialLinkRow({required this.platform, required this.url});
+
+  final String platform;
+  final String url;
+
+  static const _instagramGradient = LinearGradient(
+    begin: Alignment.bottomLeft,
+    end: Alignment.topRight,
+    colors: [
+      Color(0xFFf09433),
+      Color(0xFFe6683c),
+      Color(0xFFdc2743),
+      Color(0xFFcc2366),
+      Color(0xFFbc1888),
+    ],
+  );
+
+  ({Widget icon, Color color, String label}) _platformData() {
+    switch (platform.toLowerCase()) {
+      case 'instagram':
+        return (
+          icon: ShaderMask(
+            shaderCallback: (bounds) =>
+                _instagramGradient.createShader(bounds),
+            blendMode: BlendMode.srcIn,
+            child: const Icon(Icons.camera_alt, color: Colors.white, size: 22),
+          ),
+          color: const Color(0xFFe1306c),
+          label: 'Instagram',
+        );
+      case 'facebook':
+        return (
+          icon: const Icon(Icons.facebook, color: Colors.white, size: 22),
+          color: const Color(0xFF1877F2),
+          label: 'Facebook',
+        );
+      case 'x':
+      case 'twitter':
+        return (
+          icon: const Text(
+            'X',
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w800,
+              fontSize: 16,
+            ),
+          ),
+          color: const Color(0xFF14171A),
+          label: 'X',
+        );
+      case 'website':
+        return (
+          icon: const Icon(Icons.language, color: Colors.white, size: 22),
+          color: AppColors.primary,
+          label: 'Website',
+        );
+      default:
+        return (
+          icon: const Icon(Icons.link, color: Colors.white, size: 22),
+          color: AppColors.textSecondary,
+          label: platform,
+        );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final data = _platformData();
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(12),
+      onTap: () {
+        Clipboard.setData(ClipboardData(text: url));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Link copied to clipboard')),
+        );
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Row(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: data.color,
+                shape: BoxShape.circle,
+              ),
+              child: Center(child: data.icon),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Text(
+                data.label,
+                style: const TextStyle(
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 15,
+                ),
+              ),
+            ),
+            const Icon(Icons.copy_outlined, size: 18, color: AppColors.iconSecondary),
+          ],
+        ),
+      ),
+    );
   }
 }

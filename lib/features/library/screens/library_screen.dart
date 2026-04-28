@@ -101,11 +101,12 @@ class _LibraryScreenState extends State<LibraryScreen> {
     required String title,
     required String subtitle,
     required String route,
+    VoidCallback? onTap,
     Key? itemKey,
   }) {
     return InkWell(
       key: itemKey,
-      onTap: () => Navigator.pushNamed(context, route),
+      onTap: onTap ?? () => Navigator.pushNamed(context, route),
       borderRadius: BorderRadius.circular(12),
       child: Container(
         padding: const EdgeInsets.all(20),
