@@ -77,8 +77,6 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     await socialProvider.loadFollowing(userId);
   }
 
-  static const _playlistItems = <Map<String, String>>[];
-  static const _recentItems = <Map<String, String>>[];
   static const _favoriteGenres = <Map<String, String>>[];
 
   Future<void> _handleProfileMenuSelection(String value) async {
@@ -195,7 +193,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
             elevation: 0,
           ),
           body: DefaultTabController(
-            length: 4,
+            length: 2,
             child: NestedScrollView(
               headerSliverBuilder: (context, innerBoxIsScrolled) {
                 return [
@@ -227,8 +225,6 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                         ),
                         tabs: const [
                           Tab(text: 'Uploaded'),
-                          Tab(text: 'Playlists'),
-                          Tab(text: 'Recent'),
                           Tab(text: 'Favorite Genre'),
                         ],
                       ),
@@ -240,8 +236,6 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               body: TabBarView(
                 children: [
                   _buildUploadedTrackList(context),
-                  _buildTrackList(context, _playlistItems, 'No playlists yet.'),
-                  _buildTrackList(context, _recentItems, 'No recent tracks.'),
                   _buildTrackList(context, _favoriteGenres, 'No favorite genres yet.'),
                 ],
               ),

@@ -83,6 +83,18 @@ class _LibraryScreenState extends State<LibraryScreen> {
           const SizedBox(height: 16),
           _buildLibraryItem(
             context,
+            icon: Icons.queue_music,
+            title: 'Playlists',
+            subtitle: 'Your curated collections',
+            route: '',
+            onTap: () => ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Playlists coming soon')),
+            ),
+            itemKey: const Key('library_playlists_card'),
+          ),
+          const SizedBox(height: 16),
+          _buildLibraryItem(
+            context,
             icon: Icons.history,
             title: 'Listening History',
             subtitle: 'Relive your recent discoveries',
@@ -101,11 +113,12 @@ class _LibraryScreenState extends State<LibraryScreen> {
     required String title,
     required String subtitle,
     required String route,
+    VoidCallback? onTap,
     Key? itemKey,
   }) {
     return InkWell(
       key: itemKey,
-      onTap: () => Navigator.pushNamed(context, route),
+      onTap: onTap ?? () => Navigator.pushNamed(context, route),
       borderRadius: BorderRadius.circular(12),
       child: Container(
         padding: const EdgeInsets.all(20),

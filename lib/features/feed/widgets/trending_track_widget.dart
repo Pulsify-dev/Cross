@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import '/core/theme/app_colors.dart';
 import '/providers/feed_provider.dart';
 import '/providers/player_provider.dart';
 import '/routes/route_names.dart';
@@ -84,17 +85,17 @@ class _TrendingTrackWidgetState extends State<TrendingTrackWidget> {
                   label: Text(
                     genre['label']!,
                     style: TextStyle(
-                      color: isSelected ? const Color(0xFFA55EFC) : Colors.white,
+                      color: isSelected ? AppColors.primary : Colors.white,
                       fontWeight: FontWeight.bold,
                       fontSize: 12,
                       letterSpacing: 1.0,
                     ),
                   ),
                   selected: isSelected,
-                  selectedColor: const Color(0xFFA55EFC).withValues(alpha: 0.15),
+                  selectedColor: AppColors.primary.withValues(alpha: 0.15),
                   backgroundColor: Colors.transparent,
                   side: BorderSide(
-                    color: isSelected ? const Color(0xFFA55EFC) : Colors.white.withValues(alpha: 0.8),
+                    color: isSelected ? AppColors.primary : Colors.white.withValues(alpha: 0.8),
                     width: 1.5,
                   ),
                   shape: RoundedRectangleBorder(
@@ -152,7 +153,7 @@ class _TrendingTrackWidgetState extends State<TrendingTrackWidget> {
               center: Alignment.centerLeft,
               radius: 1.8,
               colors: [
-                const Color(0xFFA55EFC).withValues(alpha: 0.25),
+                AppColors.primary.withValues(alpha: 0.25),
                 Colors.transparent,
               ],
               stops: const [0.0, 0.6],
