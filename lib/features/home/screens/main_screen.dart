@@ -8,7 +8,7 @@ import 'package:cross/providers/feed_provider.dart';
 import 'package:cross/features/feed/screens/feed_screen.dart';
 import 'package:cross/features/player/widgets/mini_player.dart';
 import 'package:cross/providers/subscription_provider.dart';
-
+import 'package:cross/features/premium/widgets/ad_overlay.dart';
 class MainScreen extends StatefulWidget {
   final int initialIndex;
 
@@ -33,6 +33,12 @@ class _MainScreenState extends State<MainScreen> {
   void initState() {
     super.initState();
     _selectedIndex = widget.initialIndex;
+    
+    // START: Latest change - fetch status on launch
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<SubscriptionProvider>().fetchSubscriptionStatus();
+    });
+    // END: Latest change
   }
 
   void _onItemTapped(int index) {
@@ -161,6 +167,10 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // START: Latest change - watch sub status for ads
+    final sub = context.watch<SubscriptionProvider>();
+    // END: Latest change
+
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
@@ -171,10 +181,18 @@ class _MainScreenState extends State<MainScreen> {
           });
         }
       },
-      child: Scaffold(
-        body: IndexedStack(index: _selectedIndex, children: _screens),
-        bottomNavigationBar: _buildBottomNavigationBar(),
+      // START: Latest change - Stack for ad overlay
+      child: Stack(
+        children: [
+          Scaffold(
+            body: IndexedStack(index: _selectedIndex, children: _screens),
+            bottomNavigationBar: _buildBottomNavigationBar(),
+          ),
+          if (sub.showAdOverlay && sub.adVideoUrl != null)
+            AdOverlay(videoUrl: sub.adVideoUrl!),
+        ],
       ),
+      // END: Latest change
     );
   }
 }
@@ -182,9 +200,8 @@ class _MainScreenState extends State<MainScreen> {
 class _UpgradeScreen extends StatelessWidget {
   const _UpgradeScreen();
 
-@override
+  @override
   Widget build(BuildContext context) {
-    // This connects your screen to the 'brain' (Provider)
     final subProvider = context.watch<SubscriptionProvider>();
 
     return Scaffold(
@@ -202,22 +219,19 @@ class _UpgradeScreen extends StatelessWidget {
                   style: Theme.of(context).textTheme.headlineMedium,
                 ),
                 const SizedBox(height: 8),
-                
                 Text(
-                  'Usage: ${subProvider.sub?.usedTracks ?? 0} / ${subProvider.sub?.trackLimit ?? 10} tracks',
+                  'Usage: ${subProvider.usedTracks} / ${subProvider.trackLimit} tracks',
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
-                
                 const SizedBox(height: 24),
-
                 if (!subProvider.isPremium)
                   ElevatedButton(
-                    onPressed: () => subProvider.upgradeAccount(), // Starts the real upgrade
+                    onPressed: () => subProvider.upgradeAccount(),
                     child: const Text('Upgrade to Artist Pro'),
                   )
                 else
                   TextButton(
-                    onPressed: () => subProvider.downgradeAccount(), // Starts the cancellation
+                    onPressed: () => subProvider.downgradeAccount(),
                     child: const Text('Cancel Subscription', style: TextStyle(color: Colors.red)),
                   ),
               ],

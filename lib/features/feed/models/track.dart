@@ -20,6 +20,7 @@ class Track {
   bool isReposted;
   final String? status;
   final List<double>? waveform;
+  final bool isVisible; // Added for Subscription logic
 
   Track({
     required this.id,
@@ -40,6 +41,7 @@ class Track {
     this.isReposted = false,
     this.status,
     this.waveform,
+    this.isVisible = true,
   });
 
   factory Track.fromJson(Map<String, dynamic> rawJson) {
@@ -205,6 +207,7 @@ class Track {
               json['waveform'].map((x) => (x as num).toDouble()),
             )
           : null,
+      isVisible: json['is_visible'] ?? true,
     );
   }
 }
