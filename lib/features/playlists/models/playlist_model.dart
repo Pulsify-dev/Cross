@@ -37,7 +37,7 @@ class Playlist {
   factory Playlist.fromJson(Map<String, dynamic> json) {
     return Playlist(
       id: json['_id'] ?? json['id'] ?? '',
-      title: json['title'] ?? json['name'] ?? 'Untitled',
+      title: json['name'] ?? json['title'] ?? 'Untitled',
       description: json['description'],
       isPublic: json['isPublic'] ?? true,
       isPremium: json['isPremium'] ?? false,

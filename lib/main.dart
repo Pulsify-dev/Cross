@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'core/theme/app_theme.dart';
 import 'core/services/api_service.dart';
+import 'features/auth/screens/login_screen.dart';
 import 'features/feed/services/api_track_service.dart';
 import 'features/feed/services/api_user_service.dart';
 import 'features/feed/services/track_service.dart';
@@ -25,6 +26,8 @@ import 'features/search/services/search_service.dart';
 import 'features/search/services/api_search_service.dart';
 import 'routes/app_routes.dart';
 import 'routes/route_names.dart';
+import 'package:cross/providers/playlist_provider.dart';
+import 'package:cross/features/playlists/services/playlist_service.dart';
 
 
 void main() {
@@ -127,19 +130,20 @@ class PulsifyApp extends StatelessWidget {
           },
         ),
         // --- PLAYLIST MODULE 7 FIXES ---
-        Provider<PlaylistService>(
-          create: (_) => PlaylistService(),
-        ),
-        ChangeNotifierProxyProvider<AuthProvider, PlaylistProvider>(
-          create: (context) => PlaylistProvider(context.read<PlaylistService>()),
-          update: (context, auth, playlistProvider) {
-            final provider = playlistProvider ?? PlaylistProvider(context.read<PlaylistService>());
-            if (auth.isAuthenticated) {
-              provider.fetchPlaylists(auth.token ?? "");
-            }
-            return provider;
-          },
-        ),
+    Provider<PlaylistService>(
+  create: (context) => PlaylistService(context.read<ApiService>()), 
+),
+
+
+ChangeNotifierProxyProvider<AuthProvider, PlaylistProvider>(
+  create: (context) => PlaylistProvider(context.read<PlaylistService>()),
+  update: (context, auth, playlistProvider) {
+    if (auth.isAuthenticated && auth.token != null) {
+      Future.microtask(() => playlistProvider!.fetchPlaylists(auth.token!));
+    }
+    return playlistProvider!;
+  },
+),
         ChangeNotifierProvider(
           create: (context) => SubscriptionProvider(context.read<ApiService>()),
         ),

@@ -297,8 +297,7 @@ class _SearchScreenState extends State<SearchScreen> {
             );
           },
         ),
-      ),
-    );
+      ); 
   }
 
   Widget _buildTracksList(List<Track> tracks) {

@@ -427,7 +427,7 @@ class ApiTrackService implements TrackService {
     try {
       await _apiService.patch(
         ApiEndpoints.commentAction(commentId),
-        body: {'text': text},
+         {'text': text},
         authRequired: true,
       );
     } catch (e) {
@@ -551,4 +551,10 @@ class ApiTrackService implements TrackService {
   }
 
   void setCurrentUser(User? user) {}
+  
+  @override
+  Future<String?> getTrackLyrics(String trackId) {
+    // TODO: implement getTrackLyrics
+    throw UnimplementedError();
+  }
 }

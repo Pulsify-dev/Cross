@@ -1,10 +1,10 @@
-import 'package:flutter/material.dart';
-import 'package:cross/features/playlists/models/playlist_model.dart';
 import 'package:cross/features/playlists/services/playlist_service.dart';
+import 'package:flutter/material.dart';
+import '../features/playlists/models/playlist_model.dart';
 
 class PlaylistProvider extends ChangeNotifier {
   final PlaylistService _service;
-  final List<Playlist> _playlists = [];
+  List<Playlist> _playlists = [];
   bool _isLoading = false;
   String? _errorMessage;
 
@@ -16,11 +16,12 @@ class PlaylistProvider extends ChangeNotifier {
   Future<void> fetchPlaylists(String token) async {
     if (token.isEmpty) return;
     _isLoading = true;
+    _errorMessage = null;
     notifyListeners();
     try {
-     // _playlists = await _service.getPlaylists(token);
+      _playlists = await _service.getPlaylists(token);
     } catch (e) {
-      _errorMessage = "Connection issues: 502 Bad Gateway.";
+      _errorMessage = "Failed to load playlists.";
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -34,7 +35,7 @@ class PlaylistProvider extends ChangeNotifier {
     try {
       final newPlaylist = await _service.createPlaylist(token, name);
       if (newPlaylist != null) {
-        _playlists.insert(0, newPlaylist as Playlist);
+        _playlists.insert(0, newPlaylist);
         notifyListeners();
         return true;
       }
@@ -61,6 +62,26 @@ class PlaylistProvider extends ChangeNotifier {
     }
   }
 
+ Future<bool> updatePlaylist(String token, String id, String title, String description) async {
+  try {
+    final success = await _service.updatePlaylist(token, id, title, description);
+    if (success) {
+      final index = _playlists.indexWhere((p) => p.id == id);
+      if (index != -1) {
+        _playlists[index] = _playlists[index].copyWith(
+          title: title,
+          description: description,
+        );
+        notifyListeners();
+      }
+      return true;
+    }
+    return false;
+  } catch (e) {
+    return false;
+  }
+ }
+
   Future<bool> updatePlaylistPrivacy(String token, String id, bool isPublic) async {
     try {
       final success = await _service.updatePrivacy(token, id, isPublic);
@@ -76,5 +97,5 @@ class PlaylistProvider extends ChangeNotifier {
     } catch (e) {
       return false;
     }
-  }
-}
+  }    
+} 

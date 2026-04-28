@@ -1,88 +1,74 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
+import '../../../core/services/api_service.dart';
 import '../models/playlist_model.dart';
 
 class PlaylistService {
-  final String baseUrl = "http://127.0.0.1:5000/api/v1";
+  final ApiService _apiService; 
+  PlaylistService(this._apiService); 
 
-  // GET: Get All Playlists
+  // 1. FETCH ALL
   Future<List<Playlist>> getPlaylists(String token) async {
-    try {
-      final res = await http.get(
-        Uri.parse("$baseUrl/playlists"), 
-        headers: {'Authorization': 'Bearer $token'}
-      );
+    final response = await _apiService.get(
+      '/playlists',
+      authRequired: true,
+    );
 
-      if (res.statusCode == 200) {
-        List data = jsonDecode(res.body);
-        return data.map((e) => Playlist.fromJson(e)).toList();
-      }
-    } catch (e) {
-      print("Error fetching playlists: $e");
+    if (response != null && response is List) {
+      return response.map((e) => Playlist.fromJson(e)).toList();
     }
-    return []; // Return empty list instead of crashing on 502
+    return [];
   }
 
-  // POST: Create Playlist
+  // 2. CREATE
   Future<Playlist?> createPlaylist(String token, String title) async {
-    try {
-      final res = await http.post(
-        Uri.parse("$baseUrl/playlists"),
-        headers: {
-          'Authorization': 'Bearer $token', 
-          'Content-Type': 'application/json'
-        },
-        body: jsonEncode({"title": title}),
-      );
-      
-      if (res.statusCode == 201 || res.statusCode == 200) {
-        return Playlist.fromJson(jsonDecode(res.body));
-      }
-    } catch (e) {
-      print("Error creating playlist: $e");
+    final response = await _apiService.post(
+      '/playlists',
+      {'name': title}, 
+      authRequired: true,
+    );
+
+    if (response != null) {
+      return Playlist.fromJson(response);
     }
-    return null; 
+    return null;
   }
 
+Future<bool> updatePlaylist(String token, String id, String name, String description) async {
+  // Use 'data' to avoid clashing with the reserved word 'body'
+  final Map<String, dynamic> data = { 
+    'name': name,
+    'description': description,
+  };
+
+  final response = await _apiService.put(
+    '/playlists/$id',
+  );
+  return response != null;
+}
+  // 4. UPDATE PRIVACY (Toggle)
   Future<bool> updatePrivacy(String token, String id, bool isPublic) async {
-    try {
-      final res = await http.patch(
-        Uri.parse("$baseUrl/playlists/$id"),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json'
-        },
-        body: jsonEncode({"isPublic": isPublic}),
-      );
-      return res.statusCode == 200;
-    } catch (e) {
-      return false;
-    }
+    final response = await _apiService.patch(
+      '/playlists/$id',
+      {'isPublic': isPublic},
+    );
+    return response != null;
   }
+
+  // 5. ADD TRACK
   Future<bool> addTrack(String token, String playlistId, String trackId) async {
-    try {
-      final res = await http.post(
-        Uri.parse("$baseUrl/playlists/$playlistId/tracks"),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json'
-        },
-        body: jsonEncode({"trackId": trackId}),
-      );
-      return res.statusCode == 200;
-    } catch (e) {
-      return false;
-    }
+    final response = await _apiService.post(
+      '/playlists/$playlistId/tracks',
+      {'trackId': trackId},
+      authRequired: true,
+    );
+    return response != null;
   }
+
+  // 6. DELETE
   Future<bool> deletePlaylist(String token, String id) async {
-    try {
-      final res = await http.delete(
-        Uri.parse("$baseUrl/playlists/$id"),
-        headers: {'Authorization': 'Bearer $token'},
-      );
-      return res.statusCode == 204 || res.statusCode == 200;
-    } catch (e) {
-      return false;
-    }
+    final response = await _apiService.delete(
+      '/playlists/$id',
+      authRequired: true,
+    );
+    return response != null;
   }
 }

@@ -82,7 +82,7 @@ class ApiNotificationService {
 		try {
 			await _api.post(
 				'/notifications/push-token',
-				body: {
+				 {
 					'token': token,
 					'platform': platform,
 				},
@@ -93,7 +93,7 @@ class ApiNotificationService {
 			// Backward-compatible fallback if backend route name differs.
 			await _api.post(
 				'/notifications/register-push-token',
-				body: {
+				{
 					'token': token,
 					'platform': platform,
 				},

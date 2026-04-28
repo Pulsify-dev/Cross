@@ -82,7 +82,7 @@ class ApiUserService implements UserService {
 
   @override
   Future<void> followUser(String userId) async {
-    await _apiService.post('/users/$userId/follow', body: {}, authRequired: true);
+    await _apiService.post('/users/$userId/follow',{}, authRequired: true);
   }
 
   @override

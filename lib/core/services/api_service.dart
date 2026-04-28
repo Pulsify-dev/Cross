@@ -58,8 +58,7 @@ class ApiService {
 	}
 
 	Future<dynamic> patch(
-		String endpoint, {
-		Map<String, dynamic>? body,
+		String endpoint, Map<String, dynamic> body, {
 		bool authRequired = false,
 		Map<String, String>? headers,
 	}) {

@@ -1,3 +1,4 @@
+import 'package:cross/providers/auth_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/playlist_provider.dart';
@@ -32,14 +33,14 @@ class _EditPlaylistScreenState extends State<EditPlaylistScreen> {
     super.dispose();
   }
 
-  void _saveChanges() async {
+ void _saveChanges() async {
     if (_titleController.text.isEmpty) return;
-
-    // Call the provider using the ID from the playlist we passed in
-    await context.read<PlaylistProvider>().updatePlaylistPrivacy(
+    
+    await context.read<PlaylistProvider>().updatePlaylist(
+      context.read<AuthProvider>().token ?? '',
       widget.playlist.id,
       _titleController.text,
-      _descController.text as bool,
+      _descController.text, 
     );
 
     if (mounted) Navigator.pop(context);
