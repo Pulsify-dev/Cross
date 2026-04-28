@@ -51,6 +51,15 @@ class AppRoutes {
           builder: (_) => const FeedScreen(showBottomNavigationBar: true),
         );
       case RouteNames.trackDetails:
+        if (settings.arguments is Map<String, dynamic>) {
+          final args = settings.arguments as Map<String, dynamic>;
+          return MaterialPageRoute(
+            builder: (_) => TrackDetailsScreen(
+              track: args['track'] as Track,
+              playlist: args['playlist'] as List<Track>?,
+            ),
+          );
+        }
         final track = settings.arguments as Track;
         return MaterialPageRoute(
           builder: (_) => TrackDetailsScreen(track: track),

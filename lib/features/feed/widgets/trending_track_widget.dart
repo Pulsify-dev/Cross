@@ -249,7 +249,10 @@ class _TrendingTrackWidgetState extends State<TrendingTrackWidget> {
           onPressed: () {
             Navigator.of(
               context,
-            ).pushNamed(RouteNames.trackDetails, arguments: track);
+            ).pushNamed(RouteNames.trackDetails, arguments: {
+              'track': track,
+              'playlist': playlist,
+            });
           },
         ),
       ),
