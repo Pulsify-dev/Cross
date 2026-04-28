@@ -1,19 +1,23 @@
 export '../../feed/models/track.dart';
 export '../../feed/models/user.dart';
 export '../../feed/models/playlist.dart';
+export '../../feed/models/album.dart';
 import '../../feed/models/track.dart';
 import '../../feed/models/user.dart';
 import '../../feed/models/playlist.dart';
+import '../../feed/models/album.dart';
 
 class GlobalSearchResponse {
   final List<Track> tracks;
   final List<User> users;
   final List<Playlist> playlists;
+  final List<Album> albums;
 
   GlobalSearchResponse({
     this.tracks = const [],
     this.users = const [],
     this.playlists = const [],
+    this.albums = const [],
   });
 
   factory GlobalSearchResponse.fromJson(Map<String, dynamic> json) {
@@ -28,10 +32,13 @@ class GlobalSearchResponse {
       playlists: data['playlists'] != null
           ? (data['playlists'] as List).map((i) => Playlist.fromJson(i)).toList()
           : [],
+      albums: data['albums'] != null
+          ? (data['albums'] as List).map((i) => Album.fromJson(i)).toList()
+          : [],
     );
   }
 
-  bool get isEmpty => tracks.isEmpty && users.isEmpty && playlists.isEmpty;
+  bool get isEmpty => tracks.isEmpty && users.isEmpty && playlists.isEmpty && albums.isEmpty;
 }
 
 class SearchSuggestion {

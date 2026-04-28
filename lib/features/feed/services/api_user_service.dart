@@ -79,4 +79,14 @@ class ApiUserService implements UserService {
 
   @override
   Future<User?> updateProfileImage(String filePath) async => null;
+
+  @override
+  Future<void> followUser(String userId) async {
+    await _apiService.post('/users/$userId/follow', body: {}, authRequired: true);
+  }
+
+  @override
+  Future<void> unfollowUser(String userId) async {
+    await _apiService.delete('/users/$userId/follow', authRequired: true);
+  }
 }

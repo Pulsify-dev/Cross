@@ -78,13 +78,13 @@ class _TrackTileState extends State<TrackTile> {
         widget.track.repostCount = fullTrack.repostCount;
         widget.track.isLiked = fullTrack.isLiked;
         widget.track.isReposted = fullTrack.isReposted;
-        if (fullTrack.artistName != 'Unknown Artist') {
+        if (fullTrack.artistName != 'Unknown Artist' && fullTrack.artistName.isNotEmpty) {
           widget.track.artistName = fullTrack.artistName;
         }
 
         setState(() {
-          _fetchedTrack = fullTrack;
-          _artworkUrl = fullTrack.artworkUrl;
+          _fetchedTrack = widget.track; // Use the mutated widget.track to preserve its original artistName
+          _artworkUrl = fullTrack.artworkUrl ?? widget.track.artworkUrl;
         });
       }
     } catch (e) {
@@ -162,7 +162,7 @@ class _TrackTileState extends State<TrackTile> {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
-          if (currentTrack.status != null && currentTrack.status != 'Finished')
+          if (currentTrack.status != null && currentTrack.status!.toLowerCase() != 'finished')
             Container(
               margin: const EdgeInsets.only(top: 4),
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),

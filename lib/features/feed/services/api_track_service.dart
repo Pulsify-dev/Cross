@@ -11,19 +11,15 @@ import 'package:flutter/foundation.dart';
 class ApiTrackService implements TrackService {
   final ApiService _apiService;
 
-  // Local mock state for session persistence
-  final List<Track> _localLikedTracks = [];
-  final Map<String, List<Comment>> _localComments = {};
-
-  // Cache for mock objects generated in recent calls
-  final Map<String, Track> _mockTrackCache = {};
-
   ApiTrackService(this._apiService);
 
   @override
   Future<Track?> getTrackById(String id) async {
     try {
-      final response = await _apiService.get(ApiEndpoints.trackById(id));
+      final response = await _apiService.get(
+        ApiEndpoints.trackById(id),
+        authRequired: true,
+      );
       if (response != null) {
         return Track.fromJson(response);
       }
@@ -122,10 +118,10 @@ class ApiTrackService implements TrackService {
       queryParams.add('page=$page');
       queryParams.add('limit=$limit');
       
-      final url = '${ApiEndpoints.trendingTracks}?${queryParams.join('&')}';
+      final url = '${ApiEndpoints.charts}?${queryParams.join('&')}';
       
       final response = await _apiService.get(url);
-      
+
       if (response != null) {
         List<dynamic> items = [];
         if (response is List) {
@@ -148,7 +144,6 @@ class ApiTrackService implements TrackService {
     }
     return []; // Return empty if anything fails
   }
-
 
   @override
   Future<void> likeTrack(String trackId) async {
@@ -178,7 +173,10 @@ class ApiTrackService implements TrackService {
   @override
   Future<List<Track>> getLikedTracks() async {
     try {
-      final response = await _apiService.get(ApiEndpoints.likedTracks, authRequired: true);
+      final response = await _apiService.get(
+        ApiEndpoints.likedTracks,
+        authRequired: true,
+      );
       if (response != null) {
         if (response is List) {
           return response.map((data) => Track.fromJson(data)).toList();
@@ -251,6 +249,48 @@ class ApiTrackService implements TrackService {
   }
 
   @override
+  Future<List<Track>> getRecentlyPlayed({
+    int page = 1,
+    int limit = 20,
+  }) async {
+    try {
+      final response = await _apiService.get(
+        '${ApiEndpoints.recentlyPlayed}?page=$page&limit=$limit',
+        authRequired: true,
+      );
+
+      if (response != null && response is Map<String, dynamic>) {
+        final List<dynamic> tracksData =
+            (response['tracks'] ?? response['data'] ?? response['items'] ?? [])
+                as List;
+
+        final tracks = <Track>[];
+        for (final item in tracksData) {
+          try {
+            if (item is Map<String, dynamic>) {
+              // The API returns nested track objects: { "track": { ... } }
+              final trackJson = item['track'];
+              if (trackJson != null && trackJson is Map<String, dynamic>) {
+                // Also preserve the track_id if it's outside the nested object
+                if (trackJson['id'] == null && item['track_id'] != null) {
+                  trackJson['id'] = item['track_id'];
+                }
+                tracks.add(Track.fromJson(trackJson));
+              }
+            }
+          } catch (e) {
+            debugPrint('Error parsing individual recently played track: $e');
+          }
+        }
+        return tracks;
+      }
+    } catch (e) {
+      debugPrint('Error fetching recently played tracks: $e');
+    }
+    return [];
+  }
+
+  @override
   Future<List<HistoryEntry>> getListeningHistory({
     int page = 1,
     int limit = 20,
@@ -264,7 +304,12 @@ class ApiTrackService implements TrackService {
       if (response != null) {
         final List<dynamic> historyData;
         if (response is Map<String, dynamic>) {
-          historyData = (response['history'] ?? response['data'] ?? response['items'] ?? []) as List;
+          historyData =
+              (response['history'] ??
+                      response['data'] ??
+                      response['items'] ??
+                      [])
+                  as List;
         } else if (response is List) {
           historyData = response;
         } else {
@@ -304,9 +349,13 @@ class ApiTrackService implements TrackService {
   }
 
   @override
-  Future<({List<Comment> comments, int total})> getComments(String trackId) async {
+  Future<({List<Comment> comments, int total})> getComments(
+    String trackId,
+  ) async {
     try {
-      final response = await _apiService.get(ApiEndpoints.trackComments(trackId));
+      final response = await _apiService.get(
+        ApiEndpoints.trackComments(trackId),
+      );
       if (response != null && response is Map<String, dynamic>) {
         final commentsData = response['comments'] as List?;
         final total = response['comments_count'] ?? 0;
@@ -324,9 +373,13 @@ class ApiTrackService implements TrackService {
   }
 
   @override
-  Future<({List<Comment> replies, int total})> getCommentReplies(String commentId) async {
+  Future<({List<Comment> replies, int total})> getCommentReplies(
+    String commentId,
+  ) async {
     try {
-      final response = await _apiService.get(ApiEndpoints.commentReplies(commentId));
+      final response = await _apiService.get(
+        ApiEndpoints.commentReplies(commentId),
+      );
       if (response != null && response is Map<String, dynamic>) {
         final repliesData = response['replies'] as List?;
         final total = response['replies_count'] ?? 0;
@@ -480,7 +533,9 @@ class ApiTrackService implements TrackService {
   @override
   Future<List<User>> getTrackReposts(String trackId) async {
     try {
-      final response = await _apiService.get(ApiEndpoints.trackReposts(trackId));
+      final response = await _apiService.get(
+        ApiEndpoints.trackReposts(trackId),
+      );
       if (response != null && response is Map<String, dynamic>) {
         final reposters = response['reposters'] as List?;
         if (reposters != null) {
@@ -495,6 +550,5 @@ class ApiTrackService implements TrackService {
     return [];
   }
 
-  @override
   void setCurrentUser(User? user) {}
 }

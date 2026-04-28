@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../providers/feed_provider.dart';
 import '../../../routes/route_names.dart';
 import '../models/user.dart';
+import '../../social/widgets/avatar_url_utils.dart';
 
 class SuggestedUsersWidget extends StatefulWidget {
   const SuggestedUsersWidget({super.key});
@@ -98,11 +100,12 @@ class _SuggestedUsersWidgetState extends State<SuggestedUsersWidget> {
             children: [
               CircleAvatar(
                 radius: 30,
-                backgroundImage: user.profileImageUrl != null
+                backgroundColor: AppColors.surfaceElevated,
+                backgroundImage: isValidNetworkAvatarUrl(user.profileImageUrl)
                     ? NetworkImage(user.profileImageUrl!)
                     : null,
-                child: user.profileImageUrl == null
-                    ? const Icon(Icons.person, size: 30)
+                child: !isValidNetworkAvatarUrl(user.profileImageUrl)
+                    ? const Icon(Icons.person, size: 30, color: Color.fromARGB(255, 220, 218, 218))
                     : null,
               ),
               const SizedBox(height: 8),

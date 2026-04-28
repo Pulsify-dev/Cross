@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '/providers/feed_provider.dart';
+import '/providers/notifications_provider.dart';
 import '/providers/profile_provider.dart';
 import '/routes/route_names.dart';
 import '../widgets/trending_track_widget.dart';
@@ -35,6 +36,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final unreadNotifications = context.select<NotificationsProvider, int>(
+      (p) => p.unreadCount,
+    );
+
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
@@ -60,7 +65,39 @@ class _HomeScreenState extends State<HomeScreen> {
             onPressed: () {
               Navigator.of(context).pushNamed(RouteNames.messages);
             },
-            icon: const Icon(Icons.chat_bubble_outline),
+            icon: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                const Icon(Icons.chat_bubble_outline),
+                if (unreadNotifications > 0)
+                  Positioned(
+                    right: -6,
+                    top: -5,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 4,
+                        vertical: 1,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.error,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      constraints: const BoxConstraints(minWidth: 16),
+                      child: Text(
+                        unreadNotifications > 99
+                            ? '99+'
+                            : '$unreadNotifications',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
             tooltip: 'Activity',
           ),
         ],

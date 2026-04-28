@@ -10,7 +10,7 @@ class SearchProvider with ChangeNotifier {
 
   GlobalSearchResponse _searchResponse = GlobalSearchResponse();
   List<SearchSuggestion> _suggestions = [];
-  
+
   final List<String> _searchHistory = [];
   bool _isLoading = false;
   Timer? _suggestionDebounce;
@@ -24,7 +24,7 @@ class SearchProvider with ChangeNotifier {
 
   Future<void> search(String query) async {
     _suggestionDebounce?.cancel();
-    
+
     if (query.isEmpty) {
       _searchResponse = GlobalSearchResponse();
       _suggestions = [];
@@ -67,7 +67,9 @@ class SearchProvider with ChangeNotifier {
     if (q.isEmpty) return;
     _searchHistory.remove(q);
     _searchHistory.insert(0, q);
-    if (_searchHistory.length > 20) _searchHistory.removeRange(20, _searchHistory.length);
+    if (_searchHistory.length > 20) {
+      _searchHistory.removeRange(20, _searchHistory.length);
+    }
   }
 
   void removeFromHistory(String query) {

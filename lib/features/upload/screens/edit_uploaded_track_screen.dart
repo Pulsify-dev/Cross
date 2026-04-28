@@ -37,6 +37,7 @@ class _EditUploadedTrackScreenState extends State<EditUploadedTrackScreen> {
     'Afrobeats', 'House', 'Techno', 'Lo-Fi', 'Other',
   ];
   late final TextEditingController _descriptionController;
+  late final TextEditingController _lyricsController;
   late final TextEditingController _tagsController;
   bool _didInitForm = false;
   bool _isSaving = false;
@@ -51,6 +52,7 @@ class _EditUploadedTrackScreenState extends State<EditUploadedTrackScreen> {
 
     _titleController = TextEditingController();
     _descriptionController = TextEditingController();
+    _lyricsController = TextEditingController();
     _tagsController = TextEditingController();
     _previewStartController = TextEditingController();
 
@@ -66,6 +68,7 @@ class _EditUploadedTrackScreenState extends State<EditUploadedTrackScreen> {
     _titleController.text = track.title;
     _selectedGenre = _genres.contains(track.genre) ? track.genre : 'Other';
     _descriptionController.text = track.description;
+    _lyricsController.text = track.lyrics ?? '';
     _tagsController.text = track.tags.map((tag) => '#$tag').join(' ');
     _privacy = track.privacy;
     _previewStartController.text = track.previewStartSeconds?.toString() ?? '';
@@ -76,6 +79,7 @@ class _EditUploadedTrackScreenState extends State<EditUploadedTrackScreen> {
   void dispose() {
     _titleController.dispose();
     _descriptionController.dispose();
+    _lyricsController.dispose();
     _tagsController.dispose();
     _previewStartController.dispose();
     super.dispose();
@@ -113,6 +117,7 @@ class _EditUploadedTrackScreenState extends State<EditUploadedTrackScreen> {
             : _titleController.text.trim(),
         genre: _selectedGenre ?? track.genre,
         description: _descriptionController.text.trim(),
+        lyrics: _lyricsController.text.trim().isEmpty ? null : _lyricsController.text.trim(),
         tags: parsedTags,
         privacy: _privacy,
         previewStartSeconds: previewStart,
@@ -333,6 +338,14 @@ class _EditUploadedTrackScreenState extends State<EditUploadedTrackScreen> {
                 controller: _descriptionController,
                 hintText: 'Describe your track',
                 maxLines: 4,
+              ),
+              const SizedBox(height: 18),
+
+              const TrackFormSectionLabel(text: 'Lyrics'),
+              TrackTextField(
+                controller: _lyricsController,
+                hintText: 'Enter track lyrics...',
+                maxLines: 8,
               ),
               const SizedBox(height: 18),
 

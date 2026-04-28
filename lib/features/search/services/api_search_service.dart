@@ -3,10 +3,15 @@ import '../../../core/constants/api_endpoints.dart';
 import '../models/search_models.dart';
 import 'search_service.dart';
 
+import '../../feed/services/track_service.dart';
+import '../../feed/services/user_service.dart';
+
 class ApiSearchService implements SearchService {
   final ApiService _apiService;
+  final TrackService _trackService;
+  final UserService _userService;
 
-  ApiSearchService(this._apiService);
+  ApiSearchService(this._apiService, this._trackService, this._userService);
 
   @override
   Future<GlobalSearchResponse> search(String query, {int limit = 20, int offset = 0}) async {
@@ -15,7 +20,75 @@ class ApiSearchService implements SearchService {
         ApiEndpoints.globalSearch(query, limit: limit, offset: offset),
       );
       if (response != null && response is Map<String, dynamic>) {
-        return GlobalSearchResponse.fromJson(response);
+        final searchResult = GlobalSearchResponse.fromJson(response);
+        
+        // Enrich the tracks in parallel
+        if (searchResult.tracks.isNotEmpty) {
+          await Future.wait(searchResult.tracks.map((track) async {
+            try {
+              final fullTrack = await _trackService.getTrackById(track.id);
+              if (fullTrack != null) {
+                track.artworkUrl = fullTrack.artworkUrl;
+                track.likeCount = fullTrack.likeCount;
+                track.commentCount = fullTrack.commentCount;
+                track.repostCount = fullTrack.repostCount;
+                track.isLiked = fullTrack.isLiked;
+                track.isReposted = fullTrack.isReposted;
+              }
+            } catch (e) {
+              // Ignore individual fetch errors so we don't break the whole search
+            }
+          }));
+        }
+
+        // Enrich the users in parallel using getPublicProfile
+        if (searchResult.users.isNotEmpty) {
+          await Future.wait(searchResult.users.asMap().entries.map((entry) async {
+            final index = entry.key;
+            final user = entry.value;
+            try {
+              final fullProfile = await _userService.getPublicProfile(user.id);
+              if (fullProfile != null && fullProfile.profileImageUrl != null) {
+                searchResult.users[index] = user.copyWith(
+                  profileImageUrl: fullProfile.profileImageUrl,
+                  displayName: fullProfile.displayName,
+                  bio: fullProfile.bio,
+                  followersCount: fullProfile.followersCount,
+                );
+              }
+            } catch (e) {
+              // Ignore individual fetch errors
+            }
+          }));
+        }
+        
+        // Enrich the playlists in parallel
+        if (searchResult.playlists.isNotEmpty) {
+          await Future.wait(searchResult.playlists.asMap().entries.map((entry) async {
+            final index = entry.key;
+            final playlist = entry.value;
+            try {
+              final response = await _apiService.get('/v1/playlists/${playlist.id}');
+              if (response != null && response['data'] != null) {
+                final fullPlaylist = Playlist.fromJson(response['data']);
+                if (fullPlaylist.creator != null) {
+                  searchResult.playlists[index] = Playlist(
+                    id: playlist.id,
+                    name: fullPlaylist.name.isNotEmpty ? fullPlaylist.name : playlist.name,
+                    description: fullPlaylist.description ?? playlist.description,
+                    artworkUrl: fullPlaylist.artworkUrl ?? playlist.artworkUrl,
+                    creator: fullPlaylist.creator,
+                    trackCount: fullPlaylist.trackCount,
+                    tracks: fullPlaylist.tracks,
+                  );
+                }
+              }
+            } catch (e) {
+              // Ignore individual fetch errors
+            }
+          }));
+        }
+        return searchResult;
       }
     } catch (e) {
       rethrow;

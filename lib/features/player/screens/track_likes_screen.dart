@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../feed/models/track.dart';
 import '../../../providers/engagement_provider.dart';
+import '../../../routes/route_names.dart';
 import '../widgets/mini_player.dart';
 
 class TrackLikesScreen extends StatefulWidget {
@@ -56,7 +57,11 @@ class _TrackLikesScreenState extends State<TrackLikesScreen> {
                       subtitle: Text('@${user.username}'),
                       trailing: TextButton(
                         onPressed: () {
-                          // Navigate to user profile
+                          Navigator.pushNamed(
+                            context,
+                            RouteNames.publicProfile,
+                            arguments: user.id,
+                          );
                         },
                         child: Text(
                           'View Profile',

@@ -33,7 +33,7 @@ class _ListeningHistoryScreenState extends State<ListeningHistoryScreen> {
   }
 
   void _onScroll() {
-    if (_scrollController.position.pixels >= 
+    if (_scrollController.position.pixels >=
         _scrollController.position.maxScrollExtent - 200) {
       context.read<FeedProvider>().fetchMoreHistory();
     }
@@ -44,7 +44,9 @@ class _ListeningHistoryScreenState extends State<ListeningHistoryScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Clear History'),
-        content: const Text('Are you sure you want to clear your entire listening history? This cannot be undone.'),
+        content: const Text(
+          'Are you sure you want to clear your entire listening history? This cannot be undone.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
@@ -109,7 +111,8 @@ class _ListeningHistoryScreenState extends State<ListeningHistoryScreen> {
           Expanded(
             child: Consumer<FeedProvider>(
               builder: (context, provider, child) {
-                if (provider.isHistoryLoading && provider.listeningHistory.isEmpty) {
+                if (provider.isHistoryLoading &&
+                    provider.listeningHistory.isEmpty) {
                   return const Center(child: CircularProgressIndicator());
                 }
 
@@ -130,7 +133,9 @@ class _ListeningHistoryScreenState extends State<ListeningHistoryScreen> {
                   child: ListView.builder(
                     controller: _scrollController,
                     physics: const AlwaysScrollableScrollPhysics(),
-                    itemCount: provider.listeningHistory.length + (provider.hasMoreHistory ? 1 : 0),
+                    itemCount:
+                        provider.listeningHistory.length +
+                        (provider.hasMoreHistory ? 1 : 0),
                     itemBuilder: (context, index) {
                       if (index == provider.listeningHistory.length) {
                         return const Padding(
@@ -141,19 +146,29 @@ class _ListeningHistoryScreenState extends State<ListeningHistoryScreen> {
 
                       final historyEntry = provider.listeningHistory[index];
                       final track = historyEntry.track;
-                      
+
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          if (index == 0 || _formatTimeAgo(historyEntry.playedAt) != _formatTimeAgo(provider.listeningHistory[index - 1].playedAt))
+                          if (index == 0 ||
+                              _formatTimeAgo(historyEntry.playedAt) !=
+                                  _formatTimeAgo(
+                                    provider
+                                        .listeningHistory[index - 1]
+                                        .playedAt,
+                                  ))
                             Padding(
                               padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
                               child: Text(
                                 _formatTimeAgo(historyEntry.playedAt),
-                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-                                  fontWeight: FontWeight.bold,
-                                ),
+                                style: Theme.of(context).textTheme.bodySmall
+                                    ?.copyWith(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurface
+                                          .withValues(alpha: 0.6),
+                                      fontWeight: FontWeight.bold,
+                                    ),
                               ),
                             ),
                           TrackTile(
@@ -161,13 +176,19 @@ class _ListeningHistoryScreenState extends State<ListeningHistoryScreen> {
                             onPlay: () {
                               context.read<PlayerProvider>().playTrack(
                                 track,
-                                playlist: provider.listeningHistory.map((e) => e.track).toList(),
+                                playlist: provider.listeningHistory
+                                    .map((e) => e.track)
+                                    .toList(),
                               );
                             },
                             onDetails: () {
-                              Navigator.of(context).pushNamed(RouteNames.trackDetails, arguments: track);
+                              Navigator.of(context).pushNamed(
+                                RouteNames.trackDetails,
+                                arguments: track,
+                              );
                             },
-                            onLikeToggle: () => context.read<FeedProvider>().toggleLike(track),
+                            onLikeToggle: () =>
+                                context.read<FeedProvider>().toggleLike(track),
                           ),
                         ],
                       );

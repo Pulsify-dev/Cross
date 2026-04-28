@@ -17,9 +17,31 @@ class HistoryEntry {
   Duration get durationPlayed => Duration(milliseconds: durationPlayedMs);
 
   factory HistoryEntry.fromJson(Map<String, dynamic> json) {
-    final trackData = json['track_id'] ?? json['track'];
+    var trackData = json['track_id'] ?? json['track'];
     if (trackData == null || trackData is! Map<String, dynamic>) {
       throw Exception('Missing or invalid track data in history entry');
+    }
+
+    // Clone to avoid mutating the original if it's reused elsewhere
+    trackData = Map<String, dynamic>.from(trackData);
+
+    // If track data is missing artist name info but the history entry has it, merge it.
+    // We check if the existing fields are Maps with actual names, if not, we overwrite with parent data.
+    bool hasName(dynamic data) {
+      if (data is Map<String, dynamic>) {
+        return data['display_name'] != null || data['displayName'] != null || data['username'] != null;
+      }
+      return false;
+    }
+
+    if (trackData['artist_name'] == null && trackData['artistName'] == null) {
+      if (!hasName(trackData['artist']) && !hasName(trackData['uploader']) && !hasName(trackData['user'])) {
+        if (json['user'] != null) trackData['user'] = json['user'];
+        if (json['artist'] != null) trackData['artist'] = json['artist'];
+        if (json['uploader'] != null) trackData['uploader'] = json['uploader'];
+        if (json['artist_name'] != null) trackData['artist_name'] = json['artist_name'];
+        if (json['artistName'] != null) trackData['artistName'] = json['artistName'];
+      }
     }
 
     return HistoryEntry(

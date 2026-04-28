@@ -428,6 +428,7 @@ class UploadProvider extends ChangeNotifier {
 				tags: updatedTrack.tags,
 				privacy: updatedTrack.privacy,
 				previewStartSeconds: updatedTrack.previewStartSeconds,
+				lyrics: updatedTrack.lyrics,
 			);
 
 			if (saved == null) return null;
@@ -569,6 +570,11 @@ class UploadProvider extends ChangeNotifier {
 			_currentOperation = null;
 			notifyListeners();
 		}
+	}
+
+	Future<String?> fetchTrackLyrics(String trackId) async {
+		if (trackId.trim().isEmpty) return null;
+		return _uploadService.getTrackLyrics(trackId);
 	}
 
 	Future<List<double>?> fetchWaveformForTrack(
