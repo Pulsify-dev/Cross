@@ -7,11 +7,13 @@ class ChatScreen extends StatefulWidget {
   const ChatScreen({
     super.key,
     required this.userId,
+    required this.username,
     required this.displayName,
     this.avatarUrl,
   });
 
   final String userId;
+  final String username;
   final String displayName;
   final String? avatarUrl;
 
@@ -36,6 +38,7 @@ class _ChatScreenState extends State<ChatScreen> {
     final provider = context.read<ConversationsProvider>();
     final convId = await provider.openOrCreate(
       userId: widget.userId,
+      username: widget.username,
       displayName: widget.displayName,
       avatarUrl: widget.avatarUrl,
     );

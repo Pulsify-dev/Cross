@@ -28,7 +28,7 @@ class ApiMessagingService implements MessagingService {
   Future<String> startOrGetConversation(String recipientId) async {
     final response = await _api.post(
       '/conversations',
-      body: {'recipient_id': recipientId},
+      body: {'username': recipientId},
       authRequired: true,
     );
     final data = (response['data'] ?? response) as Map<String, dynamic>;

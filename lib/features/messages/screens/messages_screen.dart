@@ -295,6 +295,7 @@ class _MessagesScreenState extends State<MessagesScreen>
                           RouteNames.chat,
                           arguments: {
                             'userId': conv.userId,
+                            'username': conv.username,
                             'displayName': conv.displayName,
                             'avatarUrl': conv.avatarUrl,
                           },
