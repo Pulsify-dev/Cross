@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import '/core/theme/app_colors.dart';
 import '/providers/feed_provider.dart';
 import '/providers/player_provider.dart';
 import '/routes/route_names.dart';
@@ -32,25 +33,87 @@ class _TrendingTrackWidgetState extends State<TrendingTrackWidget> {
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 24, 16, 12),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: [
-              Text(
-                'Trending Now',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
-              ),
-            ],
+          child: Text(
+            'Trending by genre',
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
           ),
         ),
+        _buildGenreSelector(),
+        const SizedBox(height: 12),
         _buildHorizontalTrendingGroup(),
       ],
     );
   }
 
+  Widget _buildGenreSelector() {
+    final List<Map<String, String>> genres = [
+      {'label': 'ELECTRONIC', 'value': 'Electronic'},
+      {'label': 'SOUNDCLOUD', 'value': 'SoundCloud'},
+      {'label': 'TECHNOHOUSE', 'value': 'TechnoHouse'},
+      {'label': 'INDIE', 'value': 'Indie'},
+      {'label': 'LATIN', 'value': 'Latin'},
+      {'label': 'HIP HOP & RAP', 'value': 'Hip-Hop'},
+      {'label': 'ROCK, METAL, PUNK', 'value': 'Rock'},
+      {'label': 'COUNTRY', 'value': 'Country'},
+      {'label': 'FOLK', 'value': 'Folk'},
+      {'label': 'JAZZJAZZ', 'value': 'Jazz'},
+      {'label': 'REGGAE', 'value': 'Reggae'},
+      {'label': 'POP', 'value': 'Pop'},
+      {'label': 'SOUL', 'value': 'Soul'},
+      {'label': 'R&B', 'value': 'R&B'},
+    ];
 
+    return Consumer<FeedProvider>(
+      builder: (context, feed, child) {
+        return SizedBox(
+          height: 40,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            itemCount: genres.length,
+            physics: const BouncingScrollPhysics(),
+            itemBuilder: (context, index) {
+              final genre = genres[index];
+              final isSelected = (feed.selectedGenre ?? '') == genre['value'];
+              
+              return Padding(
+                padding: const EdgeInsets.only(right: 12),
+                child: ChoiceChip(
+                  label: Text(
+                    genre['label']!,
+                    style: TextStyle(
+                      color: isSelected ? AppColors.primary : Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                      letterSpacing: 1.0,
+                    ),
+                  ),
+                  selected: isSelected,
+                  selectedColor: AppColors.primary.withValues(alpha: 0.15),
+                  backgroundColor: Colors.transparent,
+                  side: BorderSide(
+                    color: isSelected ? AppColors.primary : Colors.white.withValues(alpha: 0.8),
+                    width: 1.5,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  onSelected: (selected) {
+                    if (selected && !isSelected) {
+                      feed.setGenre(genre['value']);
+                    }
+                  },
+                ),
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
 
   Widget _buildHorizontalTrendingGroup() {
     return Consumer<FeedProvider>(
@@ -84,9 +147,20 @@ class _TrendingTrackWidgetState extends State<TrendingTrackWidget> {
           );
         }
 
-        return SizedBox(
-          height:
-              280, // Increased height to avoid yellow overflow bar for 3 items
+        return Container(
+          decoration: BoxDecoration(
+            gradient: RadialGradient(
+              center: Alignment.centerLeft,
+              radius: 1.8,
+              colors: [
+                AppColors.primary.withValues(alpha: 0.25),
+                Colors.transparent,
+              ],
+              stops: const [0.0, 0.6],
+            ),
+          ),
+          child: SizedBox(
+            height: 280, // Increased height to avoid yellow overflow bar for 3 items
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -104,6 +178,7 @@ class _TrendingTrackWidgetState extends State<TrendingTrackWidget> {
               );
             },
           ),
+        ),
         );
       },
     );

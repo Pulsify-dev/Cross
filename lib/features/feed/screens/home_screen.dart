@@ -7,8 +7,8 @@ import '/providers/notifications_provider.dart';
 import '/providers/profile_provider.dart';
 import '/routes/route_names.dart';
 import '../widgets/trending_track_widget.dart';
-import '../widgets/suggested_users_widget.dart';
 import '../widgets/listening_history_widget.dart';
+import '../widgets/discover_home_sections_widget.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -25,6 +25,9 @@ class _HomeScreenState extends State<HomeScreen> {
       final feedProvider = context.read<FeedProvider>();
       if (feedProvider.trendingTracks.isEmpty) {
         feedProvider.fetchTrendingTracks();
+      }
+      if (feedProvider.discoverHomeSections.isEmpty) {
+        feedProvider.fetchDiscoverHome();
       }
 
       final profileProvider = context.read<ProfileProvider>();
@@ -131,10 +134,9 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           SliverToBoxAdapter(child: const TrendingTrackWidget()),
+          const SliverToBoxAdapter(child: DiscoverHomeSectionsWidget()),
           const SliverToBoxAdapter(child: SizedBox(height: 16)),
           const SliverToBoxAdapter(child: ListeningHistoryWidget()),
-          const SliverToBoxAdapter(child: SizedBox(height: 16)),
-          SliverToBoxAdapter(child: const SuggestedUsersWidget()),
           const SliverToBoxAdapter(child: SizedBox(height: 100)),
         ],
       ),

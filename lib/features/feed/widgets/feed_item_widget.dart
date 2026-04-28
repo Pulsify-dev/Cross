@@ -38,12 +38,13 @@ class FeedItemWidget extends StatelessWidget {
               ],
             ),
           ),
-        TrackCard(
-          track: item.track,
-          onPlay: onPlay,
-          onDetails: onDetails,
-          onLikeToggle: onLikeToggle,
-        ),
+        if (item.track != null)
+          TrackCard(
+            track: item.track!,
+            onPlay: onPlay,
+            onDetails: onDetails,
+            onLikeToggle: onLikeToggle,
+          ),
       ],
     );
   }

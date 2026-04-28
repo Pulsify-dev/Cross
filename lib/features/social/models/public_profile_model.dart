@@ -15,6 +15,7 @@ class PublicProfileModel {
 		required this.favoriteGenres,
 		required this.uploadedTracks,
 		required this.playlists,
+		required this.socialLinks,
 	});
 
 	final String id;
@@ -32,6 +33,7 @@ class PublicProfileModel {
 	final List<String> favoriteGenres;
 	final List<String> uploadedTracks;
 	final List<String> playlists;
+	final Map<String, String> socialLinks;
 
 	factory PublicProfileModel.fromJson(Map<String, dynamic> json) {
 		return PublicProfileModel(
@@ -50,6 +52,7 @@ class PublicProfileModel {
 			favoriteGenres: _toStringList(json['favoriteGenres'] ?? json['favorite_genres']),
 			uploadedTracks: _toStringList(json['uploadedTracks'] ?? json['uploaded_tracks']),
 			playlists: _toStringList(json['playlists']),
+			socialLinks: _toStringMap(json['social_links'] ?? json['socialLinks']),
 		);
 	}
 
@@ -70,6 +73,7 @@ class PublicProfileModel {
 			'favoriteGenres': favoriteGenres,
 			'uploadedTracks': uploadedTracks,
 			'playlists': playlists,
+			'social_links': socialLinks,
 		};
 	}
 
@@ -89,6 +93,7 @@ class PublicProfileModel {
 		List<String>? favoriteGenres,
 		List<String>? uploadedTracks,
 		List<String>? playlists,
+		Map<String, String>? socialLinks,
 	}) {
 		return PublicProfileModel(
 			id: id ?? this.id,
@@ -106,6 +111,7 @@ class PublicProfileModel {
 			favoriteGenres: favoriteGenres ?? this.favoriteGenres,
 			uploadedTracks: uploadedTracks ?? this.uploadedTracks,
 			playlists: playlists ?? this.playlists,
+			socialLinks: socialLinks ?? this.socialLinks,
 		);
 	}
 
@@ -120,7 +126,15 @@ class PublicProfileModel {
 		if (value is List) {
 			return value.map((item) => item.toString()).toList();
 		}
-
 		return const <String>[];
+	}
+
+	static Map<String, String> _toStringMap(dynamic value) {
+		if (value is Map) {
+			return Map.fromEntries(
+				value.entries.map((e) => MapEntry(e.key.toString(), e.value.toString())),
+			);
+		}
+		return const <String, String>{};
 	}
 }
