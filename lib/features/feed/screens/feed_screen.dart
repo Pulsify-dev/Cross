@@ -63,7 +63,9 @@ class _FeedScreenState extends State<FeedScreen>
 
     if (_tabController.index == 0) {
       final provider = context.read<FeedProvider>();
-      final newIndex = provider.discoveryFeed.indexWhere((t) => t.id == track.id);
+      final newIndex = provider.discoveryFeed.indexWhere(
+        (t) => t.id == track.id,
+      );
       if (newIndex != -1 && newIndex != _discoverActiveIndex) {
         if (_discoverPageController.hasClients) {
           _discoverPageController.animateToPage(
@@ -75,7 +77,9 @@ class _FeedScreenState extends State<FeedScreen>
       }
     } else {
       final provider = context.read<FeedProvider>();
-      final newIndex = provider.feed.indexWhere((item) => item.track?.id == track.id);
+      final newIndex = provider.feed.indexWhere(
+        (item) => item.track?.id == track.id,
+      );
       if (newIndex != -1 && newIndex != _followingActiveIndex) {
         if (_followingPageController.hasClients) {
           _followingPageController.animateToPage(
@@ -340,7 +344,8 @@ class _FeedScreenState extends State<FeedScreen>
                 );
               },
               onFollowTap: () {
-                final targetId = item.track!.uploader?.id ?? item.track!.artistId;
+                final targetId =
+                    item.track!.uploader?.id ?? item.track!.artistId;
                 if (targetId != null) {
                   provider.toggleFollow(targetId);
                 }

@@ -57,11 +57,15 @@ class SearchResultsScreen extends StatelessWidget {
                   (user) => ListTile(
                     leading: CircleAvatar(
                       backgroundColor: AppColors.surfaceElevated,
-                      backgroundImage: isValidNetworkAvatarUrl(user.profileImageUrl)
+                      backgroundImage:
+                          isValidNetworkAvatarUrl(user.profileImageUrl)
                           ? NetworkImage(user.profileImageUrl!)
                           : null,
                       child: !isValidNetworkAvatarUrl(user.profileImageUrl)
-                          ? const Icon(Icons.person, color: Color.fromARGB(255, 220, 218, 218))
+                          ? const Icon(
+                              Icons.person,
+                              color: Color.fromARGB(255, 220, 218, 218),
+                            )
                           : null,
                     ),
                     title: Text(user.displayName),
@@ -104,7 +108,9 @@ class SearchResultsScreen extends StatelessWidget {
                         if (playlist.creator?.profileImageUrl != null) ...[
                           CircleAvatar(
                             radius: 8,
-                            backgroundImage: NetworkImage(playlist.creator!.profileImageUrl!),
+                            backgroundImage: NetworkImage(
+                              playlist.creator!.profileImageUrl!,
+                            ),
                           ),
                           const SizedBox(width: 4),
                         ],

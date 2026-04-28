@@ -14,11 +14,7 @@ class TrackDetailsScreen extends StatefulWidget {
   final Track track;
   final List<Track>? playlist;
 
-  const TrackDetailsScreen({
-    super.key,
-    required this.track,
-    this.playlist,
-  });
+  const TrackDetailsScreen({super.key, required this.track, this.playlist});
 
   @override
   State<TrackDetailsScreen> createState() => _TrackDetailsScreenState();
@@ -162,7 +158,8 @@ class _TrackDetailsScreenState extends State<TrackDetailsScreen>
     }
 
     // Swipe right → previous track
-    if ((_dragOffset > threshold || velocity > 800) && player.hasPreviousTrack) {
+    if ((_dragOffset > threshold || velocity > 800) &&
+        player.hasPreviousTrack) {
       _animateSwipeOff(screenWidth, () {
         player.previousTrack();
         _startHideTimer();
@@ -255,7 +252,11 @@ class _TrackDetailsScreenState extends State<TrackDetailsScreen>
           final waveform = player.getWaveform(displayTrack.id);
 
           // Swipe visual feedback
-          final swipeOpacity = (1.0 - (_dragOffset.abs() / MediaQuery.of(context).size.width) * 0.4).clamp(0.6, 1.0);
+          final swipeOpacity =
+              (1.0 -
+                      (_dragOffset.abs() / MediaQuery.of(context).size.width) *
+                          0.4)
+                  .clamp(0.6, 1.0);
 
           return FadeTransition(
             opacity: _fadeAnimation,
@@ -280,177 +281,194 @@ class _TrackDetailsScreenState extends State<TrackDetailsScreen>
                         ),
                       ),
 
-                Positioned(
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  height: 180,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.black.withValues(alpha: 0.75),
-                          Colors.transparent,
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-
-                Positioned(
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  height: screenHeight * 0.55,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.bottomCenter,
-                        end: Alignment.topCenter,
-                        colors: [
-                          Colors.black,
-                          Colors.black.withValues(alpha: 0.95),
-                          Colors.black.withValues(alpha: 0.6),
-                          Colors.transparent,
-                        ],
-                        stops: const [0.0, 0.35, 0.65, 1.0],
-                      ),
-                    ),
-                  ),
-                ),
-
-                // Lyrics View
-                if (_showLyrics)
-                  Positioned.fill(
-                    child: GestureDetector(
-                      onTap: _toggleControls,
-                      child: Container(
-                        color: Colors.black.withValues(alpha: 0.85),
-                        padding: EdgeInsets.only(
-                          top: 160,
-                          bottom: screenHeight * 0.4,
-                          left: 24,
-                          right: 24,
-                        ),
-                        child: _isLoadingLyrics 
-                          ? const Center(child: CircularProgressIndicator())
-                          : SingleChildScrollView(
-                          child: Text(
-                            _lyrics ?? 'No lyrics available for this track.',
-                            style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.9),
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              height: 1.5,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-
-                // Controls overlay (centered on artwork)
-                Positioned.fill(
-                  child: AnimatedOpacity(
-                    opacity: _controlsVisible || !isPlaying ? 1.0 : 0.0,
-                    duration: const Duration(milliseconds: 250),
-                    child: IgnorePointer(
-                      ignoring: !_controlsVisible && isPlaying,
-                      child: GestureDetector(
-                        onTap: _toggleControls,
+                      Positioned(
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        height: 180,
                         child: Container(
-                          color: Colors.black.withValues(
-                            alpha: _controlsVisible || !isPlaying ? 0.4 : 0.0,
-                          ),
-                          child: Center(
-                            child: _buildPlayControls(
-                              player,
-                              displayTrack,
-                              isPlaying,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                Colors.black.withValues(alpha: 0.75),
+                                Colors.transparent,
+                              ],
                             ),
                           ),
                         ),
                       ),
-                    ),
-                  ),
-                ),
 
-                // Bottom content (always visible)
-                SafeArea(
-                  child: Column(
-                    children: [
-                      _buildTopBar(displayTrack),
-
-                      const Spacer(),
-
-                      // Waveform or Progress Line
-                      Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          // Waveform (hidden when controls are visible)
-                          AnimatedOpacity(
-                            opacity: _controlsVisible || !isPlaying ? 0.0 : 1.0,
-                            duration: const Duration(milliseconds: 200),
-                            child: _buildWaveform(
-                              player,
-                              displayTrack,
-                              waveform,
+                      Positioned(
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        height: screenHeight * 0.55,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.bottomCenter,
+                              end: Alignment.topCenter,
+                              colors: [
+                                Colors.black,
+                                Colors.black.withValues(alpha: 0.95),
+                                Colors.black.withValues(alpha: 0.6),
+                                Colors.transparent,
+                              ],
+                              stops: const [0.0, 0.35, 0.65, 1.0],
                             ),
                           ),
-                          // Progress Line (shown when controls are visible)
-                          if (_controlsVisible || !isPlaying)
+                        ),
+                      ),
+
+                      // Lyrics View
+                      if (_showLyrics)
+                        Positioned.fill(
+                          child: GestureDetector(
+                            onTap: _toggleControls,
+                            child: Container(
+                              color: Colors.black.withValues(alpha: 0.85),
+                              padding: EdgeInsets.only(
+                                top: 160,
+                                bottom: screenHeight * 0.4,
+                                left: 24,
+                                right: 24,
+                              ),
+                              child: _isLoadingLyrics
+                                  ? const Center(
+                                      child: CircularProgressIndicator(),
+                                    )
+                                  : SingleChildScrollView(
+                                      child: Text(
+                                        _lyrics ??
+                                            'No lyrics available for this track.',
+                                        style: TextStyle(
+                                          color: Colors.white.withValues(
+                                            alpha: 0.9,
+                                          ),
+                                          fontSize: 24,
+                                          fontWeight: FontWeight.bold,
+                                          height: 1.5,
+                                        ),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ),
+                            ),
+                          ),
+                        ),
+
+                      // Controls overlay (centered on artwork)
+                      Positioned.fill(
+                        child: AnimatedOpacity(
+                          opacity: _controlsVisible || !isPlaying ? 1.0 : 0.0,
+                          duration: const Duration(milliseconds: 250),
+                          child: IgnorePointer(
+                            ignoring: !_controlsVisible && isPlaying,
+                            child: GestureDetector(
+                              onTap: _toggleControls,
+                              child: Container(
+                                color: Colors.black.withValues(
+                                  alpha: _controlsVisible || !isPlaying
+                                      ? 0.4
+                                      : 0.0,
+                                ),
+                                child: Center(
+                                  child: _buildPlayControls(
+                                    player,
+                                    displayTrack,
+                                    isPlaying,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      // Bottom content (always visible)
+                      SafeArea(
+                        child: Column(
+                          children: [
+                            _buildTopBar(displayTrack),
+
+                            const Spacer(),
+
+                            // Waveform or Progress Line
+                            Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                // Waveform (hidden when controls are visible)
+                                AnimatedOpacity(
+                                  opacity: _controlsVisible || !isPlaying
+                                      ? 0.0
+                                      : 1.0,
+                                  duration: const Duration(milliseconds: 200),
+                                  child: _buildWaveform(
+                                    player,
+                                    displayTrack,
+                                    waveform,
+                                  ),
+                                ),
+                                // Progress Line (shown when controls are visible)
+                                if (_controlsVisible || !isPlaying)
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 20,
+                                    ),
+                                    child: Container(
+                                      height: 2,
+                                      width: double.infinity,
+                                      color: Colors.white.withValues(
+                                        alpha: 0.2,
+                                      ),
+                                      child: FractionallySizedBox(
+                                        alignment: Alignment.centerLeft,
+                                        widthFactor:
+                                            (player.position.inMilliseconds /
+                                                    (player
+                                                                .duration
+                                                                .inMilliseconds >
+                                                            0
+                                                        ? player
+                                                              .duration
+                                                              .inMilliseconds
+                                                        : 1))
+                                                .clamp(0.0, 1.0),
+                                        child: Container(color: Colors.white),
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+
+                            const SizedBox(height: 12),
+
                             Padding(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 20,
                               ),
-                              child: Container(
-                                height: 2,
-                                width: double.infinity,
-                                color: Colors.white.withValues(alpha: 0.2),
-                                child: FractionallySizedBox(
-                                  alignment: Alignment.centerLeft,
-                                  widthFactor:
-                                      (player.position.inMilliseconds /
-                                              (player.duration.inMilliseconds >
-                                                      0
-                                                  ? player
-                                                        .duration
-                                                        .inMilliseconds
-                                                  : 1))
-                                          .clamp(0.0, 1.0),
-                                  child: Container(color: Colors.white),
-                                ),
+                              child: _buildTimePill(player, displayTrack),
+                            ),
+
+                            const SizedBox(height: 24),
+                            _buildCommentBar(displayTrack),
+                            const SizedBox(height: 12),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                              ),
+                              child: Divider(
+                                color: Colors.white.withValues(alpha: 0.08),
+                                height: 1,
                               ),
                             ),
-                        ],
-                      ),
-
-                      const SizedBox(height: 12),
-
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: _buildTimePill(player, displayTrack),
-                      ),
-
-                      const SizedBox(height: 24),
-                      _buildCommentBar(displayTrack),
-                      const SizedBox(height: 12),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: Divider(
-                          color: Colors.white.withValues(alpha: 0.08),
-                          height: 1,
+                            const SizedBox(height: 4),
+                            _buildBottomBar(displayTrack),
+                            const SizedBox(height: 8),
+                          ],
                         ),
                       ),
-                      const SizedBox(height: 4),
-                      _buildBottomBar(displayTrack),
-                      const SizedBox(height: 8),
-                    ],
-                  ),
-                ),
                     ],
                   ),
                 ),
@@ -570,8 +588,10 @@ class _TrackDetailsScreenState extends State<TrackDetailsScreen>
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: _showLyrics 
-                              ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.8)
+                          color: _showLyrics
+                              ? Theme.of(
+                                  context,
+                                ).colorScheme.primary.withValues(alpha: 0.8)
                               : Colors.black.withValues(alpha: 0.5),
                           borderRadius: BorderRadius.circular(4),
                         ),
