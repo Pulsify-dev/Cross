@@ -83,18 +83,6 @@ class _LibraryScreenState extends State<LibraryScreen> {
           const SizedBox(height: 16),
           _buildLibraryItem(
             context,
-            icon: Icons.queue_music,
-            title: 'Playlists',
-            subtitle: 'Your curated collections',
-            route: '',
-            onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Playlists coming soon')),
-            ),
-            itemKey: const Key('library_playlists_card'),
-          ),
-          const SizedBox(height: 16),
-          _buildLibraryItem(
-            context,
             icon: Icons.history,
             title: 'Listening History',
             subtitle: 'Relive your recent discoveries',
