@@ -57,6 +57,7 @@ class AppRoutes {
             builder: (_) => TrackDetailsScreen(
               track: args['track'] as Track,
               playlist: args['playlist'] as List<Track>?,
+              isFeedMode: args['isFeedMode'] as bool? ?? false,
             ),
           );
         }

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:provider/provider.dart';
@@ -22,6 +23,7 @@ class _FeedScreenState extends State<FeedScreen>
   final PageController _discoverPageController = PageController();
   final PageController _followingPageController = PageController();
   PlayerProvider? _playerProvider;
+  Timer? _scrollDebounceTimer;
 
   // Track the currently active page index per tab
   int _discoverActiveIndex = 0;
@@ -33,9 +35,10 @@ class _FeedScreenState extends State<FeedScreen>
     _tabController = TabController(length: 2, vsync: this);
     _tabController.addListener(() {
       if (_tabController.indexIsChanging) {
+        _scrollDebounceTimer?.cancel();
         setState(() {});
-        // When switching tabs, play the active track from the new tab
-        _onTabChanged(_tabController.index);
+        // Pause the player when switching tabs to completely separate them
+        _playerProvider?.pause();
       }
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -48,6 +51,7 @@ class _FeedScreenState extends State<FeedScreen>
 
   @override
   void dispose() {
+    _scrollDebounceTimer?.cancel();
     _playerProvider?.removeListener(_onPlayerStateChanged);
     _tabController.dispose();
     _discoverPageController.dispose();
@@ -57,49 +61,47 @@ class _FeedScreenState extends State<FeedScreen>
 
   void _onPlayerStateChanged() {
     if (!mounted) return;
+    
+    // Do not force the screen to jump if the user is currently scrolling
+    if (_scrollDebounceTimer?.isActive ?? false) return;
+    
     final player = _playerProvider;
     if (player == null) return;
     final track = player.currentTrack;
     if (track == null) return;
 
+    final provider = context.read<FeedProvider>();
+
+    // 1. Synchronize Discover feed (only if it's the active tab)
     if (_tabController.index == 0) {
-      final provider = context.read<FeedProvider>();
-      final newIndex = provider.discoveryFeed.indexWhere(
+      final discoverIndex = provider.discoveryFeed.indexWhere(
         (t) => t.id == track.id,
       );
-      if (newIndex != -1 && newIndex != _discoverActiveIndex) {
+      if (discoverIndex != -1 && discoverIndex != _discoverActiveIndex) {
         if (_discoverPageController.hasClients) {
           _discoverPageController.animateToPage(
-            newIndex,
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeInOut,
-          );
-        }
-      }
-    } else {
-      final provider = context.read<FeedProvider>();
-      final newIndex = provider.feed.indexWhere(
-        (item) => item.track?.id == track.id,
-      );
-      if (newIndex != -1 && newIndex != _followingActiveIndex) {
-        if (_followingPageController.hasClients) {
-          _followingPageController.animateToPage(
-            newIndex,
+            discoverIndex,
             duration: const Duration(milliseconds: 300),
             curve: Curves.easeInOut,
           );
         }
       }
     }
-  }
 
-  void _onTabChanged(int tabIndex) {
-    if (tabIndex == 0) {
-      // Switched to Discover → play active discover track
-      _autoPlayDiscoverTrack(_discoverActiveIndex);
-    } else {
-      // Switched to Following → play active following track
-      _autoPlayFollowingTrack(_followingActiveIndex);
+    // 2. Synchronize Following feed (only if it's the active tab)
+    if (_tabController.index == 1) {
+      final followingIndex = provider.feed.indexWhere(
+        (item) => item.track?.id == track.id,
+      );
+      if (followingIndex != -1 && followingIndex != _followingActiveIndex) {
+        if (_followingPageController.hasClients) {
+          _followingPageController.animateToPage(
+            followingIndex,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+          );
+        }
+      }
     }
   }
 
@@ -112,11 +114,33 @@ class _FeedScreenState extends State<FeedScreen>
     final track = provider.discoveryFeed[index];
     final player = context.read<PlayerProvider>();
 
-    // Don't re-trigger if already playing this track
+    // Don't pause or re-trigger if already playing this track (e.g. natural track progression)
     if (player.currentTrack?.id == track.id && player.isPlaying) return;
+    
+    // Pause immediately while scrolling
+    player.pause();
+    
+    _scrollDebounceTimer?.cancel();
+    _scrollDebounceTimer = Timer(const Duration(milliseconds: 350), () {
+      if (!mounted) return;
+      if (!context.read<FeedProvider>().isFeedActive) return;
+      
+      final provider = context.read<FeedProvider>();
+      if (provider.discoveryFeed.isEmpty) return;
+      if (index < 0 || index >= provider.discoveryFeed.length) return;
 
-    player.playTrack(track, playlist: provider.discoveryFeed.toList());
-    player.setRepeatOne(true);
+      final track = provider.discoveryFeed[index];
+
+      // Don't re-trigger if already playing this track
+      if (player.currentTrack?.id == track.id && player.isPlaying) return;
+
+      player.playTrack(
+        track,
+        playlist: provider.discoveryFeed.toList(),
+        isFeedMode: true,
+      );
+      player.setRepeatOne(true);
+    });
   }
 
   void _autoPlayFollowingTrack(int index) {
@@ -130,14 +154,27 @@ class _FeedScreenState extends State<FeedScreen>
 
     final player = context.read<PlayerProvider>();
 
-    // Don't re-trigger if already playing this track
+    // Don't pause or re-trigger if already playing this track
     if (player.currentTrack?.id == item.track!.id && player.isPlaying) return;
+    
+    // Pause immediately while scrolling
+    player.pause();
+    
+    _scrollDebounceTimer?.cancel();
+    _scrollDebounceTimer = Timer(const Duration(milliseconds: 350), () {
+      if (!mounted) return;
+      if (!context.read<FeedProvider>().isFeedActive) return;
+      
+      // Don't re-trigger if already playing this track
+      if (player.currentTrack?.id == item.track!.id && player.isPlaying) return;
 
-    player.playTrack(
-      item.track!,
-      playlist: provider.feed.map((e) => e.track!).toList(),
-    );
-    player.setRepeatOne(true);
+      player.playTrack(
+        item.track!,
+        playlist: provider.feed.map((e) => e.track!).toList(),
+        isFeedMode: true,
+      );
+      player.setRepeatOne(true);
+    });
   }
 
   @override
@@ -249,59 +286,62 @@ class _FeedScreenState extends State<FeedScreen>
           },
           child: PageView.builder(
             controller: _discoverPageController,
-          scrollDirection: Axis.vertical,
-          itemCount: provider.discoveryFeed.length,
-          onPageChanged: _autoPlayDiscoverTrack,
-          itemBuilder: (context, index) {
-            final track = provider.discoveryFeed[index];
-            return VerticalFeedItem(
-              track: track,
-              isActive: index == _discoverActiveIndex,
-              onPlay: () {
-                final player = context.read<PlayerProvider>();
-                player.playTrack(
-                  track,
-                  playlist: provider.discoveryFeed.toList(),
-                );
-                player.setRepeatOne(true);
-              },
-              onDetails: () {
-                Navigator.of(
-                  context,
-                ).pushNamed(RouteNames.trackDetails, arguments: {
-                  'track': track,
-                  'playlist': provider.discoveryFeed.toList(),
-                });
-              },
-              onLikeToggle: () => provider.toggleLike(track),
-              onRepostToggle: () => provider.toggleRepost(track),
-              onCommentTap: () {
-                showModalBottomSheet(
-                  context: context,
-                  isScrollControlled: true,
-                  backgroundColor: Colors.transparent,
-                  builder: (context) => Container(
-                    height: MediaQuery.of(context).size.height * 0.75,
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).scaffoldBackgroundColor,
-                      borderRadius: const BorderRadius.vertical(
-                        top: Radius.circular(20),
+            scrollDirection: Axis.vertical,
+            itemCount: provider.discoveryFeed.length,
+            onPageChanged: _autoPlayDiscoverTrack,
+            itemBuilder: (context, index) {
+              final track = provider.discoveryFeed[index];
+              return VerticalFeedItem(
+                track: track,
+                isActive: index == _discoverActiveIndex,
+                onPlay: () {
+                  final player = context.read<PlayerProvider>();
+                  player.playTrack(
+                    track,
+                    playlist: provider.discoveryFeed.toList(),
+                    isFeedMode: true,
+                  );
+                  player.setRepeatOne(true);
+                },
+                onDetails: () {
+                  Navigator.of(context).pushNamed(
+                    RouteNames.trackDetails,
+                    arguments: {
+                      'track': track,
+                      'playlist': provider.discoveryFeed.toList(),
+                      'isFeedMode': true,
+                    },
+                  );
+                },
+                onLikeToggle: () => provider.toggleLike(track),
+                onRepostToggle: () => provider.toggleRepost(track),
+                onCommentTap: () {
+                  showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    backgroundColor: Colors.transparent,
+                    builder: (context) => Container(
+                      height: MediaQuery.of(context).size.height * 0.75,
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).scaffoldBackgroundColor,
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(20),
+                        ),
                       ),
+                      child: TrackCommentsScreen(track: track),
                     ),
-                    child: TrackCommentsScreen(track: track),
-                  ),
-                );
-              },
-              onFollowTap: () {
-                final targetId = track.uploader?.id ?? track.artistId;
-                if (targetId != null) {
-                  provider.toggleFollow(targetId);
-                }
-              },
-            );
-          },
-        ),
-      );
+                  );
+                },
+                onFollowTap: () {
+                  final targetId = track.uploader?.id ?? track.artistId;
+                  if (targetId != null) {
+                    provider.toggleFollow(targetId);
+                  }
+                },
+              );
+            },
+          ),
+        );
       },
     );
   }
@@ -340,60 +380,63 @@ class _FeedScreenState extends State<FeedScreen>
           },
           child: PageView.builder(
             controller: _followingPageController,
-          scrollDirection: Axis.vertical,
-          itemCount: provider.feed.length,
-          onPageChanged: _autoPlayFollowingTrack,
-          itemBuilder: (context, index) {
-            final item = provider.feed[index];
-            return VerticalFeedItem(
-              track: item.track!,
-              isActive: index == _followingActiveIndex,
-              onPlay: () {
-                final player = context.read<PlayerProvider>();
-                player.playTrack(
-                  item.track!,
-                  playlist: provider.feed.map((e) => e.track!).toList(),
-                );
-                player.setRepeatOne(true);
-              },
-              onDetails: () {
-                Navigator.of(
-                  context,
-                ).pushNamed(RouteNames.trackDetails, arguments: {
-                  'track': item.track!,
-                  'playlist': provider.feed.map((e) => e.track!).toList(),
-                });
-              },
-              onLikeToggle: () => provider.toggleLike(item.track!),
-              onRepostToggle: () => provider.toggleRepost(item.track!),
-              onCommentTap: () {
-                showModalBottomSheet(
-                  context: context,
-                  isScrollControlled: true,
-                  backgroundColor: Colors.transparent,
-                  builder: (context) => Container(
-                    height: MediaQuery.of(context).size.height * 0.75,
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).scaffoldBackgroundColor,
-                      borderRadius: const BorderRadius.vertical(
-                        top: Radius.circular(20),
+            scrollDirection: Axis.vertical,
+            itemCount: provider.feed.length,
+            onPageChanged: _autoPlayFollowingTrack,
+            itemBuilder: (context, index) {
+              final item = provider.feed[index];
+              return VerticalFeedItem(
+                track: item.track!,
+                isActive: index == _followingActiveIndex,
+                onPlay: () {
+                  final player = context.read<PlayerProvider>();
+                  player.playTrack(
+                    item.track!,
+                    playlist: provider.feed.map((e) => e.track!).toList(),
+                    isFeedMode: true,
+                  );
+                  player.setRepeatOne(true);
+                },
+                onDetails: () {
+                  Navigator.of(context).pushNamed(
+                    RouteNames.trackDetails,
+                    arguments: {
+                      'track': item.track!,
+                      'playlist': provider.feed.map((e) => e.track!).toList(),
+                      'isFeedMode': true,
+                    },
+                  );
+                },
+                onLikeToggle: () => provider.toggleLike(item.track!),
+                onRepostToggle: () => provider.toggleRepost(item.track!),
+                onCommentTap: () {
+                  showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    backgroundColor: Colors.transparent,
+                    builder: (context) => Container(
+                      height: MediaQuery.of(context).size.height * 0.75,
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).scaffoldBackgroundColor,
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(20),
+                        ),
                       ),
+                      child: TrackCommentsScreen(track: item.track!),
                     ),
-                    child: TrackCommentsScreen(track: item.track!),
-                  ),
-                );
-              },
-              onFollowTap: () {
-                final targetId =
-                    item.track!.uploader?.id ?? item.track!.artistId;
-                if (targetId != null) {
-                  provider.toggleFollow(targetId);
-                }
-              },
-            );
-          },
-        ),
-      );
+                  );
+                },
+                onFollowTap: () {
+                  final targetId =
+                      item.track!.uploader?.id ?? item.track!.artistId;
+                  if (targetId != null) {
+                    provider.toggleFollow(targetId);
+                  }
+                },
+              );
+            },
+          ),
+        );
       },
     );
   }

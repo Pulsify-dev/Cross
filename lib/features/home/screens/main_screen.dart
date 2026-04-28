@@ -8,6 +8,8 @@ import 'package:cross/providers/feed_provider.dart';
 import 'package:cross/features/feed/screens/feed_screen.dart';
 import 'package:cross/features/player/widgets/mini_player.dart';
 
+import 'package:cross/providers/player_provider.dart';
+
 class MainScreen extends StatefulWidget {
   final int initialIndex;
 
@@ -32,6 +34,11 @@ class _MainScreenState extends State<MainScreen> {
   void initState() {
     super.initState();
     _selectedIndex = widget.initialIndex;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.read<FeedProvider>().setFeedActive(_selectedIndex == 3);
+      }
+    });
   }
 
   void _onItemTapped(int index) {
@@ -41,6 +48,17 @@ class _MainScreenState extends State<MainScreen> {
         context.read<FeedProvider>().fetchDiscoveryFeed();
       }
       return;
+    }
+
+    // Pause feed playback when navigating away from the feed tab
+    if (_selectedIndex == 3 && index != 3) {
+      context.read<FeedProvider>().setFeedActive(false);
+      final player = context.read<PlayerProvider>();
+      if (player.isFeedMode) {
+        player.pause();
+      }
+    } else if (index == 3) {
+      context.read<FeedProvider>().setFeedActive(true);
     }
 
     setState(() {

@@ -28,6 +28,7 @@ class FeedProvider with ChangeNotifier {
   bool _isTrendingLoading = false;
   String? _error;
   String? _selectedGenre;
+  bool _isFeedActive = false;
 
   // History pagination
   int _historyPage = 1;
@@ -63,6 +64,12 @@ class FeedProvider with ChangeNotifier {
   bool get hasMoreHistory => _hasMoreHistory;
   String? get error => _error;
   String? get selectedGenre => _selectedGenre;
+  bool get isFeedActive => _isFeedActive;
+
+  void setFeedActive(bool isActive) {
+    _isFeedActive = isActive;
+    notifyListeners();
+  }
 
   final Map<String, int> _trackLikeCounts = {};
   final Set<String> _repostedTrackIds = {};

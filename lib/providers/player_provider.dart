@@ -19,6 +19,8 @@ class PlayerProvider with ChangeNotifier {
   final Map<String, List<double>> _waveformCache = {};
   Map<String, dynamic>? _currentStatus;
   ProcessingState _processingState = ProcessingState.idle;
+  bool _isFeedMode = false;
+  bool _isPlayIntended = false;
 
   void Function(Track track)? onTrackStarted;
 
@@ -50,6 +52,14 @@ class PlayerProvider with ChangeNotifier {
   }
 
   ProcessingState get processingState => _processingState;
+  bool get isFeedMode => _isFeedMode;
+
+  void setFeedMode(bool value) {
+    if (_isFeedMode != value) {
+      _isFeedMode = value;
+      notifyListeners();
+    }
+  }
 
   Future<void> _onTrackCompleted() async {
     final completedTrackId = _currentTrack?.id;
@@ -98,7 +108,9 @@ class PlayerProvider with ChangeNotifier {
     }
   }
 
-  Future<void> playTrack(Track track, {List<Track>? playlist}) async {
+  Future<void> playTrack(Track track, {List<Track>? playlist, bool isFeedMode = false}) async {
+    _isFeedMode = isFeedMode;
+    _isPlayIntended = true;
     if (playlist != null) {
       _queue = playlist;
       _currentIndex = _queue.indexWhere((t) => t.id == track.id);
@@ -205,7 +217,10 @@ class PlayerProvider with ChangeNotifier {
             onTimeout: () => throw TimeoutException('Track load timed out'),
           );
 
-      await _player.play();
+      // Prevent race conditions: only play if this track is still current and wasn't paused during load
+      if (_currentTrack?.id == track.id && _isPlayIntended) {
+        await _player.play();
+      }
     } catch (e) {
       debugPrint('Error playing track: $e');
       _isPlaying = false;
@@ -224,7 +239,7 @@ class PlayerProvider with ChangeNotifier {
 
     if (_currentIndex < _queue.length - 1) {
       _currentIndex++;
-      await playTrack(_queue[_currentIndex]);
+      await playTrack(_queue[_currentIndex], isFeedMode: _isFeedMode);
     }
   }
 
@@ -238,12 +253,20 @@ class PlayerProvider with ChangeNotifier {
 
     if (_currentIndex > 0) {
       _currentIndex--;
-      await playTrack(_queue[_currentIndex]);
+      await playTrack(_queue[_currentIndex], isFeedMode: _isFeedMode);
     }
   }
 
-  Future<void> resume() async => await _player.play();
-  Future<void> pause() async => await _player.pause();
+  Future<void> resume() async {
+    _isPlayIntended = true;
+    await _player.play();
+  }
+
+  Future<void> pause() async {
+    _isPlayIntended = false;
+    await _player.pause();
+  }
+
   Future<void> seek(Duration position) async => await _player.seek(position);
 
   bool _isRepeatOne = false;

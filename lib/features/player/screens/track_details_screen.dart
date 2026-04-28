@@ -13,8 +13,14 @@ import '../../feed/services/track_service.dart';
 class TrackDetailsScreen extends StatefulWidget {
   final Track track;
   final List<Track>? playlist;
+  final bool isFeedMode;
 
-  const TrackDetailsScreen({super.key, required this.track, this.playlist});
+  const TrackDetailsScreen({
+    super.key,
+    required this.track,
+    this.playlist,
+    this.isFeedMode = false,
+  });
 
   @override
   State<TrackDetailsScreen> createState() => _TrackDetailsScreenState();
@@ -69,11 +75,16 @@ class _TrackDetailsScreenState extends State<TrackDetailsScreen>
         if (widget.playlist != null) {
           player.setQueue(widget.playlist!, widget.track);
         }
+        player.setFeedMode(widget.isFeedMode);
         if (!player.isPlaying) {
           player.resume();
         }
       } else {
-        player.playTrack(widget.track, playlist: widget.playlist);
+        player.playTrack(
+          widget.track,
+          playlist: widget.playlist,
+          isFeedMode: widget.isFeedMode,
+        );
       }
       _startHideTimer();
     });

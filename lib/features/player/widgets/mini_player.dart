@@ -13,7 +13,7 @@ class MiniPlayer extends StatelessWidget {
     return Consumer2<PlayerProvider, FeedProvider>(
       builder: (context, player, feed, child) {
         final track = player.currentTrack;
-        if (track == null) return const SizedBox.shrink();
+        if (track == null || player.isFeedMode) return const SizedBox.shrink();
 
         final progress = player.duration.inMilliseconds > 0
             ? player.position.inMilliseconds / player.duration.inMilliseconds
