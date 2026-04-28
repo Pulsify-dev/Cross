@@ -192,6 +192,10 @@ class PlayerProvider with ChangeNotifier {
 
       debugPrint('Playing track: ${track.title} (URL: $playUrl)');
 
+      if (playUrl.isEmpty) {
+        throw Exception('Stream URL is empty');
+      }
+
       await _player.stop();
 
       await _player
@@ -207,6 +211,12 @@ class PlayerProvider with ChangeNotifier {
       _isPlaying = false;
       notifyListeners();
     }
+  }
+
+  void setQueue(List<Track> playlist, Track currentTrack) {
+    _queue = playlist;
+    _currentIndex = _queue.indexWhere((t) => t.id == currentTrack.id);
+    notifyListeners();
   }
 
   Future<void> nextTrack() async {

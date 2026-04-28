@@ -70,7 +70,10 @@ class _LikedTracksScreenState extends State<LikedTracksScreen> {
                             context.read<FeedProvider>().cleanupUnlikedTracks();
                             Navigator.of(context).pushNamed(
                               RouteNames.trackDetails,
-                              arguments: track,
+                              arguments: {
+                                'track': track,
+                                'playlist': provider.likedTracks,
+                              },
                             );
                           },
                           onLikeToggle: () =>

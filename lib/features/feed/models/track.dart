@@ -125,7 +125,10 @@ class Track {
     }();
 
     return Track(
-      id: json['id']?.toString() ?? json['_id']?.toString() ?? '',
+      id: json['id']?.toString() ?? 
+          json['_id']?.toString() ?? 
+          json['track_id']?.toString() ?? 
+          json['trackId']?.toString() ?? '',
       title: json['title']?.toString() ?? 'Untitled Track',
       artistName: artistName,
       artistId: artistId,

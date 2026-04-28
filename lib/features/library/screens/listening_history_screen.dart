@@ -184,7 +184,12 @@ class _ListeningHistoryScreenState extends State<ListeningHistoryScreen> {
                             onDetails: () {
                               Navigator.of(context).pushNamed(
                                 RouteNames.trackDetails,
-                                arguments: track,
+                                arguments: {
+                                  'track': track,
+                                  'playlist': provider.listeningHistory
+                                      .map((e) => e.track)
+                                      .toList(),
+                                },
                               );
                             },
                             onLikeToggle: () =>

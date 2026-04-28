@@ -66,6 +66,9 @@ class _TrackDetailsScreenState extends State<TrackDetailsScreen>
 
       if (player.currentTrack?.id == widget.track.id) {
         setState(() => _followingPlayer = true);
+        if (widget.playlist != null) {
+          player.setQueue(widget.playlist!, widget.track);
+        }
         if (!player.isPlaying) {
           player.resume();
         }

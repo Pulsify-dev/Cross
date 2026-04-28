@@ -44,7 +44,10 @@ class SearchResultsScreen extends StatelessWidget {
                     onDetails: () {
                       Navigator.of(
                         context,
-                      ).pushNamed(RouteNames.trackDetails, arguments: track);
+                      ).pushNamed(RouteNames.trackDetails, arguments: {
+                        'track': track,
+                        'playlist': searchProvider.searchResponse.tracks,
+                      });
                     },
                     onLikeToggle: () =>
                         context.read<FeedProvider>().toggleLike(track),

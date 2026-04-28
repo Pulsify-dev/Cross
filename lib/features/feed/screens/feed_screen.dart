@@ -251,7 +251,10 @@ class _FeedScreenState extends State<FeedScreen>
               onDetails: () {
                 Navigator.of(
                   context,
-                ).pushNamed(RouteNames.trackDetails, arguments: track);
+                ).pushNamed(RouteNames.trackDetails, arguments: {
+                  'track': track,
+                  'playlist': provider.discoveryFeed.toList(),
+                });
               },
               onLikeToggle: () => provider.toggleLike(track),
               onRepostToggle: () => provider.toggleRepost(track),
@@ -322,7 +325,10 @@ class _FeedScreenState extends State<FeedScreen>
               onDetails: () {
                 Navigator.of(
                   context,
-                ).pushNamed(RouteNames.trackDetails, arguments: item.track!);
+                ).pushNamed(RouteNames.trackDetails, arguments: {
+                  'track': item.track!,
+                  'playlist': provider.feed.map((e) => e.track!).toList(),
+                });
               },
               onLikeToggle: () => provider.toggleLike(item.track!),
               onRepostToggle: () => provider.toggleRepost(item.track!),
