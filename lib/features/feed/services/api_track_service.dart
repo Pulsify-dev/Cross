@@ -5,6 +5,7 @@ import '../models/track.dart';
 import '../models/history_entry.dart';
 import '../models/comment.dart';
 import '../models/user.dart';
+import '../models/discover_section.dart';
 import 'track_service.dart';
 import 'package:flutter/foundation.dart';
 
@@ -118,7 +119,7 @@ class ApiTrackService implements TrackService {
       queryParams.add('page=$page');
       queryParams.add('limit=$limit');
 
-      final url = '${ApiEndpoints.charts}?${queryParams.join('&')}';
+      final url = '${ApiEndpoints.trendingTracks}?${queryParams.join('&')}';
 
       final response = await _apiService.get(url);
 
@@ -231,6 +232,50 @@ class ApiTrackService implements TrackService {
       }
     } catch (e) {
       debugPrint('Error fetching feed: $e');
+    }
+    return [];
+  }
+
+  @override
+  Future<List<Track>> getDiscoverFeed({
+    int page = 1,
+    int limit = 15,
+  }) async {
+    try {
+      final response = await _apiService.get(
+        '${ApiEndpoints.discoverFeed}?page=$page&limit=$limit',
+      );
+
+      if (response != null && response is Map<String, dynamic>) {
+        final data = response['data'];
+        if (data is Map<String, dynamic> && data['tracks'] is List) {
+          final tracks = data['tracks'] as List;
+          return tracks
+              .map((t) => Track.fromJson(t as Map<String, dynamic>))
+              .toList();
+        }
+      }
+    } catch (e) {
+      debugPrint('Error fetching discover feed: $e');
+    }
+    return [];
+  }
+
+  @override
+  Future<List<DiscoverSection>> getDiscoverHome() async {
+    try {
+      final response = await _apiService.get(ApiEndpoints.discoverHome);
+
+      if (response != null && response is Map<String, dynamic>) {
+        final data = response['data'];
+        if (data is List) {
+          return data
+              .map((section) => DiscoverSection.fromJson(section as Map<String, dynamic>))
+              .toList();
+        }
+      }
+    } catch (e) {
+      debugPrint('Error fetching discover home: $e');
     }
     return [];
   }

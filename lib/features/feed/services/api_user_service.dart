@@ -24,38 +24,6 @@ class ApiUserService implements UserService {
   }
 
   @override
-  Future<List<User>> getSuggestedUsers({int page = 1, int limit = 20}) async {
-    try {
-      final response = await _apiService.get(
-        '/users/me/suggested?page=$page&limit=$limit',
-        authRequired: true,
-      );
-
-      if (response == null) return [];
-
-      if (response is List) {
-        return response.map((data) => User.fromJson(data)).toList();
-      }
-
-      final List? list =
-          response['suggestedUsers'] ??
-          response['users'] ??
-          (response['data'] is List ? response['data'] : null) ??
-          (response['data'] is Map
-              ? (response['data']['suggestedUsers'] ??
-                    response['data']['users'])
-              : null);
-
-      if (list != null) {
-        return list.map((data) => User.fromJson(data)).toList();
-      }
-    } catch (e) {
-      return [];
-    }
-    return [];
-  }
-
-  @override
   Future<User?> login(String email, String password) async => null;
 
   @override
@@ -82,7 +50,11 @@ class ApiUserService implements UserService {
 
   @override
   Future<void> followUser(String userId) async {
-    await _apiService.post('/users/$userId/follow', body: {}, authRequired: true);
+    await _apiService.post(
+      '/users/$userId/follow',
+      body: {},
+      authRequired: true,
+    );
   }
 
   @override

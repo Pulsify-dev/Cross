@@ -9,7 +9,6 @@ abstract class UserService {
   Future<User?> updateProfile(User user);
   Future<User?> updateProfileImage(String filePath);
   Future<User?> getPublicProfile(String userId);
-  Future<List<User>> getSuggestedUsers({int page = 1, int limit = 20});
   Future<void> followUser(String userId);
   Future<void> unfollowUser(String userId);
 }
