@@ -144,6 +144,7 @@ class _FeedScreenState extends State<FeedScreen>
           // Content
           TabBarView(
             controller: _tabController,
+            physics: const NeverScrollableScrollPhysics(),
             children: [_buildDiscoverTab(), _buildFollowingTab()],
           ),
 
