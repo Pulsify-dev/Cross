@@ -73,6 +73,8 @@ class PlayerProvider with ChangeNotifier {
   Duration get position => _position;
   List<Track> get queue => _queue;
   int get currentIndex => _currentIndex;
+  bool get hasNextTrack => _queue.isNotEmpty && _currentIndex < _queue.length - 1;
+  bool get hasPreviousTrack => _queue.isNotEmpty && _currentIndex > 0;
 
   List<double>? get currentWaveform =>
       _currentTrack != null ? _waveformCache[_currentTrack!.id] : null;
@@ -101,6 +103,9 @@ class PlayerProvider with ChangeNotifier {
     } else if (_queue.isEmpty || !_queue.any((t) => t.id == track.id)) {
       _queue = [track];
       _currentIndex = 0;
+    } else {
+      // Track already in queue – just update the index to point to it
+      _currentIndex = _queue.indexWhere((t) => t.id == track.id);
     }
 
     if (_currentTrack?.id == track.id) {

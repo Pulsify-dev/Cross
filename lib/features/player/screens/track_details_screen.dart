@@ -30,6 +30,11 @@ class _TrackDetailsScreenState extends State<TrackDetailsScreen>
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
 
+  // Swipe state
+  late AnimationController _swipeAnimController;
+  double _dragOffset = 0.0;
+  bool _isSwiping = false;
+
   @override
   void initState() {
     super.initState();
@@ -43,6 +48,11 @@ class _TrackDetailsScreenState extends State<TrackDetailsScreen>
       curve: Curves.easeOut,
     );
     _fadeController.forward();
+
+    _swipeAnimController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final player = Provider.of<PlayerProvider>(context, listen: false);
@@ -69,6 +79,7 @@ class _TrackDetailsScreenState extends State<TrackDetailsScreen>
   void dispose() {
     _hideTimer?.cancel();
     _fadeController.dispose();
+    _swipeAnimController.dispose();
     super.dispose();
   }
 
@@ -101,6 +112,96 @@ class _TrackDetailsScreenState extends State<TrackDetailsScreen>
           setState(() => _controlsVisible = false);
         }
       }
+    });
+  }
+
+  // ── Swipe gesture handlers ──
+
+  void _onSwipeDragStart(DragStartDetails details) {
+    if (_swipeAnimController.isAnimating) return;
+    _isSwiping = true;
+    _dragOffset = 0.0;
+  }
+
+  void _onSwipeDragUpdate(DragUpdateDetails details) {
+    if (!_isSwiping) return;
+    final player = Provider.of<PlayerProvider>(context, listen: false);
+    final delta = details.primaryDelta ?? 0.0;
+
+    // Rubber-band effect when no track in that direction
+    if (_dragOffset + delta > 0 && !player.hasPreviousTrack) {
+      setState(() => _dragOffset += delta * 0.15);
+    } else if (_dragOffset + delta < 0 && !player.hasNextTrack) {
+      setState(() => _dragOffset += delta * 0.15);
+    } else {
+      setState(() => _dragOffset += delta);
+    }
+  }
+
+  void _onSwipeDragEnd(DragEndDetails details) {
+    if (!_isSwiping) return;
+    _isSwiping = false;
+
+    final player = Provider.of<PlayerProvider>(context, listen: false);
+    final velocity = details.primaryVelocity ?? 0.0;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final threshold = screenWidth * 0.25;
+
+    // Swipe left → next track
+    if ((_dragOffset < -threshold || velocity < -800) && player.hasNextTrack) {
+      _animateSwipeOff(-screenWidth, () {
+        player.nextTrack();
+        _startHideTimer();
+      });
+      return;
+    }
+
+    // Swipe right → previous track
+    if ((_dragOffset > threshold || velocity > 800) && player.hasPreviousTrack) {
+      _animateSwipeOff(screenWidth, () {
+        player.previousTrack();
+        _startHideTimer();
+      });
+      return;
+    }
+
+    // Snap back
+    _animateSnapBack();
+  }
+
+  void _animateSwipeOff(double targetX, VoidCallback onComplete) {
+    final startOffset = _dragOffset;
+    late Animation<double> anim;
+    anim = Tween<double>(begin: startOffset, end: targetX).animate(
+      CurvedAnimation(parent: _swipeAnimController, curve: Curves.easeInOut),
+    );
+
+    void listener() {
+      if (mounted) setState(() => _dragOffset = anim.value);
+    }
+
+    anim.addListener(listener);
+    _swipeAnimController.forward(from: 0.0).then((_) {
+      anim.removeListener(listener);
+      onComplete();
+      if (mounted) setState(() => _dragOffset = 0.0);
+    });
+  }
+
+  void _animateSnapBack() {
+    final startOffset = _dragOffset;
+    late Animation<double> anim;
+    anim = Tween<double>(begin: startOffset, end: 0.0).animate(
+      CurvedAnimation(parent: _swipeAnimController, curve: Curves.easeOutCubic),
+    );
+
+    void listener() {
+      if (mounted) setState(() => _dragOffset = anim.value);
+    }
+
+    anim.addListener(listener);
+    _swipeAnimController.forward(from: 0.0).then((_) {
+      anim.removeListener(listener);
     });
   }
 
@@ -151,20 +252,31 @@ class _TrackDetailsScreenState extends State<TrackDetailsScreen>
               : null;
           final waveform = player.getWaveform(displayTrack.id);
 
+          // Swipe visual feedback
+          final swipeOpacity = (1.0 - (_dragOffset.abs() / MediaQuery.of(context).size.width) * 0.4).clamp(0.6, 1.0);
+
           return FadeTransition(
             opacity: _fadeAnimation,
-            child: Stack(
-              children: [
-                // Tappable artwork background
-                Positioned.fill(
-                  child: GestureDetector(
-                    onTap: _toggleControls,
-                    child: Hero(
-                      tag: 'track_${displayTrack.id}',
-                      child: _buildArtwork(displayTrack),
-                    ),
-                  ),
-                ),
+            child: GestureDetector(
+              onHorizontalDragStart: _onSwipeDragStart,
+              onHorizontalDragUpdate: _onSwipeDragUpdate,
+              onHorizontalDragEnd: _onSwipeDragEnd,
+              child: Transform.translate(
+                offset: Offset(_dragOffset, 0),
+                child: Opacity(
+                  opacity: swipeOpacity,
+                  child: Stack(
+                    children: [
+                      // Tappable artwork background
+                      Positioned.fill(
+                        child: GestureDetector(
+                          onTap: _toggleControls,
+                          child: Hero(
+                            tag: 'track_${displayTrack.id}',
+                            child: _buildArtwork(displayTrack),
+                          ),
+                        ),
+                      ),
 
                 Positioned(
                   top: 0,
@@ -340,7 +452,10 @@ class _TrackDetailsScreenState extends State<TrackDetailsScreen>
                     ],
                   ),
                 ),
-              ],
+                    ],
+                  ),
+                ),
+              ),
             ),
           );
         },
