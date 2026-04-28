@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 import 'package:provider/provider.dart';
 
 import 'core/theme/app_theme.dart';
@@ -141,6 +142,13 @@ class PulsifyApp extends StatelessWidget {
         theme: AppTheme.darkTheme,
         initialRoute: RouteNames.login,
         onGenerateRoute: AppRoutes.generateRoute,
+        scrollBehavior: const MaterialScrollBehavior().copyWith(
+          dragDevices: {
+            PointerDeviceKind.touch,
+            PointerDeviceKind.mouse,
+            PointerDeviceKind.trackpad,
+          },
+        ),
       ),
     );
   }

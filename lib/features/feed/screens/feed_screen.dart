@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/feed_provider.dart';
 import '../../../providers/player_provider.dart';
@@ -230,8 +231,24 @@ class _FeedScreenState extends State<FeedScreen>
           );
         }
 
-        return PageView.builder(
-          controller: _discoverPageController,
+        return Listener(
+          onPointerSignal: (pointerSignal) {
+            if (pointerSignal is PointerScrollEvent) {
+              if (pointerSignal.scrollDelta.dy > 0) {
+                _discoverPageController.nextPage(
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeIn,
+                );
+              } else if (pointerSignal.scrollDelta.dy < 0) {
+                _discoverPageController.previousPage(
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeIn,
+                );
+              }
+            }
+          },
+          child: PageView.builder(
+            controller: _discoverPageController,
           scrollDirection: Axis.vertical,
           itemCount: provider.discoveryFeed.length,
           onPageChanged: _autoPlayDiscoverTrack,
@@ -283,7 +300,8 @@ class _FeedScreenState extends State<FeedScreen>
               },
             );
           },
-        );
+        ),
+      );
       },
     );
   }
@@ -304,8 +322,24 @@ class _FeedScreenState extends State<FeedScreen>
           );
         }
 
-        return PageView.builder(
-          controller: _followingPageController,
+        return Listener(
+          onPointerSignal: (pointerSignal) {
+            if (pointerSignal is PointerScrollEvent) {
+              if (pointerSignal.scrollDelta.dy > 0) {
+                _followingPageController.nextPage(
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeIn,
+                );
+              } else if (pointerSignal.scrollDelta.dy < 0) {
+                _followingPageController.previousPage(
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeIn,
+                );
+              }
+            }
+          },
+          child: PageView.builder(
+            controller: _followingPageController,
           scrollDirection: Axis.vertical,
           itemCount: provider.feed.length,
           onPageChanged: _autoPlayFollowingTrack,
@@ -358,7 +392,8 @@ class _FeedScreenState extends State<FeedScreen>
               },
             );
           },
-        );
+        ),
+      );
       },
     );
   }
