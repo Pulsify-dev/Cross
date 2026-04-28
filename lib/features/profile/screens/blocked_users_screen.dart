@@ -110,7 +110,7 @@ class _BlockedUsersScreenState extends State<BlockedUsersScreen> {
                 return ListView.separated(
                   itemCount: users.length,
                   padding: const EdgeInsets.symmetric(horizontal: 16),
-                  separatorBuilder: (_, __) => const SizedBox(height: 10),
+                  separatorBuilder: (_, _) => const SizedBox(height: 10),
                   itemBuilder: (context, index) {
                     final user = users[index];
                     return SocialUserTile(

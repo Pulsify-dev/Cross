@@ -1,4 +1,3 @@
-import '../../feed/models/user.dart';
 
 class Message {
   final String id;
@@ -83,7 +82,7 @@ class Message {
     }
 
     if (value is Map) {
-      final map = Map<String, dynamic>.from(value as Map);
+      final map = Map<String, dynamic>.from(value);
       const idKeys = [
         'id',
         '_id',

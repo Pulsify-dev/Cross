@@ -1,6 +1,6 @@
 import 'package:cross/features/library/screens/library_screen.dart';
 import 'package:cross/features/messages/screens/messages_screen.dart';
-import 'package:cross/features/messages/models/conversation.dart';
+import 'package:cross/features/profile/screens/suggested_users_screen.dart';
 import 'package:cross/features/search/screens/search_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:cross/features/auth/screens/login_screen.dart';
@@ -25,10 +25,15 @@ import 'package:cross/features/profile/screens/following_screen.dart';
 import 'package:cross/features/upload/screens/upload_track_screen.dart';
 import 'package:cross/features/upload/screens/edit_uploaded_track_screen.dart';
 import 'package:cross/features/profile/screens/blocked_users_screen.dart';
-import 'package:cross/features/profile/screens/suggested_users_screen.dart';
-import 'package:cross/features/social/screens/mutual_followers_screen.dart';
-import 'package:cross/features/social/screens/public_profile_screen.dart';
-import 'package:cross/features/messages/screens/chat_screen.dart';
+import 'package:cross/features/playlists/models/playlist_model.dart';
+import 'package:cross/features/playlists/screens/add_track_screen.dart';
+import 'package:cross/features/playlists/screens/create_playlist_screen.dart';
+import 'package:cross/features/playlists/screens/edit_playlist_screen.dart';
+import 'package:cross/features/playlists/screens/playlist_details_screen.dart';
+import 'package:cross/features/playlists/screens/playlist_library_screen.dart';
+//import 'package:cross/features/profile/screens/public_profile_screen.dart';
+//import 'package:cross/features/profile/screens/mutual_followers_screen.dart';
+
 
 class AppRoutes {
   static Route<dynamic> generateRoute(RouteSettings settings) {
@@ -87,7 +92,7 @@ class AppRoutes {
         );
       case RouteNames.messages:
         return MaterialPageRoute(builder: (_) => const MessagesScreen());
-      case RouteNames.messageThread:
+   /*   case RouteNames.messageThread:
         final convArg = settings.arguments as Conversation;
         return MaterialPageRoute(
           builder: (_) => ChatScreen(
@@ -95,7 +100,7 @@ class AppRoutes {
             displayName: convArg.otherUser.displayName,
             avatarUrl: convArg.otherUser.profileImageUrl,
           ),
-        );
+        );*/
       case RouteNames.profile:
         return MaterialPageRoute(builder: (_) => const UserProfileScreen());
       case RouteNames.editProfile:
@@ -129,7 +134,7 @@ class AppRoutes {
         return MaterialPageRoute(builder: (_) => const BlockedUsersScreen());
       case RouteNames.suggestedUsers:
         return MaterialPageRoute(builder: (_) => const SuggestedUsersScreen());
-      case RouteNames.publicProfile:
+     /* case RouteNames.publicProfile:
         final userId = settings.arguments is String
             ? settings.arguments as String
             : '';
@@ -152,8 +157,41 @@ class AppRoutes {
             displayName: args['displayName'] as String,
             avatarUrl: args['avatarUrl'] as String?,
           ),
-        );
+        );*/
 
+     case RouteNames.playlists:
+        return MaterialPageRoute(builder: (_) => const PlaylistLibraryScreen());
+        case RouteNames.playlistLibrary:
+      return MaterialPageRoute(builder: (_) => const PlaylistLibraryScreen());
+
+    case RouteNames.playlistDetails:
+       final playlist = settings.arguments as Playlist?;
+         if (playlist == null) {
+          return MaterialPageRoute(builder: (_) => const Scaffold(body: Center(child: Text("Error: No playlist selected"))));
+        }
+         return MaterialPageRoute(builder: (_) => PlaylistDetailsScreen(playlist: playlist));
+
+    case RouteNames.createPlaylist:
+      return MaterialPageRoute(builder: (_) => const CreatePlaylistScreen());
+
+    case RouteNames.editPlaylist:
+    final playlist = settings.arguments as Playlist?;
+    if (playlist == null) {
+    return MaterialPageRoute(builder: (_) => const Scaffold(body: Center(child: Text("Data Missing"))));
+  }
+     return MaterialPageRoute(
+    builder: (_) => EditPlaylistScreen(playlist: playlist),
+  );
+
+    case RouteNames.addTrack:
+        final playlist = settings.arguments as Playlist?;
+       if (playlist == null) {
+          return MaterialPageRoute(builder: (_) => const Scaffold(body: Center(child: Text("Error: No playlist selected"))));
+        }
+        return MaterialPageRoute(builder: (_) => AddTrackScreen(playlist: playlist));
+
+
+        
       default:
         return MaterialPageRoute(
           builder: (_) => Scaffold(

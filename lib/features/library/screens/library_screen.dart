@@ -89,7 +89,17 @@ class _LibraryScreenState extends State<LibraryScreen> {
             route: RouteNames.history,
             itemKey: const Key('library_history_card'),
           ),
+          const SizedBox(height: 16),
+          _buildLibraryItem(
+            context,
+            icon: Icons.playlist_play,
+            title: 'My Playlists',
+            subtitle: 'Curate your own sound collections',
+            route: RouteNames.playlistLibrary, // This connects to your new routes
+            itemKey: const Key('library_playlists_card'),
+          ),
         ],
+        
       ),
     );
   }

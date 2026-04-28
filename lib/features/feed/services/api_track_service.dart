@@ -23,7 +23,7 @@ class ApiTrackService implements TrackService {
   @override
   Future<Track?> getTrackById(String id) async {
     try {
-      final response = await _apiService.get(ApiEndpoints.trackById(id), authRequired: true);
+      final response = await _apiService.get(ApiEndpoints.trackById(id));
       if (response != null) {
         return Track.fromJson(response);
       }
@@ -122,7 +122,7 @@ class ApiTrackService implements TrackService {
       queryParams.add('page=$page');
       queryParams.add('limit=$limit');
       
-      final url = '${ApiEndpoints.charts}?${queryParams.join('&')}';
+      final url = '${ApiEndpoints.trendingTracks}?${queryParams.join('&')}';
       
       final response = await _apiService.get(url);
       
@@ -154,7 +154,7 @@ class ApiTrackService implements TrackService {
   Future<void> likeTrack(String trackId) async {
     try {
       await _apiService.post(
-        ApiEndpoints.trackLike(trackId),
+        ApiEndpoints.trackLike(trackId),{},
         body: {},
         authRequired: true,
       );
@@ -241,7 +241,7 @@ class ApiTrackService implements TrackService {
   Future<void> recordPlay(String trackId, {int durationPlayedMs = 0}) async {
     try {
       await _apiService.post(
-        ApiEndpoints.trackRecordPlay(trackId),
+        ApiEndpoints.trackRecordPlay(trackId),{},
         body: {'duration_played_ms': durationPlayedMs},
         authRequired: true,
       );
@@ -353,7 +353,7 @@ class ApiTrackService implements TrackService {
   }) async {
     try {
       await _apiService.post(
-        ApiEndpoints.trackComments(trackId),
+        ApiEndpoints.trackComments(trackId),{},
         body: {
           'text': text,
           'timestamp_seconds': timestampInTrack.inSeconds,
@@ -440,7 +440,7 @@ class ApiTrackService implements TrackService {
   Future<void> repostTrack(String trackId) async {
     try {
       await _apiService.post(
-        ApiEndpoints.trackRepost(trackId),
+        ApiEndpoints.trackRepost(trackId),{},
         body: {},
         authRequired: true,
       );
@@ -495,5 +495,6 @@ class ApiTrackService implements TrackService {
     return [];
   }
 
+  @override
   void setCurrentUser(User? user) {}
 }

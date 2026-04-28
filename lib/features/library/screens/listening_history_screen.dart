@@ -5,7 +5,6 @@ import '../../../providers/feed_provider.dart';
 import '../../../providers/player_provider.dart';
 import '../../../routes/route_names.dart';
 import '../../../features/feed/widgets/track_tile.dart';
-import '../../../features/feed/widgets/track_tile.dart';
 
 class ListeningHistoryScreen extends StatefulWidget {
   const ListeningHistoryScreen({super.key});

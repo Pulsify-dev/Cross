@@ -15,6 +15,11 @@ class AuthProvider extends ChangeNotifier {
   bool _isLoggedIn = false;
   String? _errorMessage;
   String? _successMessage;
+  bool _isPremium = false; 
+  String? _token;
+  bool _isAuthenticated = false;
+
+ 
 
   UserModel? get currentUser => _currentUser;
   bool get isLoading => _isLoading;
@@ -22,6 +27,12 @@ class AuthProvider extends ChangeNotifier {
   bool get isLoggedIn => _isLoggedIn;
   String? get errorMessage => _errorMessage;
   String? get successMessage => _successMessage;
+  bool get isPremium => _isPremium;
+  String? get token => _token;
+  bool get isAuthenticated => _isAuthenticated;
+  
+ 
+  
 
   Future<void> checkLoginStatus() async {
     await restoreSession();
@@ -37,6 +48,7 @@ class AuthProvider extends ChangeNotifier {
         await _sessionService.clearSession();
         _currentUser = null;
         _isLoggedIn = false;
+        _isAuthenticated = false;
         notifyListeners();
         return;
       }
@@ -370,6 +382,9 @@ class AuthProvider extends ChangeNotifier {
     if (effectiveRefreshToken != null && effectiveRefreshToken.isNotEmpty) {
       await _sessionService.saveRefreshToken(effectiveRefreshToken);
     }
+    _token = accessToken;          
+    _isAuthenticated = true;       
+    _isLoggedIn = true;
 
     final hasValidSession =
       accessToken.isNotEmpty &&
@@ -395,4 +410,20 @@ class AuthProvider extends ChangeNotifier {
       debugPrint('[AuthProvider.$method] $message');
     }
   }
+  void togglePremium(bool value) {
+    _isPremium = value;
+    notifyListeners(); 
+  }
+
+  // 3. Add the "Upgrade" logic
+  Future<void> upgradeToPremium() async {
+    _setLoading(true);
+    await Future.delayed(const Duration(seconds: 1)); 
+    _isPremium = true;
+    _successMessage = "Welcome to Pulsify Premium!";
+    notifyListeners();
+    _setLoading(false);
+  }
+
+  
 }

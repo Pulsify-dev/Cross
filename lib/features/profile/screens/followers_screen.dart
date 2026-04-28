@@ -104,7 +104,7 @@ class _FollowersScreenState extends State<FollowersScreen> {
 
                   return ListView.separated(
                     itemCount: users.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 10),
+                    separatorBuilder: (_, _) => const SizedBox(height: 10),
                     itemBuilder: (context, index) {
                       final user = users[index];
                       final isSelf = user.id == provider.currentUserId;

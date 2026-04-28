@@ -19,36 +19,16 @@ class UserProfileScreen extends StatefulWidget {
 }
 
 class _UserProfileScreenState extends State<UserProfileScreen> {
-  AuthProvider? _authProviderListener;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      _authProviderListener = context.read<AuthProvider>();
-      _authProviderListener!.addListener(_onAuthUserChanged);
       _loadUploadedTracksForCurrentArtist();
       _loadProfile();
       _loadSocialStats();
     });
-  }
-
-  @override
-  void dispose() {
-    _authProviderListener?.removeListener(_onAuthUserChanged);
-    super.dispose();
-  }
-
-  void _onAuthUserChanged() {
-    if (!mounted) return;
-    final authProvider = context.read<AuthProvider>();
-    if (authProvider.currentUser != null && !authProvider.isLoading) {
-      final uploadProvider = context.read<UploadProvider>();
-      if (uploadProvider.errorMessage != null && uploadProvider.allUploadedTracks.isEmpty) {
-        _loadUploadedTracksForCurrentArtist();
-      }
-    }
   }
 
   Future<void> _loadProfile() async {
@@ -522,7 +502,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
       itemCount: trackItems.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 12),
+      separatorBuilder: (_, _) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
         final track = trackItems[index];
         return _buildTrackItem(
@@ -579,7 +559,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         return ListView.separated(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
           itemCount: tracks.length,
-          separatorBuilder: (_, __) => const SizedBox(height: 12),
+          separatorBuilder: (_, _) => const SizedBox(height: 12),
           itemBuilder: (context, index) {
             final track = tracks[index];
             return _buildTrackItem(

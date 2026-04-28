@@ -1,6 +1,6 @@
+import 'package:cross/providers/subscription_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
 import 'core/theme/app_theme.dart';
 import 'core/services/api_service.dart';
 import 'features/feed/services/api_track_service.dart';
@@ -22,13 +22,13 @@ import 'features/messages/services/socket_service.dart';
 import 'features/search/services/search_service.dart';
 import 'features/search/services/api_search_service.dart';
 import 'routes/app_routes.dart';
-import 'routes/route_names.dart';
-import 'features/feed/models/feed_item.dart';
+import 'providers/playlist_provider.dart';
+import 'features/playlists/services/playlist_service.dart';
+import 'package:cross/features/auth/screens/login_screen.dart';
 
 void main() {
   runApp(const PulsifyApp());
 }
-
 class PulsifyApp extends StatelessWidget {
   const PulsifyApp({super.key});
 
@@ -55,28 +55,22 @@ class PulsifyApp extends StatelessWidget {
             context.read<UserService>(),
           ),
         ),
-
         ChangeNotifierProvider(
           create: (context) => SearchProvider(
             context.read<SearchService>(),
             context.read<UserService>(),
           ),
         ),
-
         ChangeNotifierProxyProvider<FeedProvider, PlayerProvider>(
-          create: (context) =>
-              PlayerProvider(trackService: context.read<TrackService>()),
-          update: (context, feedProvider, playerProvider) {
-            return playerProvider!;
-          },
+          create: (context) => PlayerProvider(trackService: context.read<TrackService>()),
+          update: (context, feedProvider, playerProvider) => playerProvider!,
         ),
         ChangeNotifierProvider(
           create: (context) => EngagementProvider(context.read<TrackService>()),
         ),
         ChangeNotifierProvider(create: (_) => ProfileProvider()),
         Provider<MessagingService>(
-          create: (context) =>
-              ApiMessagingService(context.read<ApiService>()),
+          create: (context) => ApiMessagingService(context.read<ApiService>()),
         ),
         Provider<SocketService>(
           create: (_) => SocketService(),
@@ -111,13 +105,31 @@ class PulsifyApp extends StatelessWidget {
             return provider;
           },
         ),
+        // --- PLAYLIST MODULE 7 FIXES ---
+        Provider<PlaylistService>(
+          create: (_) => PlaylistService(),
+        ),
+        ChangeNotifierProxyProvider<AuthProvider, PlaylistProvider>(
+          create: (context) => PlaylistProvider(context.read<PlaylistService>()),
+          update: (context, auth, playlistProvider) {
+            final provider = playlistProvider ?? PlaylistProvider(context.read<PlaylistService>());
+            if (auth.isAuthenticated) {
+              provider.fetchPlaylists(auth.token ?? "");
+            }
+            return provider;
+          },
+        ),
+        ChangeNotifierProvider(
+          create: (context) => SubscriptionProvider(context.read<ApiService>()),
+        ),
       ],
       child: MaterialApp(
         title: 'Pulsify',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.darkTheme,
-        initialRoute: RouteNames.login,
+        home: const LoginScreen(),
         onGenerateRoute: AppRoutes.generateRoute,
+        
       ),
     );
   }

@@ -42,14 +42,11 @@ class ArtworkPickerCard extends StatelessWidget {
                             fit: BoxFit.cover,
                             width: 92,
                             height: 92,
-                            fadeInDuration: Duration.zero,
-                            fadeOutDuration: Duration.zero,
-                            placeholderFadeInDuration: Duration.zero,
-                            errorWidget: (context, _, error) => const Icon(
+                           /* errorBuilder: (_, _, _) => const Icon(
                               Icons.add_a_photo_outlined,
                               color: AppColors.iconPrimary,
                               size: 28,
-                            ),
+                            ),*/
                             placeholder: (context, _) => const Center(
                               child: SizedBox(
                                 width: 18,

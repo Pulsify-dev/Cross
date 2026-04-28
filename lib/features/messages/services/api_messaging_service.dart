@@ -27,7 +27,7 @@ class ApiMessagingService implements MessagingService {
   @override
   Future<String> startOrGetConversation(String recipientId) async {
     final response = await _api.post(
-      '/conversations',
+      '/conversations',{},
       body: {'recipient_id': recipientId},
       authRequired: true,
     );
@@ -55,7 +55,7 @@ class ApiMessagingService implements MessagingService {
   @override
   Future<void> sendMessageRest(String conversationId, String text) async {
     await _api.post(
-      '/conversations/$conversationId/messages',
+      '/conversations/$conversationId/messages',{},
       body: {'text': text},
       authRequired: true,
     );

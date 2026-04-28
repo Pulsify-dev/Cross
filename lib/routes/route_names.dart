@@ -23,8 +23,14 @@ class RouteNames {
   static const String uploadTrack = '/upload-track';
   static const String editUploadedTrack = '/edit-uploaded-track';
   static const String blockedUsers = '/blocked-users';
-  static const String suggestedUsers = '/suggested-users';
+  static const String playlists = '/playlists';
+  static const String playlistLibrary = '/playlistLibrary';
+  static const String playlistDetails = '/playlistDetails';
+  static const String createPlaylist = '/createPlaylist';
+  static const String editPlaylist = '/editPlaylist';
+  static const String addTrack = '/addTrack';
+  static const String chat = '/chat';
   static const String publicProfile = '/public-profile';
   static const String mutualFollowers = '/mutual-followers';
-  static const String chat = '/chat';
+  static const String suggestedUsers = 'suggestedUsers';
 }

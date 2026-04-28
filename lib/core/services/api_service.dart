@@ -43,7 +43,7 @@ class ApiService {
 	}
 
 	Future<dynamic> post(
-		String endpoint, {
+		String endpoint, Map<String, String> map, {
 		Map<String, dynamic>? body,
 		bool authRequired = false,
 		Map<String, String>? headers,

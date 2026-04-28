@@ -140,7 +140,7 @@ class _MessagesScreenState extends State<MessagesScreen>
               : ListView.separated(
                   physics: const AlwaysScrollableScrollPhysics(),
                   itemCount: conversations.length,
-                  separatorBuilder: (_, __) => const Divider(height: 1),
+                  separatorBuilder: (_, _) => const Divider(height: 1),
                   itemBuilder: (context, index) {
                     final conv = conversations[index];
                     final last = conv.lastMessage;

@@ -368,7 +368,7 @@ class MockSocialService implements SocialService {
 		}
 
 		final response = await _apiService.post(
-			ApiEndpoints.followUser(userId),
+			ApiEndpoints.followUser(userId),{},
 			authRequired: true,
 		);
 
@@ -410,7 +410,7 @@ class MockSocialService implements SocialService {
 		}
 
 		await _apiService.post(
-			ApiEndpoints.blockUser(userId),
+			ApiEndpoints.blockUser(userId),{},
 			body: {
 				if (reason != null && reason.trim().isNotEmpty) 'reason': reason.trim(),
 			},

@@ -7,6 +7,7 @@ import 'package:cross/features/library/screens/library_screen.dart';
 import 'package:cross/providers/feed_provider.dart';
 import 'package:cross/features/feed/screens/feed_screen.dart';
 import 'package:cross/features/player/widgets/mini_player.dart';
+import 'package:cross/providers/subscription_provider.dart';
 
 class MainScreen extends StatefulWidget {
   final int initialIndex;
@@ -170,24 +171,46 @@ class _MainScreenState extends State<MainScreen> {
 class _UpgradeScreen extends StatelessWidget {
   const _UpgradeScreen();
 
-  @override
+@override
   Widget build(BuildContext context) {
+    // This connects your screen to the 'brain' (Provider)
+    final subProvider = context.watch<SubscriptionProvider>();
+
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.workspace_premium, size: 64, color: AppColors.primary),
-            const SizedBox(height: 16),
-            Text(
-              'Go Premium',
-              style: Theme.of(context).textTheme.headlineMedium,
+        child: subProvider.isLoading 
+          ? const CircularProgressIndicator() 
+          : Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.workspace_premium, size: 64, color: AppColors.primary),
+                const SizedBox(height: 16),
+                Text(
+                  'Plan: ${subProvider.currentPlan}', 
+                  style: Theme.of(context).textTheme.headlineMedium,
+                ),
+                const SizedBox(height: 8),
+                
+                Text(
+                  'Usage: ${subProvider.sub?.usedTracks ?? 0} / ${subProvider.sub?.trackLimit ?? 10} tracks',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+                
+                const SizedBox(height: 24),
+
+                if (!subProvider.isPremium)
+                  ElevatedButton(
+                    onPressed: () => subProvider.upgradeAccount(), // Starts the real upgrade
+                    child: const Text('Upgrade to Artist Pro'),
+                  )
+                else
+                  TextButton(
+                    onPressed: () => subProvider.downgradeAccount(), // Starts the cancellation
+                    child: const Text('Cancel Subscription', style: TextStyle(color: Colors.red)),
+                  ),
+              ],
             ),
-            const SizedBox(height: 8),
-            Text('Coming soon', style: Theme.of(context).textTheme.bodyMedium),
-          ],
-        ),
       ),
     );
   }

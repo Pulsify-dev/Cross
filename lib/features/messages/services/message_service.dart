@@ -35,7 +35,7 @@ class MessageService {
 
   Future<Conversation?> startOrGetConversation(String recipientId) async {
     final response = await _apiService.post(
-      ApiEndpoints.startConversation(),
+      ApiEndpoints.startConversation(),{},
       body: {'recipient_id': recipientId},
       authRequired: true,
     );
@@ -109,7 +109,7 @@ class MessageService {
     }
 
     final response = await _apiService.post(
-      ApiEndpoints.sendMessage(conversationId),
+      ApiEndpoints.sendMessage(conversationId),{},
       body: requestBody,
       authRequired: true,
     );

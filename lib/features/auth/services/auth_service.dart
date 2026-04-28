@@ -12,7 +12,7 @@ class AuthService {
     required String password,
   }) async {
     final response = await _apiService.post(
-      ApiEndpoints.login,
+      ApiEndpoints.login,{},
       body: {
         'email': email,
         'password': password,
@@ -33,7 +33,7 @@ class AuthService {
     required String captchaToken,
   }) async {
     final response = await _apiService.post(
-      ApiEndpoints.register,
+      ApiEndpoints.register,{},
       body: {
         'username': username,
         'email': email,
@@ -54,7 +54,7 @@ class AuthService {
     required String token,
   }) async {
     final response = await _apiService.post(
-      ApiEndpoints.socialLogin(provider),
+      ApiEndpoints.socialLogin(provider),{},
       body: {'token': token},
     );
 
@@ -69,7 +69,7 @@ class AuthService {
     required String token,
   }) async {
     final response = await _apiService.post(
-      ApiEndpoints.verifyEmail,
+      ApiEndpoints.verifyEmail,{},
       body: {'token': token},
     );
 
@@ -84,7 +84,7 @@ class AuthService {
     required String refreshToken,
   }) async {
     final response = await _apiService.post(
-      ApiEndpoints.refreshToken,
+      ApiEndpoints.refreshToken,{},
       body: {'refresh_token': refreshToken},
     );
 
@@ -99,7 +99,7 @@ class AuthService {
     required String email,
   }) async {
     final response = await _apiService.post(
-      ApiEndpoints.forgotPassword,
+      ApiEndpoints.forgotPassword,{},
       body: {'email': email},
     );
 
@@ -116,7 +116,7 @@ class AuthService {
     required String newPassword,
   }) async {
     final response = await _apiService.post(
-      ApiEndpoints.resetPassword,
+      ApiEndpoints.resetPassword,{},
       body: {
         'token': token,
         'new_password': newPassword,
@@ -148,7 +148,7 @@ class AuthService {
     required String email,
   }) async {
     final response = await _apiService.post(
-      ApiEndpoints.resendVerification,
+      ApiEndpoints.resendVerification,{},
       body: {'email': email},
     );
 
@@ -164,7 +164,7 @@ class AuthService {
     required String refreshToken,
   }) async {
     await _apiService.post(
-      ApiEndpoints.logout,
+      ApiEndpoints.logout,{},
       body: {'refresh_token': refreshToken},
       authRequired: true,
     );
