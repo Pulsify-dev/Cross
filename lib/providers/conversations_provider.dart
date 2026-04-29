@@ -331,19 +331,38 @@ class ConversationsProvider extends ChangeNotifier {
     }
     notifyListeners();
 
-    // Prefer socket; reconnect if needed, then fall back to REST
-    if (!_socket.isConnected) {
-      await _socket.connect();
-    }
+    // Prefer socket (with ack to replace temp ID); fall back to REST.
     if (_socket.isConnected) {
-      _socket.sendMessage(conversationId, text);
+      _socket.sendMessage(conversationId, text, onAck: (ackData) {
+        final msgData = ((ackData['data'] as Map?)
+                    ?['message'] as Map?)
+                ?.cast<String, dynamic>() ??
+            const <String, dynamic>{};
+        final realId = msgData['_id']?.toString() ?? '';
+        if (realId.isNotEmpty) {
+          final msgs = List<ChatMessage>.from(
+              _messagesMap[conversationId] ?? []);
+          final idx = msgs.indexWhere((m) => m.id == tempId);
+          if (idx != -1) {
+            msgs[idx] = ChatMessage(
+              id: realId,
+              text: msgData['text']?.toString() ?? text,
+              isMe: true,
+              timestamp:
+                  DateTime.tryParse(
+                          msgData['createdAt']?.toString() ?? '') ??
+                      DateTime.now(),
+            );
+            _messagesMap[conversationId] = msgs;
+            notifyListeners();
+          }
+        }
+      });
     } else {
       try {
         await _messaging.sendMessageRest(conversationId, text);
       } catch (_) {
         // Keep the optimistic message visible — REST is a fallback only.
-        // The server-side 500 is transient; the message will reconcile on
-        // next loadMessages (e.g. when the user re-opens the chat).
       }
     }
   }

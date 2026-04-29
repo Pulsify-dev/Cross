@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'package:socket_io_client/socket_io_client.dart' as io;
 import '../../../core/constants/api_constants.dart';
 import '../../../core/services/session_service.dart';
@@ -13,6 +13,9 @@ class SocketService {
       StreamController<Map<String, dynamic>>.broadcast();
   final _notificationController =
       StreamController<Map<String, dynamic>>.broadcast();
+
+  // Callbacks registered to run once the socket connects.
+  final List<VoidCallback> _onConnectQueue = [];
 
   SocketService({SessionService? sessionService})
       : _sessionService = sessionService ?? SessionService();
@@ -39,6 +42,14 @@ class SocketService {
           .build(),
     );
 
+    _socket!.on('connect', (_) {
+      // Flush any deferred room-join calls that arrived before the handshake.
+      for (final cb in _onConnectQueue) {
+        cb();
+      }
+      _onConnectQueue.clear();
+    });
+
     _socket!.on('message:new', (data) {
       if (data is Map && !_messageController.isClosed) {
         _messageController.add(Map<String, dynamic>.from(data));
@@ -60,7 +71,17 @@ class SocketService {
     _socket!.connect();
   }
 
+  /// Joins the conversation room immediately if connected, or defers until
+  /// the socket connects.
   void joinConversation(String conversationId) {
+    if (isConnected) {
+      _emitJoin(conversationId);
+    } else {
+      _onConnectQueue.add(() => _emitJoin(conversationId));
+    }
+  }
+
+  void _emitJoin(String conversationId) {
     _socket?.emitWithAck(
       'conversation:join',
       {'conversation_id': conversationId},
@@ -68,11 +89,22 @@ class SocketService {
     );
   }
 
-  void sendMessage(String conversationId, String text) {
-    _socket?.emit('message:new', {
-      'conversation_id': conversationId,
-      'text': text,
-    });
+  /// Sends a message via socket and calls [onAck] with the server's
+  /// acknowledgment payload so the caller can replace the temp ID.
+  void sendMessage(
+    String conversationId,
+    String text, {
+    void Function(Map<String, dynamic> ack)? onAck,
+  }) {
+    _socket?.emitWithAck(
+      'message:new',
+      {'conversation_id': conversationId, 'text': text},
+      ack: (data) {
+        if (onAck != null && data is Map) {
+          onAck(Map<String, dynamic>.from(data));
+        }
+      },
+    );
   }
 
   void markRead(String conversationId) {
@@ -94,6 +126,7 @@ class SocketService {
   void disconnect() {
     _socket?.disconnect();
     _socket = null;
+    _onConnectQueue.clear();
   }
 
   void dispose() {
@@ -103,3 +136,5 @@ class SocketService {
     _notificationController.close();
   }
 }
+
+typedef VoidCallback = void Function();

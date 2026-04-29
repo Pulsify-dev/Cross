@@ -160,7 +160,9 @@ class AppRoutes {
         return MaterialPageRoute(
           builder: (_) => ChatScreen(
             userId: args['userId'] as String,
-            username: args['username'] as String? ?? args['userId'] as String,
+            username: (args['username'] as String?)?.isNotEmpty == true
+                ? args['username'] as String
+                : args['userId'] as String,
             displayName: args['displayName'] as String,
             avatarUrl: args['avatarUrl'] as String?,
           ),
