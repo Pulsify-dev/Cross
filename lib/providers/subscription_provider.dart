@@ -1,24 +1,21 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart'; // Fixes launchUrl errors
+import 'package:url_launcher/url_launcher.dart'; 
 import '../core/services/api_service.dart';
 
 class SubscriptionProvider with ChangeNotifier {
   final ApiService _apiService;
 
-  // Data from backend
   int? adIntervalSeconds;
   String? adVideoUrl;
   bool _isLoading = false;
   String _currentPlan = 'Free';
   bool _isPremium = false;
 
-  // Quotas (Mapped to your usage API)
   int currentTrackCount = 0;
   int currentAlbumCount = 0;
   int? maxTrackLimit; 
 
-  // UI state
   bool showAdOverlay = false;
   Timer? _adTimer;
 
@@ -27,7 +24,7 @@ class SubscriptionProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   bool get isPremium => _isPremium;
   String get currentPlan => _currentPlan;
-  SubscriptionProvider get sub => this; // Fixes 'sub' undefined
+  SubscriptionProvider get sub => this; 
   int get usedTracks => currentTrackCount;
   dynamic get trackLimit => maxTrackLimit ?? '∞'; 
 
@@ -36,8 +33,8 @@ class SubscriptionProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final subData = await _apiService.get('/subscriptions/me');
-      final usageData = await _apiService.get('/users/me/usage');
+      final subData = await _apiService.get('/subscriptions/me',authRequired: true);
+      final usageData = await _apiService.get('/users/me/usage',authRequired: true);
 
       if (subData != null && usageData != null) {
         _currentPlan = subData['effective_plan'] ?? 'Free';
@@ -64,10 +61,12 @@ class SubscriptionProvider with ChangeNotifier {
     notifyListeners();
   }
 
- 
   Future<void> upgradeAccount() async {
     try {
-      final response = await _apiService.post('/subscriptions/checkout', {'plan': 'Artist Pro'});
+      final response = await _apiService.post(
+        '/subscriptions/checkout', 
+        body: {'plan': 'Artist Pro'} // Added body label
+      );
       if (response != null && response['checkout_url'] != null) {
         await launchUrl(Uri.parse(response['checkout_url']), mode: LaunchMode.externalApplication);
       }
@@ -75,10 +74,12 @@ class SubscriptionProvider with ChangeNotifier {
   }
 
   Future<void> downgradeAccount() async {
-    await _apiService.post('/subscriptions/cancel', {});
+    await _apiService.post(
+      '/subscriptions/cancel', 
+      body: {} // Added body label
+    );
     await fetchSubscriptionStatus();
   }
-
 
   void _startAdTimer() {
     _adTimer?.cancel();

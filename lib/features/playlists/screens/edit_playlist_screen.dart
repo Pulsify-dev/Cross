@@ -35,12 +35,11 @@ class _EditPlaylistScreenState extends State<EditPlaylistScreen> {
 
  void _saveChanges() async {
     if (_titleController.text.isEmpty) return;
-    
+
     await context.read<PlaylistProvider>().updatePlaylist(
-      context.read<AuthProvider>().token ?? '',
       widget.playlist.id,
       _titleController.text,
-      _descController.text, 
+      _descController.text,
     );
 
     if (mounted) Navigator.pop(context);

@@ -150,7 +150,7 @@ class ApiTrackService implements TrackService {
   Future<void> likeTrack(String trackId) async {
     try {
       await _apiService.post(
-        ApiEndpoints.trackLike(trackId),{},
+        ApiEndpoints.trackLike(trackId),
         body: {},
         authRequired: true,
       );
@@ -284,7 +284,7 @@ class ApiTrackService implements TrackService {
   Future<void> recordPlay(String trackId, {int durationPlayedMs = 0}) async {
     try {
       await _apiService.post(
-        ApiEndpoints.trackRecordPlay(trackId),{},
+        ApiEndpoints.trackRecordPlay(trackId),
         body: {'duration_played_ms': durationPlayedMs},
         authRequired: true,
       );
@@ -451,7 +451,7 @@ class ApiTrackService implements TrackService {
   }) async {
     try {
       await _apiService.post(
-        ApiEndpoints.trackComments(trackId),{},
+        ApiEndpoints.trackComments(trackId),
         body: {
           'text': text,
           'timestamp_seconds': timestampInTrack.inSeconds,
@@ -472,7 +472,7 @@ class ApiTrackService implements TrackService {
     try {
       await _apiService.patch(
         ApiEndpoints.commentAction(commentId),
-         {'text': text},
+        body: {'text': text},
         authRequired: true,
       );
     } catch (e) {
@@ -538,7 +538,7 @@ class ApiTrackService implements TrackService {
   Future<void> repostTrack(String trackId) async {
     try {
       await _apiService.post(
-        ApiEndpoints.trackRepost(trackId),{},
+        ApiEndpoints.trackRepost(trackId),
         body: {},
         authRequired: true,
       );
@@ -595,11 +595,19 @@ class ApiTrackService implements TrackService {
     return [];
   }
 
-  void setCurrentUser(User? user) {}
-  
   @override
-  Future<String?> getTrackLyrics(String trackId) {
-    // TODO: implement getTrackLyrics
-    throw UnimplementedError();
+  Future<String?> getTrackLyrics(String trackId) async {
+    try {
+      final response = await _apiService.get(
+        ApiEndpoints.trackLyrics(trackId),
+        authRequired: true,
+      );
+      if (response != null && response is Map<String, dynamic>) {
+        return response['lyrics']?.toString();
+      }
+    } catch (e) {
+      debugPrint('Error fetching track lyrics: $e');
+    }
+    return null;
   }
 }

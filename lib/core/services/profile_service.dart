@@ -58,7 +58,7 @@ class ProfileService {
 
       final response = await _apiService.patch(
         ApiEndpoints.myProfile,
-        body,
+        body: body, // Added 'body:' label here
         authRequired: true,
       );
 
@@ -107,7 +107,7 @@ class ProfileService {
 
       final response = await _apiService.patch(
         ApiEndpoints.editProfile(userId),
-        body,
+        body: body, // Added 'body:' label here
         authRequired: true,
       );
 

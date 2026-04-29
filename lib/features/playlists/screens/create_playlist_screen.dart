@@ -32,7 +32,7 @@ class _CreatePlaylistScreenState extends State<CreatePlaylistScreen> {
     debugPrint("DEBUG: Attempting create with Token: ${auth.token}");
     debugPrint("DEBUG: Attempting create with Title: $title");
 
-    final success = await playlistProvider.createPlaylist(auth.token ?? "", title);
+    final success = await playlistProvider.createPlaylist(title);
     
     if (success) {
       if (mounted) Navigator.pop(context);

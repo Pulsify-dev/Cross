@@ -27,6 +27,8 @@ import 'features/search/services/api_search_service.dart';
 import 'routes/app_routes.dart';
 import 'package:cross/providers/playlist_provider.dart';
 import 'package:cross/features/playlists/services/playlist_service.dart';
+import 'providers/admin_provider.dart';
+import 'features/feed/services/admin_service.dart';
 
 
 void main() {
@@ -138,7 +140,7 @@ ChangeNotifierProxyProvider<AuthProvider, PlaylistProvider>(
   create: (context) => PlaylistProvider(context.read<PlaylistService>()),
   update: (context, auth, playlistProvider) {
     if (auth.isAuthenticated && auth.token != null) {
-      Future.microtask(() => playlistProvider!.fetchPlaylists(auth.token!));
+      Future.microtask(() => playlistProvider!.fetchPlaylists());
     }
     return playlistProvider!;
   },
@@ -146,6 +148,10 @@ ChangeNotifierProxyProvider<AuthProvider, PlaylistProvider>(
         ChangeNotifierProvider(
           create: (context) => SubscriptionProvider(context.read<ApiService>()),
         ),
+        ChangeNotifierProxyProvider<ApiService, AdminProvider>(
+  create: (context) => AdminProvider(AdminService(context.read<ApiService>())),
+  update: (context, api, previous) => AdminProvider(AdminService(api)),
+),
       ],
       child: MaterialApp(
         title: 'Pulsify',

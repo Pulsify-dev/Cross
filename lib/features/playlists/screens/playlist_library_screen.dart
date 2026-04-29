@@ -40,11 +40,10 @@ class PlaylistLibraryScreen extends StatelessWidget {
                 minimumSize: const Size(double.infinity, 50),
               ),
               onPressed: () {
-                // Connect to Postman POST /subscriptions/upgrade
                 context.read<SubscriptionProvider>().upgradeAccount();
                 Navigator.pop(context);
               },
-              child: const Text("UPGRADE NOW", style: TextStyle(fontWeight: FontWeight.bold)),
+              child: const Text("UPGRADE NOW", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
             ),
           ],
         ),
@@ -52,27 +51,61 @@ class PlaylistLibraryScreen extends StatelessWidget {
     );
   }
 
+  void showAddToPlaylistSheet(BuildContext context, String trackId) {
+    final playlistProv = context.read<PlaylistProvider>();
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.black,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (context) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Padding(
+            padding: EdgeInsets.all(16.0),
+            child: Text("Add to Playlist", style: TextStyle(color: Colors.white, fontSize: 18)),
+          ),
+          ...playlistProv.playlists.map((playlist) => ListTile(
+            leading: const Icon(Icons.playlist_add, color: Colors.white),
+            title: Text(playlist.title!, style: const TextStyle(color: Colors.white)), // FIXED: Added !
+            onTap: () async {
+              final success = await playlistProv.addTrackToPlaylist(playlist.id!, trackId); // FIXED: Added !
+              if (context.mounted) {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(success ? "Added to ${playlist.title!}" : "Error adding track"),
+                    backgroundColor: success ? Colors.green : Colors.red,
+                  )
+                );
+              }
+            },
+          )),
+          const SizedBox(height: 20),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isUserPremium = context.watch<SubscriptionProvider>().isPremium;
-    final authProvider = Provider.of<AuthProvider>(context);
     final playlistProv = context.watch<PlaylistProvider>();
 
     return Scaffold(
-      appBar: AppBar(title: const Text("My Playlists")),
+      appBar: AppBar(title: const Text("My Library")),
       body: playlistProv.playlists.isEmpty
-          ? const Center(child: Text("No playlists yet."))
+          ? const Center(child: Text("No playlists yet.", style: TextStyle(color: Colors.white70)))
           : ListView.builder(
               itemCount: playlistProv.playlists.length,
               itemBuilder: (context, index) {
                 final item = playlistProv.playlists[index];
                 return ListTile(
-                  leading: const Icon(Icons.playlist_play),
+                  leading: const Icon(Icons.playlist_play, color: Colors.white),
                   title: Row(
                     children: [
-                      Text(item.title),
+                      Text(item.title!, style: const TextStyle(color: Colors.white)), // FIXED: Added !
                       const SizedBox(width: 8),
-                      // SoundCloud GO+ Badge
                       if (item.isPremium) 
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
@@ -87,9 +120,11 @@ class PlaylistLibraryScreen extends StatelessWidget {
                         ),
                     ],
                   ),
-                  subtitle: Text(item.description ?? ""),
+                  subtitle: Text(
+                    item.description ?? "No description", 
+                    style: const TextStyle(color: Colors.white54),
+                  ),
                   onTap: () {
-                    // Logic Check: If playlist is premium and user is not, block access
                     if (item.isPremium && !isUserPremium) {
                       _showPremiumUpsell(context);
                     } else {
@@ -104,7 +139,7 @@ class PlaylistLibraryScreen extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       IconButton(
-                        icon: const Icon(Icons.edit),
+                        icon: const Icon(Icons.edit, color: Colors.white70),
                         onPressed: () => Navigator.pushNamed(
                           context,
                           RouteNames.editPlaylist,
@@ -112,8 +147,12 @@ class PlaylistLibraryScreen extends StatelessWidget {
                         ),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.delete, color: Colors.red),
-                        onPressed: () => playlistProv.deletePlaylist(authProvider.token ?? "", item.id),
+                        icon: const Icon(Icons.delete, color: Colors.redAccent),
+                        onPressed: () {
+                          // Standard confirmation dialog could go here, 
+                          // but calling provider directly as requested:
+                          playlistProv.deletePlaylist(item.id!); // FIXED: Added !
+                        },
                       ),
                     ],
                   ),
@@ -121,8 +160,9 @@ class PlaylistLibraryScreen extends StatelessWidget {
               },
             ),
       floatingActionButton: FloatingActionButton(
+        backgroundColor: Colors.orange,
         onPressed: () => Navigator.pushNamed(context, RouteNames.createPlaylist),
-        child: const Icon(Icons.add),
+        child: const Icon(Icons.add, color: Colors.white),
       ),
     );
   }

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:cross/features/player/widgets/playlist_selector_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../feed/models/track.dart';
@@ -745,6 +746,20 @@ class _TrackDetailsScreenState extends State<TrackDetailsScreen>
                 activeColor: Theme.of(context).colorScheme.primary,
                 onTap: () => feedProvider.toggleRepost(track),
               ),
+
+              _BottomAction(
+                icon: Icons.playlist_add_rounded, 
+                label: '', 
+                onTap: () {
+        showModalBottomSheet(
+          context: context,
+          backgroundColor: const Color(0xFF121212), // Match your theme
+          isScrollControlled: true,
+          builder: (context) => PlaylistSelectorSheet(track: widget.track), // Use widget.track here
+  );
+},
+                     tooltip: 'Add to Playlist',
+             )   ,
 
               _BottomAction(
                 icon: Icons.bar_chart_rounded,

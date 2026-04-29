@@ -1,3 +1,4 @@
+import 'package:cross/features/player/widgets/playlist_selector_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -229,20 +230,53 @@ class _TrendingTrackWidgetState extends State<TrendingTrackWidget> {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
-        trailing: IconButton(
-          icon: Icon(
-            Icons.more_vert,
-            color: Theme.of(
-              context,
-            ).colorScheme.onSurface.withValues(alpha: 0.7),
-          ),
-          onPressed: () {
-            Navigator.of(
-              context,
-            ).pushNamed(RouteNames.trackDetails, arguments: track);
-          },
+       trailing: IconButton(
+  icon: Icon(
+    Icons.more_vert,
+    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+  ),
+  onPressed: () {
+    // Show the Bottom Sheet menu
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.navBarBackground, // Matches your theme
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // 1. Keep your existing "Go to Details" option
+            ListTile(
+              leading: const Icon(Icons.info_outline, color: Colors.white),
+              title: const Text('View Details', style: TextStyle(color: Colors.white)),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.of(context).pushNamed(RouteNames.trackDetails, arguments: track);
+              },
+            ),
+            // 2. ADD THE NEW PLAYLIST OPTION HERE
+            ListTile(
+              leading: const Icon(Icons.playlist_add, color: Colors.white),
+              title: const Text('Add to Playlist', style: TextStyle(color: Colors.white)),
+              onTap: () {
+                 Navigator.pop(context); // Closes the 'More' menu
+                   showModalBottomSheet(
+                    context: context,
+                     backgroundColor: const Color(0xFF121212),
+                      isScrollControlled: true,
+                builder: (context) => PlaylistSelectorSheet(track: track),
+                );
+              },
+            ),
+          ],
         ),
       ),
     );
-  }
+  },
+),
+      ),
+    );    
+}
 }

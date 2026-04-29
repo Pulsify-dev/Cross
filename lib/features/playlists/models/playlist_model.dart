@@ -33,15 +33,15 @@ class Playlist {
       trackIds: trackIds ?? this.trackIds,
     );
   }
-
-  factory Playlist.fromJson(Map<String, dynamic> json) {
-    return Playlist(
-      id: json['_id'] ?? json['id'] ?? '',
-      title: json['name'] ?? json['title'] ?? 'Untitled',
-      description: json['description'],
-      isPublic: json['isPublic'] ?? true,
-      isPremium: json['isPremium'] ?? false,
-      trackIds: List<String>.from(json['tracks'] ?? []),
-    );
-  }
+factory Playlist.fromJson(Map<String, dynamic> json) {
+  return Playlist(
+    id: json['_id'] ?? json['id'] ?? '',
+    title: json['name'] ?? json['title'] ?? 'Untitled',
+    // Check for 'desc' (common in SoundCloud-style APIs)
+    description: json['description'] ?? json['desc'] ?? json['details'] ?? 'No description provided', 
+    isPublic: json['isPublic'] ?? true,
+    isPremium: json['isPremium'] ?? false,
+    trackIds: List<String>.from(json['tracks'] ?? []),
+  );
+}
 }

@@ -12,6 +12,7 @@ class PlaylistDetailsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final provider = context.watch<PlaylistProvider>();
     
+    // Finds the updated version of this playlist from the provider
     final currentPlaylist = provider.playlists.firstWhere(
       (p) => p.id == playlist.id, 
       orElse: () => playlist
@@ -19,7 +20,7 @@ class PlaylistDetailsScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(currentPlaylist.title),
+        title: Text(currentPlaylist.title!), // FIXED: Added !
         actions: [
           IconButton(
             icon: const Icon(Icons.edit),
@@ -32,25 +33,46 @@ class PlaylistDetailsScreen extends StatelessWidget {
         ],
       ),
       body: currentPlaylist.trackIds.isEmpty
-          ? const Center(child: Text("No tracks in this playlist."))
+          ? const Center(child: Text("No tracks in this playlist.", style: TextStyle(color: Colors.white70)))
           : ListView.builder(
               itemCount: currentPlaylist.trackIds.length,
               itemBuilder: (context, index) {
                 final trackId = currentPlaylist.trackIds[index];
                 return ListTile(
-                  leading: CircleAvatar(child: Text("${index + 1}")),
-                  title: Text("Track $trackId"),
-                  trailing: const Icon(Icons.play_arrow),
+                  leading: CircleAvatar(
+                    backgroundColor: Colors.orange,
+                    child: Text("${index + 1}", style: const TextStyle(color: Colors.white)),
+                  ),
+                  title: Text(
+                    "Track ID: $trackId", // Later you can map this to a Track name
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                  // ADDED: Remove Track button to make the feature functional
+                  trailing: IconButton(
+                    icon: const Icon(Icons.remove_circle_outline, color: Colors.redAccent),
+                    onPressed: () async {
+                      final success = await provider.removeTrack(currentPlaylist.id!, trackId);
+                      if (context.mounted && success) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text("Track removed from playlist"))
+                        );
+                      }
+                    },
+                  ),
+                  onTap: () {
+                    // This is where you'll trigger the Audio Player in Module 8
+                  },
                 );
               },
             ),
       floatingActionButton: FloatingActionButton(
+        backgroundColor: Colors.orange,
         onPressed: () => Navigator.pushNamed(
           context, 
           RouteNames.addTrack, 
           arguments: currentPlaylist,
         ),
-        child: const Icon(Icons.library_add), 
+        child: const Icon(Icons.library_add, color: Colors.white), 
       ),
     );
   }

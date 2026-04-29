@@ -45,7 +45,10 @@ class ApiEndpoints {
 
   static String blockUser(String userId) => '/users/$userId/block';
   static String updateBlockReason(String userId) => blockUser(userId);
-
+  // 
+  static const String playlists = '/playlists';
+  static String playlistById(String id) => '/playlists/$id';
+  static String playlistTracks(String id) => '/playlists/$id/tracks';
   static const String tracks = '/tracks';
 
   static String trackById(String trackId) => '/tracks/$trackId';

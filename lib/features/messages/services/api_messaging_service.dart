@@ -27,8 +27,8 @@ class ApiMessagingService implements MessagingService {
   @override
   Future<String> startOrGetConversation(String recipientId) async {
     final response = await _api.post(
-      '/conversations',{},
-      body: {'recipient_id': recipientId},
+      '/conversations',
+      body: {'recipient_id': recipientId}, // Removed extra {},
       authRequired: true,
     );
     final data = (response['data'] ?? response) as Map<String, dynamic>;
@@ -55,8 +55,8 @@ class ApiMessagingService implements MessagingService {
   @override
   Future<void> sendMessageRest(String conversationId, String text) async {
     await _api.post(
-      '/conversations/$conversationId/messages',{},
-      body: {'text': text},
+      '/conversations/$conversationId/messages',
+      body: {'text': text}, // Removed extra {},
       authRequired: true,
     );
   }

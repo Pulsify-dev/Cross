@@ -309,7 +309,7 @@ class UploadService {
 
 		final response = await _apiService.patch(
 			ApiEndpoints.trackMetadata(trackId),
-			 body,
+			 body: body,
 			authRequired: true,
 		);
 

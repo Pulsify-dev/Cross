@@ -50,22 +50,18 @@ class ApiUserService implements UserService {
 
   @override
   Future<void> followUser(String userId) async {
-<<<<<<< HEAD
-    await _apiService.post('/users/$userId/follow',{}, authRequired: true);
-=======
     await _apiService.post(
       '/users/$userId/follow',
-      body: {},
+      body: {}, // Removed {}, and added body: label
       authRequired: true,
     );
->>>>>>> origin/develop
   }
 
   @override
   Future<void> unfollowUser(String userId) async {
     await _apiService.delete('/users/$userId/follow', authRequired: true);
   }
-  @override
+
   Future<List<User>> getSuggestedUsers({int? limit, int? page}) async {
     return [];
   }
