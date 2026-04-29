@@ -36,7 +36,6 @@ class SocketService {
     _socket = io.io(
       ApiConstants.socketUrl,
       io.OptionBuilder()
-          .setTransports(['websocket'])
           .setAuth({'token': 'Bearer $token'})
           .disableAutoConnect()
           .build(),
